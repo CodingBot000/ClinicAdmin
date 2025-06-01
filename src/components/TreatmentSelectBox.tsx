@@ -8,13 +8,13 @@ import { CategoryNode } from "@/app/contents/CategoryNode";
 import { Button } from "@/components/ui/button";
 
 interface TreatmentSelectBoxProps {
-  onSelectionChange?: (selectedKeys: string[]) => void;
-  initialSelectedKeys?: string[];
+  onSelectionChange?: (selectedKeys: number[]) => void;
+  initialSelectedKeys?: number[];
 }
 
 const getLabelByKey = (() => {
   // 한번만 트리 플랫하게 만들어서 성능 최적화
-  const map = new Map<string, string>();
+  const map = new Map<number, string>();
   const traverse = (nodes: CategoryNode[]) => {
     nodes.forEach((n) => {
       map.set(n.key, n.label);
@@ -22,11 +22,11 @@ const getLabelByKey = (() => {
     });
   };
   traverse(TREATMENT_CATEGORIES);
-  return (key: string) => map.get(key) ?? key;
+  return (key: number) => map.get(key) ?? key.toString();
 })();
 
 export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = [] }: TreatmentSelectBoxProps) {
-  const [selectedKeys, setSelectedKeys] = useState<string[]>(initialSelectedKeys);
+  const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
   const [modalOpen, setModalOpen] = useState(false);
 
   // 선택된 항목이 변경될 때마다 상위 컴포넌트에 알림
@@ -36,14 +36,18 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
     }
   }, [selectedKeys, onSelectionChange]);
 
-  const handleRemove = (key: string) => {
+  const handleRemove = (key: number) => {
     setSelectedKeys((prev) => prev.filter((k) => k !== key));
+  };
+
+  const handleRemoveOption = (key: number) => {
+    // setSelectedKeys((prev) => prev.filter((k) => k !== key));
   };
 
   const handleOpen = () => setModalOpen(true);
   const handleClose = () => setModalOpen(false);
 
-  const handleSave = (keys: string[]) => {
+  const handleSave = (keys: number[]) => {
     setSelectedKeys(keys);
   };
 
@@ -71,6 +75,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
                 <X className="w-4 h-4" />
               </button>
               {getLabelByKey(key)}
+            
             </div>
           ))
         )}

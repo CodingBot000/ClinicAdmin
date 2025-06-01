@@ -1,6 +1,6 @@
 export type CategoryNode = {
-    key: string;
+    key: number;
+    name: string;
     label: string;
     children?: CategoryNode[];
   };
-  

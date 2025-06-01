@@ -5,8 +5,8 @@ import { REGIONS } from "@/app/contents/location";
 import { CategoryNode } from "@/app/contents/CategoryNode";
 
 interface LocationSelectProps {
-  onSelect: (location: { key: string; label: string }) => void;
-  selectedLocation?: { key: string; label: string } | null;
+  onSelect: (location: { key: number; label: string; name: string }) => void;
+  selectedLocation?: { key: number; label: string; name: string } | null;
 }
 
 const LocationSelect: React.FC<LocationSelectProps> = ({ onSelect, selectedLocation }) => {
@@ -18,7 +18,7 @@ const LocationSelect: React.FC<LocationSelectProps> = ({ onSelect, selectedLocat
   };
 
   const handleLocationSelect = (location: CategoryNode) => {
-    onSelect({ key: location.key, label: location.label });
+    onSelect({ key: location.key, label: location.label, name: location.name });
     setIsOpen(false);
     setSelectedRegion(null);
   };
