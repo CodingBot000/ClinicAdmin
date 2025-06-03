@@ -1,4 +1,4 @@
-import { CategoryNode } from "./CategoryNode";
+import { CategoryNode } from "@/types/category";
 
 export const REGIONS: CategoryNode[] = [
     {

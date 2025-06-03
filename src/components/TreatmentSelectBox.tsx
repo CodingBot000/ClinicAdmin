@@ -3,29 +3,31 @@
 import React, { useState, useEffect } from "react";
 import { TreatmentSelectModal } from "./modal/TreatmentSelectModal";
 import { X } from "lucide-react";
-import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
-import { CategoryNode } from "@/app/contents/CategoryNode";
+// import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
+import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
 
 interface TreatmentSelectBoxProps {
   onSelectionChange?: (selectedKeys: number[]) => void;
   initialSelectedKeys?: number[];
+  categories: CategoryNode[];
 }
 
-const getLabelByKey = (() => {
-  // 한번만 트리 플랫하게 만들어서 성능 최적화
-  const map = new Map<number, string>();
-  const traverse = (nodes: CategoryNode[]) => {
-    nodes.forEach((n) => {
-      map.set(n.key, n.label);
-      if (n.children) traverse(n.children);
-    });
-  };
-  traverse(TREATMENT_CATEGORIES);
-  return (key: number) => map.get(key) ?? key.toString();
-})();
+// const getLabelByKey = (() => {
+//   // 한번만 트리 플랫하게 만들어서 성능 최적화
+//   const map = new Map<number, string>();
+//   const traverse = (nodes: CategoryNode[]) => {
+//     nodes.forEach((n) => {
+//       map.set(n.key, n.label);
+//       if (n.children) traverse(n.children);
+//     });
+//   };
+//   traverse(TREATMENT_CATEGORIES);
+//   return (key: number) => map.get(key) ?? key.toString();
+// })();
 
-export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = [] }: TreatmentSelectBoxProps) {
+export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = [], categories }: TreatmentSelectBoxProps) {
+  console.log("categories", categories);
   const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -74,7 +76,8 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
               >
                 <X className="w-4 h-4" />
               </button>
-              {getLabelByKey(key)}
+              {/* {getLabelByKey(key)} */}
+              {categories.find(c => c.key === key)?.label}
             
             </div>
           ))
@@ -92,6 +95,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
         initialSelectedKeys={selectedKeys}
         onClose={handleClose}
         onSave={handleSave}
+        categories={categories}
       />
     </div>
   );

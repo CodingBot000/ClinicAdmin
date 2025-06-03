@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
-import { CategoryNode } from "@/app/contents/CategoryNode";
+// import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
+import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ProductOptionInput from "@/components/ProductOptionInput";
+import { useCategories } from "@/hooks/useCategories";
 
 interface ProductOption {
   id: string;
@@ -19,6 +20,7 @@ interface TreatmentSelectModalProps {
   initialSelectedKeys: number[];
   onClose: () => void;
   onSave: (keys: number[]) => void;
+  categories: CategoryNode[];
 }
 
 // depth 정보를 가지면서 전체 카테고리 플랫하게 펼치기
@@ -58,6 +60,7 @@ export function TreatmentSelectModal({
   initialSelectedKeys,
   onClose,
   onSave,
+  categories,
 }: TreatmentSelectModalProps) {
   const [selectedKeys, setSelectedKeys] = useState<number[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -82,7 +85,8 @@ export function TreatmentSelectModal({
     };
   }, [open]);
 
-  const flatList = flattenCategoriesWithParentDepth(TREATMENT_CATEGORIES);
+  // const flatList = flattenCategoriesWithParentDepth(TREATMENT_CATEGORIES);
+  const flatList = flattenCategoriesWithParentDepth(categories);
 
   // depth마다 마지막 depth가 체크박스 위치인지 파악
   const lastDepth = Math.max(...flatList.map((x) => x.depth));

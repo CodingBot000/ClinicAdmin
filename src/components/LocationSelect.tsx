@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { REGIONS } from "@/app/contents/location";
-import { CategoryNode } from "@/app/contents/CategoryNode";
+import { CategoryNode } from "@/types/category";
 
 interface LocationSelectProps {
   onSelect: (location: { key: number; label: string; name: string }) => void;

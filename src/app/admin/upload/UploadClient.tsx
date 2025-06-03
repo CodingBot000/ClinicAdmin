@@ -20,6 +20,7 @@ import { TreatmentSelectBox } from "@/components/TreatmentSelectBox";
 import ImageUploadSection from "@/components/ImageUploadSection";
 import OpeningHoursForm from "@/components/OpeningHoursForm";
 import ExtraOptions from "@/components/ExtraOptions";
+import { useCategories } from "@/hooks/useCategories";
 
 interface Surgery {
   created_at: string;
@@ -35,6 +36,16 @@ const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
 const UploadClient = () => {
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useCategories();
+  
+  // categories 디버깅
+  console.log("🏥 UploadClient - categories 상태:", {
+    categoriesLoading,
+    categoriesError,
+    categoriesLength: categories?.length || 0,
+    categories
+  });
+
   const state = useFormStatus();
   const router = useRouter();
   const [address, setAddress] = useState("");
@@ -114,7 +125,7 @@ const UploadClient = () => {
     }
   };
 
-  if (isPending) return <LoadingSpinner backdrop />;
+  if (isPending || categoriesLoading) return <LoadingSpinner backdrop />;
 
   return (
     <main>
@@ -144,10 +155,13 @@ const UploadClient = () => {
         />
         <div className="w-full">
           {/* <SurgeriesModal itemList={surgeryList} /> */}
-          <TreatmentSelectBox 
-            onSelectionChange={handleTreatmentSelectionChange}
-            initialSelectedKeys={selectedTreatments}
-          />
+          {categories && (
+            <TreatmentSelectBox 
+              onSelectionChange={handleTreatmentSelectionChange}
+              initialSelectedKeys={selectedTreatments}
+              categories={categories}
+            />
+          )}
         </div>
         
         {/* 디버깅 정보 표시 */}
