@@ -48,7 +48,7 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
         label="상세주소"
         name="address_detail"
         required
-        placeholder="상세 주소를 입력하세요"
+        placeholder="필요시 최대한 상세한 추가 주소를 입력하세요 (선택)"
       />
       
       {/* 숨겨진 input으로 좌표 정보를 form에 포함 */}

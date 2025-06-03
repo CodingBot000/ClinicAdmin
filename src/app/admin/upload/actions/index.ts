@@ -12,7 +12,8 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const searchkey = formData.get("searchkey") as string;
   const search_key = formData.get("search_key") as string;
   const address = formData.get("address") as string;
-  const address_detail = formData.get("address_detail") as string;  const latitude = formData.get("latitude") as string;
+  const address_detail = formData.get("address_detail") as string; 
+   const latitude = formData.get("latitude") as string;
   const longitude = formData.get("longitude") as string;
   const location = formData.get("location") as string;
   const imageurls = formData.getAll("imageurls");

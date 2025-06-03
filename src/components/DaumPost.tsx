@@ -16,8 +16,8 @@ const DaumPost: React.FC<DaumPostProps> = ({ setAddress, setCoordinates }) => {
 
   // 카카오 API를 사용해서 주소를 좌표로 변환하는 함수
   const getCoordinatesFromAddress = async (address: string) => {
-    console.log('address:', address);
-    console.log('address:', encodeURIComponent(address));
+    // console.log('address:', address);
+    // console.log('address:', encodeURIComponent(address));
     try {
       const response = await fetch(
         `/api/geocode?address=${encodeURIComponent(address)}`,
@@ -53,7 +53,7 @@ const DaumPost: React.FC<DaumPostProps> = ({ setAddress, setCoordinates }) => {
   };
 
   const handleComplete = async (data: any) => {
-    console.log('🏠 원본 주소 데이터:', data);
+    // console.log('🏠 원본 주소 데이터:', data);
     
     // 다음 주소 API 응답을 DaumAddressData 타입으로 매핑
     const daumAddressData: DaumAddressData = {
@@ -73,7 +73,7 @@ const DaumPost: React.FC<DaumPostProps> = ({ setAddress, setCoordinates }) => {
       zonecode: data.zonecode || '',
     };
     
-    console.log('📋 DaumAddressData 매핑 결과:', daumAddressData);
+    // console.log('📋 DaumAddressData 매핑 결과:', daumAddressData);
 
     // 기존 주소 설정 로직
     let fullAddress = data.address;
@@ -100,8 +100,8 @@ const DaumPost: React.FC<DaumPostProps> = ({ setAddress, setCoordinates }) => {
     // mapDaumDataToHospitalAddress 함수를 사용하여 HospitalAddress 객체 생성
     const hospitalAddress = mapDaumDataToHospitalAddress(daumAddressData, coordinates);
     
-    console.log('🏥 HospitalAddress 변환 결과:', hospitalAddress);
-    console.log('📍 좌표 정보 포함 여부:', !!hospitalAddress.latitude && !!hospitalAddress.longitude);
+    // console.log('🏥 HospitalAddress 변환 결과:', hospitalAddress);
+    // console.log('📍 좌표 정보 포함 여부:', !!hospitalAddress.latitude && !!hospitalAddress.longitude);
     
     // 여기서 수파베이스 전송 전 최종 데이터 확인
     console.log('🚀 수파베이스 전송 준비 완료 - HospitalAddress:', JSON.stringify(hospitalAddress, null, 2));

@@ -31,7 +31,7 @@
 
 // const imageUploadLength = 6;
 
-// const UploadClient = () => {
+// const UploadClientLegacy = () => {
 //   const state = useFormStatus();
 //   const router = useRouter();
 //   const ref = useRef<HTMLInputElement>(null);

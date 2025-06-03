@@ -84,7 +84,7 @@ const UploadClient = () => {
   // 선택된 치료 항목들을 surgeryList와 연결하는 함수
   const handleTreatmentSelectionChange = (selectedKeys: number[]) => {
     setSelectedTreatments(selectedKeys);
-    console.log('선택된 치료 항목들:', selectedKeys);
+    // console.log('선택된 치료 항목들:', selectedKeys);
     // 필요시 여기서 surgeryList 필터링이나 추가 처리 가능
   };
 
