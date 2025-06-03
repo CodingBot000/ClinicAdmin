@@ -3,6 +3,7 @@
 import React from "react";
 import { useDaumPostcodePopup } from "react-daum-postcode";
 
+
 interface DaumPostProps {
   setAddress: (address: string) => void;
   setCoordinates?: (coordinates: { latitude: number; longitude: number }) => void;
@@ -43,14 +44,38 @@ const DaumPost: React.FC<DaumPostProps> = ({ setAddress, setCoordinates }) => {
         return data.coordinates;
       } else {
         console.warn('좌표를 찾을 수 없습니다:', address);
+        return null;
       }
     } catch (error) {
       console.error('주소 -> 좌표 변환 오류:', error);
+      return null;
     }
   };
 
   const handleComplete = async (data: any) => {
-    console.log('address data:', data);
+    console.log('🏠 원본 주소 데이터:', data);
+    
+    // 다음 주소 API 응답을 DaumAddressData 타입으로 매핑
+    const daumAddressData: DaumAddressData = {
+      address: data.address || '',
+      addressEnglish: data.addressEnglish || '',
+      addressType: data.addressType || '',
+      roadAddress: data.roadAddress || '',
+      roadAddressEnglish: data.roadAddressEnglish || '',
+      jibunAddress: data.jibunAddress || '',
+      jibunAddressEnglish: data.jibunAddressEnglish || '',
+      sido: data.sido || '',
+      sidoEnglish: data.sidoEnglish || '',
+      sigungu: data.sigungu || '',
+      sigunguEnglish: data.sigunguEnglish || '',
+      bname: data.bname || '',
+      bnameEnglish: data.bnameEnglish || '',
+      zonecode: data.zonecode || '',
+    };
+    
+    console.log('📋 DaumAddressData 매핑 결과:', daumAddressData);
+
+    // 기존 주소 설정 로직
     let fullAddress = data.address;
     let extraAddress = "";
     let localAddress = data.sido + " " + data.sigungu;
@@ -70,9 +95,16 @@ const DaumPost: React.FC<DaumPostProps> = ({ setAddress, setCoordinates }) => {
     setAddress(fullAddress);
     
     // 주소로부터 좌표 정보 가져오기
-    if (setCoordinates) {
-      await getCoordinatesFromAddress(data.address);
-    }
+    const coordinates = await getCoordinatesFromAddress(data.address);
+    
+    // mapDaumDataToHospitalAddress 함수를 사용하여 HospitalAddress 객체 생성
+    const hospitalAddress = mapDaumDataToHospitalAddress(daumAddressData, coordinates);
+    
+    console.log('🏥 HospitalAddress 변환 결과:', hospitalAddress);
+    console.log('📍 좌표 정보 포함 여부:', !!hospitalAddress.latitude && !!hospitalAddress.longitude);
+    
+    // 여기서 수파베이스 전송 전 최종 데이터 확인
+    console.log('🚀 수파베이스 전송 준비 완료 - HospitalAddress:', JSON.stringify(hospitalAddress, null, 2));
   };
 
   const handleClick = () => {
