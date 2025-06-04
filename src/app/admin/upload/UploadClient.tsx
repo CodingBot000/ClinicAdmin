@@ -516,7 +516,7 @@ const UploadClient = () => {
       <div className="flex justify-center mt-8 gap-8">
         <Button type="reset" color="red">cancel</Button>
         <Button color="blue" disabled={state.pending}>
-          {state.pending ? "...submit" : "register"}
+          {state.pending ? "...submit" : "preview"}
         </Button>
       </div>
 
