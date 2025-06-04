@@ -6,12 +6,13 @@ import clsx from "clsx";
 interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   name: string;
+  disabled?: boolean;
   isError?: boolean;
   placeholder?: string;
 }
 
 const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
-  ({ label, name, isError, placeholder, ...props }, ref) => {
+  ({ label, name, disabled = false, isError, placeholder, ...props }, ref) => {
     return (
       <div className="flex items-center w-full gap-2">
         {/* 왼쪽 라벨 */}
@@ -23,6 +24,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           id={name}
           name={name}
           ref={ref}
+          disabled={disabled}
           placeholder={placeholder}
           className={clsx(
             "flex-1 px-3 py-2 border rounded outline-none transition",

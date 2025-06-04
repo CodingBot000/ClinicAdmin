@@ -19,7 +19,7 @@ interface TreatmentSelectModalProps {
   open: boolean;
   initialSelectedKeys: number[];
   onClose: () => void;
-  onSave: (keys: number[]) => void;
+  onSave: (data: { selectedKeys: number[], productOptions: ProductOption[] }) => void;
   categories: CategoryNode[];
 }
 
@@ -102,7 +102,7 @@ export function TreatmentSelectModal({
   };
 
   const handleSave = () => {
-    onSave([...selectedKeys]);
+    onSave({ selectedKeys: [...selectedKeys], productOptions: [...productOptions] });
     handleClose();
   };
 

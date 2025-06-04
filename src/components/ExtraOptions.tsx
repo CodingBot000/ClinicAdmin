@@ -16,7 +16,7 @@ const extraOptions: ExtraOption[] = [
   { key: 'anesthesiologist', label: '마취전문의' },
 ];
 
-interface OptionState {
+export interface ExtraOptionState {
   private_recovery: boolean;
   parking: boolean;
   cctv: boolean;
@@ -26,23 +26,28 @@ interface OptionState {
   specialistCount: number;
 }
 
-export default function ExtraOptions() {
-  const [options, setOptions] = useState<OptionState>({
+interface ExtraOptionStateProps {
+  onSelectOptionState?: (address: ExtraOptionState) => void;
+}
+
+export default function ExtraOptions({ onSelectOptionState } : ExtraOptionStateProps) {
+  const [options, setOptions] = useState<ExtraOptionState>({
     private_recovery: false,
     parking: false,
     cctv: false,
     night_consult: false,
     female_doctor: false,
     anesthesiologist: false,
-    specialistCount: 0,
+    specialistCount: 1,
   });
 
   // 체크박스 변경 핸들러
-  const handleCheck = (key: keyof OptionState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheck = (key: keyof ExtraOptionState) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setOptions((prev) => ({
       ...prev,
       [key]: e.target.checked,
     }));
+    onSelectOptionState?.(options);
   };
 
   // 숫자 입력 핸들러
@@ -59,7 +64,7 @@ export default function ExtraOptions() {
     <div className="flex flex-row items-end gap-6 max-w-3xl mx-auto p-4 bg-white rounded-xl shadow">
       {/* 전문의 O명 (input만) */}
       <div className="flex flex-row items-end gap-1">
-        <span className="text-sm font-medium">전문의</span>
+        <span className="text-sm font-medium">의사</span>
         <input
           type="number"
           className="w-12 border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 text-center text-sm"
@@ -77,8 +82,8 @@ export default function ExtraOptions() {
         >
           <input
             type="checkbox"
-            checked={options[opt.key as keyof OptionState] as boolean}
-            onChange={handleCheck(opt.key as keyof OptionState)}
+            checked={options[opt.key as keyof ExtraOptionState] as boolean}
+            onChange={handleCheck(opt.key as keyof ExtraOptionState)}
             className="w-4 h-4 accent-blue-500"
           />
           <span className="text-xs text-gray-700">{opt.label}</span>
