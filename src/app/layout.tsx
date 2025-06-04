@@ -6,6 +6,7 @@ import "./globals.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import Providers from "@/provider/QueryProvider";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,6 +27,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="en">
       <body
