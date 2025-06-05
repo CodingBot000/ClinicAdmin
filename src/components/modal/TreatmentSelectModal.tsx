@@ -18,6 +18,7 @@ interface ProductOption {
 interface TreatmentSelectModalProps {
   open: boolean;
   initialSelectedKeys: number[];
+  initialProductOptions?: ProductOption[];
   onClose: () => void;
   onSave: (data: { selectedKeys: number[], productOptions: ProductOption[] }) => void;
   categories: CategoryNode[];
@@ -58,6 +59,7 @@ const flattenCategoriesWithParentDepth = (categories: CategoryNode[], depth = 1,
 export function TreatmentSelectModal({
   open,
   initialSelectedKeys,
+  initialProductOptions = [],
   onClose,
   onSave,
   categories,
@@ -67,8 +69,20 @@ export function TreatmentSelectModal({
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
 
   useEffect(() => {
-    setSelectedKeys(initialSelectedKeys ?? []);
-  }, [open, initialSelectedKeys]);
+    if (open) {
+      console.log('🔄 TreatmentSelectModal 열림 - 초기값 설정:', {
+        initialSelectedKeys,
+        selectedKeysLength: initialSelectedKeys?.length || 0,
+        initialProductOptions,
+        productOptionsLength: initialProductOptions?.length || 0
+      });
+      
+      setSelectedKeys(initialSelectedKeys ?? []);
+      setProductOptions(initialProductOptions ?? []);
+      
+      console.log('✅ TreatmentSelectModal 상태 설정 완료');
+    }
+  }, [open, initialSelectedKeys, initialProductOptions]);
 
   useEffect(() => {
     if (open) {
@@ -284,6 +298,8 @@ export function TreatmentSelectModal({
                               <ProductOptionInput
                                 key={option.id}
                                 id={option.id}
+                                initialValue1={option.value1}
+                                initialValue2={option.value2}
                                 onRemove={handleRemoveOption}
                                 onChange={handleOptionChange}
                               />

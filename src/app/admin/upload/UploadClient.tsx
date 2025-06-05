@@ -57,6 +57,9 @@ const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
 const UploadClient = () => {
+  const pageStartTime = Date.now();
+  console.log("📄 UploadClient 페이지 시작:", new Date().toISOString());
+  
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useCategories();
   
   // categories 디버깅
@@ -75,16 +78,17 @@ const UploadClient = () => {
   const [selectedLocation, setSelectedLocation] = useState<{ key: number;  label: string, name: string } | null>(null);
   const [selectedTreatments, setSelectedTreatments] = useState<number[]>([]);
   const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
+  const [priceExpose, setPriceExpose] = useState<boolean>(true);
   const [clinicImages, setClinicImages] = useState<File[]>([]);
   const [doctorImages, setDoctorImages] = useState<File[]>([]);
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([]);
   const [optionState, setOptionState] = useState<ExtraOptionState>({
-    private_recovery: false,
-    parking: false,
-    cctv: false,
-    night_consult: false,
-    female_doctor: false,
-    anesthesiologist: false,
+    has_private_recovery_room: false,
+    has_parking: false,
+    has_cctv: false,
+    has_night_counseling: false,
+    has_female_doctor: false,
+    has_anesthesiologist: false,
     specialistCount: 0,
   });
   const [searchkey, setSearchKey] = useState<string>("");
@@ -99,7 +103,18 @@ const UploadClient = () => {
   const { data: surgeryList = [], isPending } = useQuery<Surgery[]>({
     queryKey: ["surgery_info"],
     queryFn: async () => {
+      const queryStartTime = Date.now();
+      console.log("🔍 surgeryList 쿼리 시작:", new Date().toISOString());
+      
       const { data, error } = await supabase.from("surgery_info").select("*");
+      
+      const queryEndTime = Date.now();
+      const queryTime = queryEndTime - queryStartTime;
+      console.log(`🔍 surgeryList 쿼리 완료: ${queryTime}ms`, {
+        dataLength: data?.length || 0,
+        error: error?.message || null
+      });
+      
       if (error) throw Error("surgery_info error");
       return data;
     },
@@ -113,6 +128,22 @@ const UploadClient = () => {
     }
   }, [formState]);
 
+  // 페이지 로딩 완료 시간 측정
+  useEffect(() => {
+    if (!categoriesLoading && !isPending && categories) {
+      const pageEndTime = Date.now();
+      const totalLoadTime = pageEndTime - pageStartTime;
+      console.log("✅ UploadClient 페이지 로딩 완료:", new Date().toISOString());
+      console.log(`⏱️ 총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`);
+      console.log("📊 로딩 완료 상태:", {
+        categoriesCount: categories?.length || 0,
+        surgeryListCount: surgeryList?.length || 0,
+        categoriesLoading,
+        isPending
+      });
+    }
+  }, [categoriesLoading, isPending, categories, surgeryList, pageStartTime]);
+
   const handleModal = () => {
     if (formState?.status === "success") {
       router.refresh();
@@ -121,13 +152,15 @@ const UploadClient = () => {
   };
 
   // 선택된 치료 항목들과 상품옵션을 처리하는 함수
-  const handleTreatmentSelectionChange = (data: { selectedKeys: number[], productOptions: any[] }) => {
+  const handleTreatmentSelectionChange = (data: { selectedKeys: number[], productOptions: any[], priceExpose: boolean }) => {
     setSelectedTreatments(data.selectedKeys);
     setTreatmentOptions(data.productOptions);
+    setPriceExpose(data.priceExpose);
     
     console.log('💊 UploadClient - 시술 데이터 업데이트:', {
       selectedTreatments: data.selectedKeys,
-      productOptions: data.productOptions
+      productOptions: data.productOptions,
+      priceExpose: data.priceExpose
     });
   };
 
@@ -167,12 +200,12 @@ const UploadClient = () => {
       .filter(([key, value]) => key !== 'specialistCount' && value === true)
       .map(([key]) => {
         switch (key) {
-          case 'private_recovery': return '개인회복실';
-          case 'parking': return '주차가능';
-          case 'cctv': return 'CCTV';
-          case 'night_consult': return '야간상담';
-          case 'female_doctor': return '여의사';
-          case 'anesthesiologist': return '마취통증의학과 전문의';
+          case 'has_private_recovery_room': return '개인회복실';
+          case 'has_parking': return '주차가능';
+          case 'has_cctv': return 'CCTV';
+          case 'has_night_counseling': return '야간상담';
+          case 'has_female_doctor': return '여의사';
+          case 'has_anesthesiologist': return '마취통증의학과 전문의';
           default: return key;
         }
       });
@@ -260,7 +293,18 @@ const UploadClient = () => {
       // 상품옵션 데이터를 formData에 추가
       if (treatmentOptions.length > 0) {
         formData.append('treatment_options', JSON.stringify(treatmentOptions));
+        console.log('💊 상품옵션 formData 추가:', {
+          length: treatmentOptions.length,
+          data: treatmentOptions,
+          jsonString: JSON.stringify(treatmentOptions)
+        });
+      } else {
+        console.log('⚠️ 상품옵션이 없습니다.');
       }
+      
+      // 가격노출 설정 추가
+      formData.append('price_expose', priceExpose.toString());
+      console.log('💰 가격노출 설정:', priceExpose);
       
       // 시설정보
       formData.append('extra_options', JSON.stringify(optionState));
@@ -494,7 +538,9 @@ const UploadClient = () => {
         description={`- 병원 메인 이미지는 가로로 긴 직사각형(권장 비율: 16:9 또는 3:1)으로 업로드해 주세요.
   · 예시: 1600x900px(16:9) 또는 1800x600px(3:1)
   · 알림: 주어진 사진을 중앙을 기준으로 16:9 혹은 3:1 비율로 넘치는 부분이 자동으로 잘라집니다.
-      사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.`}
+      사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
+      * File 한개당 50MB 이하로 업로드 해주세요.
+      * 최대(권장) 7개까지 업로드 가능합니다. 추가 업로드 원하시면 문의 부탁드립니다.`}
         onFilesChange={setClinicImages}
         name="clinic_images"
         type="Banner"
@@ -505,6 +551,7 @@ const UploadClient = () => {
         maxImages={doctorImageUploadLength}
         title="의사 프로필 이미지 등록"
         description={`- 의사 프로필 이미지는 정사각형(1:1)으로 업로드해 주세요.
+          * File 한개당 50MB 이하로 업로드 해주세요.
   · 예시: 권장해상도 500x500px
   · 알림: 주어진 사진을 중앙을 기준으로 1:1 비율로 넘치는 부분이 자동으로 잘라집니다.`}
         onFilesChange={setDoctorImages}

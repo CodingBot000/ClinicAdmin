@@ -8,21 +8,21 @@ interface ExtraOption {
 }
 
 const extraOptions: ExtraOption[] = [
-  { key: 'private_recovery', label: '전담회복실' },
-  { key: 'parking', label: '주차가능' },
-  { key: 'cctv', label: 'CCTV설치' },
-  { key: 'night_consult', label: '야간상담' },
-  { key: 'female_doctor', label: '여의사진료' },
-  { key: 'anesthesiologist', label: '마취전문의' },
+  { key: 'has_private_recovery_room', label: '전담회복실' },
+  { key: 'has_parking', label: '주차가능' },
+  { key: 'has_cctv', label: 'CCTV설치' },
+  { key: 'has_night_counseling', label: '야간상담' },
+  { key: 'has_female_doctor', label: '여의사진료' },
+  { key: 'has_anesthesiologist', label: '마취전문의' },
 ];
 
 export interface ExtraOptionState {
-  private_recovery: boolean;
-  parking: boolean;
-  cctv: boolean;
-  night_consult: boolean;
-  female_doctor: boolean;
-  anesthesiologist: boolean;
+  has_private_recovery_room: boolean;
+  has_parking: boolean;
+  has_cctv: boolean;
+  has_night_counseling: boolean;
+  has_female_doctor: boolean;
+  has_anesthesiologist: boolean;
   specialistCount: number;
 }
 
@@ -32,12 +32,12 @@ interface ExtraOptionStateProps {
 
 export default function ExtraOptions({ onSelectOptionState } : ExtraOptionStateProps) {
   const [options, setOptions] = useState<ExtraOptionState>({
-    private_recovery: false,
-    parking: false,
-    cctv: false,
-    night_consult: false,
-    female_doctor: false,
-    anesthesiologist: false,
+    has_private_recovery_room: false,
+    has_parking: false,
+    has_cctv: false,
+    has_night_counseling: false,
+    has_female_doctor: false,
+    has_anesthesiologist: false,
     specialistCount: 1,
   });
 
