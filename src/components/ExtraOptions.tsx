@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ExtraOption {
   key: string;
@@ -41,18 +41,28 @@ export default function ExtraOptions({ onSelectOptionState } : ExtraOptionStateP
     specialistCount: 1,
   });
 
+  // options가 변경될 때마다 상위 컴포넌트에 알림
+  useEffect(() => {
+    console.log('🔧 ExtraOptions - 상태 변경:', options);
+    onSelectOptionState?.(options);
+  }, [options, onSelectOptionState]);
+
   // 체크박스 변경 핸들러
   const handleCheck = (key: keyof ExtraOptionState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked;
+    console.log(`✅ ExtraOptions - ${key} 체크박스 변경:`, newValue);
+    
     setOptions((prev) => ({
       ...prev,
-      [key]: e.target.checked,
+      [key]: newValue,
     }));
-    onSelectOptionState?.(options);
   };
 
   // 숫자 입력 핸들러
   const handleCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(0, parseInt(e.target.value.replace(/\D/g, '') || '0', 10));
+    const val = Math.max(1, parseInt(e.target.value.replace(/\D/g, '') || '1', 10));
+    console.log('👨‍⚕️ ExtraOptions - 전문의 수 변경:', val);
+    
     setOptions((prev) => ({
       ...prev,
       specialistCount: val,

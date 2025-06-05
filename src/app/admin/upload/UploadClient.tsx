@@ -89,7 +89,7 @@ const UploadClient = () => {
     has_night_counseling: false,
     has_female_doctor: false,
     has_anesthesiologist: false,
-    specialistCount: 0,
+    specialistCount: 1,
   });
   const [searchkey, setSearchKey] = useState<string>("");
   const [search_key, setSearch_Key] = useState<string>("");
@@ -164,6 +164,12 @@ const UploadClient = () => {
     });
   };
 
+  // 부가시설 옵션 변경 처리하는 함수
+  const handleExtraOptionsChange = (data: ExtraOptionState) => {
+    console.log('🏥 UploadClient - 부가시설 옵션 업데이트:', data);
+    setOptionState(data);
+  };
+
   // FormData에서 데이터를 요약 정보로 변환하는 함수
   const prepareFormDataSummary = (formData: FormData) => {
     // 시술 이름 매핑 생성 - 중첩된 구조를 재귀적으로 탐색
@@ -200,12 +206,12 @@ const UploadClient = () => {
       .filter(([key, value]) => key !== 'specialistCount' && value === true)
       .map(([key]) => {
         switch (key) {
-          case 'has_private_recovery_room': return '개인회복실';
+          case 'has_private_recovery_room': return '전담회복실';
           case 'has_parking': return '주차가능';
           case 'has_cctv': return 'CCTV';
           case 'has_night_counseling': return '야간상담';
-          case 'has_female_doctor': return '여의사';
-          case 'has_anesthesiologist': return '마취통증의학과 전문의';
+          case 'has_female_doctor': return '여의사진료';
+          case 'has_anesthesiologist': return '마취전문의';
           default: return key;
         }
       });
@@ -529,7 +535,7 @@ const UploadClient = () => {
         <OpeningHoursForm onSelectOpeningHours={setOpeningHours}/>
         {/* </div> */}
         <div className="w-full mt-4">
-           <ExtraOptions onSelectOptionState={setOptionState}/>
+           <ExtraOptions onSelectOptionState={handleExtraOptionsChange}/>
         </div>
       {/* 병원 이미지 업로드 */}
       <ImageUploadSection
