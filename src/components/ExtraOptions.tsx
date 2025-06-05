@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ExtraOption {
   key: string;
@@ -8,21 +8,21 @@ interface ExtraOption {
 }
 
 const extraOptions: ExtraOption[] = [
-  { key: 'private_recovery', label: '전담회복실' },
-  { key: 'parking', label: '주차가능' },
-  { key: 'cctv', label: 'CCTV설치' },
-  { key: 'night_consult', label: '야간상담' },
-  { key: 'female_doctor', label: '여의사진료' },
-  { key: 'anesthesiologist', label: '마취전문의' },
+  { key: 'has_private_recovery_room', label: '전담회복실' },
+  { key: 'has_parking', label: '주차가능' },
+  { key: 'has_cctv', label: 'CCTV설치' },
+  { key: 'has_night_counseling', label: '야간상담' },
+  { key: 'has_female_doctor', label: '여의사진료' },
+  { key: 'has_anesthesiologist', label: '마취전문의' },
 ];
 
 export interface ExtraOptionState {
-  private_recovery: boolean;
-  parking: boolean;
-  cctv: boolean;
-  night_consult: boolean;
-  female_doctor: boolean;
-  anesthesiologist: boolean;
+  has_private_recovery_room: boolean;
+  has_parking: boolean;
+  has_cctv: boolean;
+  has_night_counseling: boolean;
+  has_female_doctor: boolean;
+  has_anesthesiologist: boolean;
   specialistCount: number;
 }
 
@@ -32,27 +32,37 @@ interface ExtraOptionStateProps {
 
 export default function ExtraOptions({ onSelectOptionState } : ExtraOptionStateProps) {
   const [options, setOptions] = useState<ExtraOptionState>({
-    private_recovery: false,
-    parking: false,
-    cctv: false,
-    night_consult: false,
-    female_doctor: false,
-    anesthesiologist: false,
+    has_private_recovery_room: false,
+    has_parking: false,
+    has_cctv: false,
+    has_night_counseling: false,
+    has_female_doctor: false,
+    has_anesthesiologist: false,
     specialistCount: 1,
   });
 
+  // options가 변경될 때마다 상위 컴포넌트에 알림
+  useEffect(() => {
+    console.log('🔧 ExtraOptions - 상태 변경:', options);
+    onSelectOptionState?.(options);
+  }, [options, onSelectOptionState]);
+
   // 체크박스 변경 핸들러
   const handleCheck = (key: keyof ExtraOptionState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked;
+    console.log(`✅ ExtraOptions - ${key} 체크박스 변경:`, newValue);
+    
     setOptions((prev) => ({
       ...prev,
-      [key]: e.target.checked,
+      [key]: newValue,
     }));
-    onSelectOptionState?.(options);
   };
 
   // 숫자 입력 핸들러
   const handleCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(0, parseInt(e.target.value.replace(/\D/g, '') || '0', 10));
+    const val = Math.max(1, parseInt(e.target.value.replace(/\D/g, '') || '1', 10));
+    console.log('👨‍⚕️ ExtraOptions - 전문의 수 변경:', val);
+    
     setOptions((prev) => ({
       ...prev,
       specialistCount: val,
