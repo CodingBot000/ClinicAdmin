@@ -175,7 +175,7 @@ export function SubmitConfirmationModal({
                   <strong>시설:</strong> {formData.extraOptions.facilities.join(', ')}
                 </div>
                 <div>
-                  <strong>전문의 수:</strong> {formData.extraOptions.specialistCount}명
+                  <strong>의사 수:</strong> {formData.extraOptions.specialistCount}명
                 </div>
               </div>
             </div>
