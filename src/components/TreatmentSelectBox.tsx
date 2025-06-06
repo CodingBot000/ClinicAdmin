@@ -103,7 +103,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
   return (
     <div>
       <div className="flex items-center gap-4 mb-2">
-        <Button size="sm" onClick={handleOpen}>
+        <Button size="sm" type="button" onClick={handleOpen}>
           가능시술 선택하기
         </Button>
         
@@ -185,7 +185,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
                 <div className="ml-4 mt-1 space-y-1">
                   {productOptions.map((option, index) => (
                     <div key={option.id} className="text-gray-600">
-                      {index + 1}. [{getLabelByKey(option.treatmentKey)}] {option.value1} - {option.value2?.toLocaleString()}원
+                      {index + 1}. [{getLabelByKey(option.treatmentKey)}] {option.value1} : {option.value2?.toLocaleString()}원
                     </div>
                   ))}
                 </div>

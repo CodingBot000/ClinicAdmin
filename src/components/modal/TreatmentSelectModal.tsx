@@ -262,7 +262,7 @@ export function TreatmentSelectModal({
               </div>
             </div>
 
-            {/* 오른쪽 패널 - 상품옵션 */}
+            {/* 오른쪽 패널  : 상품옵션 */}
             <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-gray-50 pb-2">
                 상품옵션 관리

@@ -264,8 +264,8 @@ const UploadClient = () => {
     };
   };
 
-  // 제출 전 데이터 준비 및 모달 표시
-  const handleSubmit = async (formData: FormData) => {
+  // 미리보기 모달 표시를 위한 데이터 준비
+  const handlePreview = async (formData: FormData) => {
     try {
       // 주소 latitude, longitude, 주소상세 포함 
       if (addressForSendForm) {
@@ -332,9 +332,9 @@ const UploadClient = () => {
         })
       }
       
-      // 제출할 데이터 전체 로그 출력
-      console.log('🚀 ===== 제출할 데이터 전체 목록 =====');
-      console.log('📋 Form 제출 데이터:');
+      // 미리보기용 데이터 전체 로그 출력
+      console.log('🔍 ===== 미리보기용 데이터 전체 목록 =====');
+      console.log('📋 미리보기 데이터:');
       console.log('- 병원명:', formData.get('name'));
       console.log('- 검색키:', searchkey);
       console.log('- 검색키2:', search_key);
@@ -346,24 +346,24 @@ const UploadClient = () => {
       console.log('- 부가 시설 옵션:', optionState);
       console.log('- 병원 이미지 개수:', clinicImages.length);
       console.log('- 의사 이미지 개수:', doctorImages.length);
-      console.log('🚀 ================================');
+      console.log('🔍 ================================');
 
-      // FormData를 저장하고 모달 표시
+      // FormData를 저장하고 미리보기 모달 표시
       setPreparedFormData(formData);
       setShowConfirmModal(true);
       
     } catch (error) {
-      console.log("데이터 준비 중 오류:", error);
-      setFormState({ message: "데이터 준비 중 오류가 발생했습니다.", status: "error" });
+      console.log("미리보기 데이터 준비 중 오류:", error);
+      setFormState({ message: "미리보기 데이터 준비 중 오류가 발생했습니다.", status: "error" });
     }
   };
 
-  // 실제 제출 함수
-  const handleActualSubmit = async () => {
+  // 최종 제출 함수 (SubmitConfirmationModal에서 호출)
+  const handleFinalSubmit = async () => {
     if (!preparedFormData) return;
     
     try {
-      console.log('🔥 실제 제출 시작...');
+      console.log('🚀 최종 제출 시작...');
       console.log('📤 POST 요청 URL:', "/api/upload");
       console.log('📦 FormData 내용 확인:');
       
@@ -480,7 +480,7 @@ const UploadClient = () => {
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData(e.currentTarget);
-          handleSubmit(formData);
+          handlePreview(formData);
         }}
         className="my-8 mx-auto px-6"
         style={{ width: '100vw', maxWidth: '1024px' }}
@@ -584,7 +584,7 @@ const UploadClient = () => {
         <SubmitConfirmationModal
           open={showConfirmModal}
           formData={prepareFormDataSummary(preparedFormData)}
-          onConfirm={handleActualSubmit}
+          onConfirm={handleFinalSubmit}
           onCancel={handleModalCancel}
         />
       )}
