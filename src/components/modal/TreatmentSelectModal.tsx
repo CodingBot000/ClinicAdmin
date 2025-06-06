@@ -70,7 +70,7 @@ export function TreatmentSelectModal({
 
   useEffect(() => {
     if (open) {
-      console.log('🔄 TreatmentSelectModal 열림 - 초기값 설정:', {
+      console.log(' TreatmentSelectModal 열림 - 초기값 설정:', {
         initialSelectedKeys,
         selectedKeysLength: initialSelectedKeys?.length || 0,
         initialProductOptions,
@@ -80,7 +80,7 @@ export function TreatmentSelectModal({
       setSelectedKeys(initialSelectedKeys ?? []);
       setProductOptions(initialProductOptions ?? []);
       
-      console.log('✅ TreatmentSelectModal 상태 설정 완료');
+      console.log(' TreatmentSelectModal 상태 설정 완료');
     }
   }, [open, initialSelectedKeys, initialProductOptions]);
 

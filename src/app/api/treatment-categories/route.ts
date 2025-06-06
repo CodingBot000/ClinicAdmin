@@ -9,7 +9,7 @@ const supabase = createClient(
 
 export async function GET() {
   const apiStartTime = Date.now();
-  console.log("🔄 Treatment Categories API 시작:", new Date().toISOString());
+  console.log("Treatment Categories API 시작:", new Date().toISOString());
   
   const dbQueryStart = Date.now();
   const { data, error } = await supabase
@@ -18,16 +18,16 @@ export async function GET() {
   
   const dbQueryEnd = Date.now();
   const dbQueryTime = dbQueryEnd - dbQueryStart;
-  console.log(`📊 DB 쿼리 시간: ${dbQueryTime}ms`);
-  console.log(`📊 조회된 데이터 개수: ${data?.length || 0}`);
+  console.log(` DB 쿼리 시간: ${dbQueryTime}ms`);
+  console.log(` 조회된 데이터 개수: ${data?.length || 0}`);
 
   if (error) {
-    console.error("❌ DB 쿼리 에러:", error);
+    console.error(" DB 쿼리 에러:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const transformStart = Date.now();
-  console.log("🔄 데이터 변환 시작");
+  console.log("데이터 변환 시작");
   
   // group by level1 > level2 (nullable)
   const level1Map = new Map<string, Map<string | null, any[]>>();
@@ -76,12 +76,12 @@ export async function GET() {
 
   const transformEnd = Date.now();
   const transformTime = transformEnd - transformStart;
-  console.log(`🔄 데이터 변환 시간: ${transformTime}ms`);
+  console.log(` 데이터 변환 시간: ${transformTime}ms`);
   
   const apiEndTime = Date.now();
   const totalApiTime = apiEndTime - apiStartTime;
-  console.log(`✅ Treatment Categories API 완료: ${totalApiTime}ms`);
-  console.log(`📊 최종 카테고리 개수: ${TREATMENT_CATEGORIES.length}`);
+  console.log(` Treatment Categories API 완료: ${totalApiTime}ms`);
+  console.log(` 최종 카테고리 개수: ${TREATMENT_CATEGORIES.length}`);
 
   return NextResponse.json(TREATMENT_CATEGORIES);
 }

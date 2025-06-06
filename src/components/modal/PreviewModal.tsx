@@ -47,19 +47,21 @@ interface FormDataSummary {
   };
 }
 
-interface SubmitConfirmationModalProps {
+interface PreviewModalProps {
   open: boolean;
   formData: FormDataSummary;
   onConfirm: () => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
-export function SubmitConfirmationModal({
+export function PreviewModal({
   open,
   formData,
   onConfirm,
   onCancel,
-}: SubmitConfirmationModalProps) {
+  isSubmitting = false,
+}: PreviewModalProps) {
   if (!open) return null;
 
   return (
@@ -204,10 +206,20 @@ export function SubmitConfirmationModal({
             </Button>
             <Button 
               onClick={onConfirm}
-              className="px-8 py-3 text-base bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="px-8 py-3 text-base bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              <Check className="w-4 h-4 mr-2" />
-              최종 제출
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  제출 중...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  최종 제출
+                </>
+              )}
             </Button>
           </div>
         </div>

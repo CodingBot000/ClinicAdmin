@@ -12,7 +12,6 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import useModal from "@/hooks/useModal";
 import { AlertModal } from "@/components/modal";
 import { useRouter } from "next/navigation";
-import { useFormStatus } from "react-dom";
 import DaumPost from "@/components/DaumPost";
 import AddressSection from "@/components/AddressSection";
 import LocationSelect from "@/components/LocationSelect";
@@ -21,7 +20,7 @@ import ImageUploadSection from "@/components/ImageUploadSection";
 import OpeningHoursForm, { OpeningHour } from "@/components/OpeningHoursForm";
 import ExtraOptions, { ExtraOptionState } from "@/components/ExtraOptions";
 import { useCategories } from "@/hooks/useCategories";
-import { SubmitConfirmationModal } from "@/components/modal/SubmitConfirmationModal";
+import { PreviewModal } from "@/components/modal/PreviewModal";
 import { CategoryNode } from "@/types/category";
 
 // HospitalAddress 타입 정의
@@ -58,19 +57,18 @@ const clinicImageUploadLength = 7;
 
 const UploadClient = () => {
   const pageStartTime = Date.now();
-  console.log("📄 UploadClient 페이지 시작:", new Date().toISOString());
+  console.log("UploadClient 페이지 시작:", new Date().toISOString());
   
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useCategories();
   
   // categories 디버깅
-  console.log("🏥 UploadClient - categories 상태:", {
+  console.log("UploadClient - categories 상태:", {
     categoriesLoading,
     categoriesError,
     categoriesLength: categories?.length || 0,
     categories
   });
 
-  const state = useFormStatus();
   const router = useRouter();
   const [address, setAddress] = useState("");
   const [addressForSendForm, setAddressForSendForm] = useState<HospitalAddress | null>(null);
@@ -99,18 +97,19 @@ const UploadClient = () => {
   // 확인 모달 상태 추가
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [preparedFormData, setPreparedFormData] = useState<FormData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: surgeryList = [], isPending } = useQuery<Surgery[]>({
     queryKey: ["surgery_info"],
     queryFn: async () => {
       const queryStartTime = Date.now();
-      console.log("🔍 surgeryList 쿼리 시작:", new Date().toISOString());
+      console.log("surgeryList 쿼리 시작:", new Date().toISOString());
       
       const { data, error } = await supabase.from("surgery_info").select("*");
       
       const queryEndTime = Date.now();
       const queryTime = queryEndTime - queryStartTime;
-      console.log(`🔍 surgeryList 쿼리 완료: ${queryTime}ms`, {
+      console.log(`surgeryList 쿼리 완료: ${queryTime}ms`, {
         dataLength: data?.length || 0,
         error: error?.message || null
       });
@@ -133,9 +132,9 @@ const UploadClient = () => {
     if (!categoriesLoading && !isPending && categories) {
       const pageEndTime = Date.now();
       const totalLoadTime = pageEndTime - pageStartTime;
-      console.log("✅ UploadClient 페이지 로딩 완료:", new Date().toISOString());
-      console.log(`⏱️ 총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`);
-      console.log("📊 로딩 완료 상태:", {
+      console.log("UploadClient 페이지 로딩 완료:", new Date().toISOString());
+      console.log(`총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`);
+      console.log("로딩 완료 상태:", {
         categoriesCount: categories?.length || 0,
         surgeryListCount: surgeryList?.length || 0,
         categoriesLoading,
@@ -157,7 +156,7 @@ const UploadClient = () => {
     setTreatmentOptions(data.productOptions);
     setPriceExpose(data.priceExpose);
     
-    console.log('💊 UploadClient - 시술 데이터 업데이트:', {
+    console.log('UploadClient - 시술 데이터 업데이트:', {
       selectedTreatments: data.selectedKeys,
       productOptions: data.productOptions,
       priceExpose: data.priceExpose
@@ -166,7 +165,7 @@ const UploadClient = () => {
 
   // 부가시설 옵션 변경 처리하는 함수
   const handleExtraOptionsChange = (data: ExtraOptionState) => {
-    console.log('🏥 UploadClient - 부가시설 옵션 업데이트:', data);
+    console.log('UploadClient - 부가시설 옵션 업데이트:', data);
     setOptionState(data);
   };
 
@@ -216,6 +215,28 @@ const UploadClient = () => {
         }
       });
 
+    // 이미지 URL 개수 계산
+    let clinicImageCount = 0;
+    let doctorImageCount = 0;
+    
+    try {
+      const clinicUrls = formData.get('clinic_image_urls') as string;
+      const doctorUrls = formData.get('doctor_image_urls') as string;
+      
+      if (clinicUrls) {
+        const parsedClinicUrls = JSON.parse(clinicUrls);
+        clinicImageCount = Array.isArray(parsedClinicUrls) ? parsedClinicUrls.length : 0;
+      }
+      
+      if (doctorUrls) {
+        const parsedDoctorUrls = JSON.parse(doctorUrls);
+        doctorImageCount = Array.isArray(parsedDoctorUrls) ? parsedDoctorUrls.length : 0;
+      }
+    } catch (e) {
+      // 파싱 실패 시 기본값 유지
+      console.warn('이미지 URL 파싱 실패:', e);
+    }
+
     return {
       basicInfo: {
         name: (formData.get('name') as string) || '',
@@ -258,210 +279,438 @@ const UploadClient = () => {
         specialistCount: optionState.specialistCount
       },
       images: {
-        clinicImages: clinicImages.length,
-        doctorImages: doctorImages.length
+        clinicImages: clinicImageCount,
+        doctorImages: doctorImageCount
       }
     };
   };
 
   // 미리보기 모달 표시를 위한 데이터 준비
-  const handlePreview = async (formData: FormData) => {
+  const handlePreview = async () => {
     try {
-      // 주소 latitude, longitude, 주소상세 포함 
-      if (addressForSendForm) {
-        formData.append('address_full_road', addressForSendForm.address_full_road ?? "");
-        formData.append('address_full_road_en', addressForSendForm.address_full_road_en ?? "");
-        formData.append('address_full_jibun', addressForSendForm.address_full_jibun ?? "");
-        formData.append('address_full_jibun_en', addressForSendForm.address_full_jibun_en ?? "");
-        formData.append('address_si', addressForSendForm.address_si ?? "");
-        formData.append('address_si_en', addressForSendForm.address_si_en ?? "");
-        formData.append('address_gu', addressForSendForm.address_gu ?? "");
-        formData.append('address_gu_en', addressForSendForm.address_gu_en ?? "");
-        formData.append('address_dong', addressForSendForm.address_dong ?? "");
-        formData.append('address_dong_en', addressForSendForm.address_dong_en ?? "");
-        formData.append('zipcode', addressForSendForm.zipcode ?? "");
-        formData.append('latitude', addressForSendForm.latitude !== undefined ? String(addressForSendForm.latitude) : "");
-        formData.append('longitude', addressForSendForm.longitude !== undefined ? String(addressForSendForm.longitude) : "");
-        formData.append('address_detail', addressForSendForm.address_detail ?? "");
-        formData.append('address_detail_en', addressForSendForm.address_detail_en ?? "");
-      }
-      
-      // 지역
-      if (selectedLocation) {
-        formData.append('location', JSON.stringify(selectedLocation));
-      }
-
-      // 선택된 치료 항목들을 formData에 추가
-      if (selectedTreatments.length > 0) {
-        formData.append('selected_treatments', JSON.stringify(selectedTreatments));
-      }
-      
-      // 상품옵션 데이터를 formData에 추가
-      if (treatmentOptions.length > 0) {
-        formData.append('treatment_options', JSON.stringify(treatmentOptions));
-        console.log('💊 상품옵션 formData 추가:', {
-          length: treatmentOptions.length,
-          data: treatmentOptions,
-          jsonString: JSON.stringify(treatmentOptions)
-        });
-      } else {
-        console.log('⚠️ 상품옵션이 없습니다.');
-      }
-      
-      // 가격노출 설정 추가
-      formData.append('price_expose', priceExpose.toString());
-      console.log('💰 가격노출 설정:', priceExpose);
-      
-      // 시설정보
-      formData.append('extra_options', JSON.stringify(optionState));
-
-      // opening hour schedules info 
-      formData.append('opening_hours', JSON.stringify(openingHours));
-      
-      // 병원 이미지들을 formData에 추가
-      if (clinicImages.length > 0) {
-        clinicImages.forEach((file) => {
-          formData.append('clinicImages', file);
-        })
-      }
-      
-      // 의사 이미지들을 formData에 추가
-      if (doctorImages.length > 0) {
-        doctorImages.forEach((file) => {
-          formData.append('doctorImages', file);
-        })
-      }
-      
-      // 미리보기용 데이터 전체 로그 출력
-      console.log('🔍 ===== 미리보기용 데이터 전체 목록 =====');
-      console.log('📋 미리보기 데이터:');
-      console.log('- 병원명:', formData.get('name'));
-      console.log('- 검색키:', searchkey);
-      console.log('- 검색키2:', search_key);
-      console.log('- 주소 정보:', addressForSendForm);
-      console.log('- 선택된 위치:', selectedLocation);
-      console.log('- 선택된 치료 항목들:', selectedTreatments);
-      console.log('- 상품옵션:', treatmentOptions);
-      console.log('- 영업시간:', openingHours);
-      console.log('- 부가 시설 옵션:', optionState);
-      console.log('- 병원 이미지 개수:', clinicImages.length);
-      console.log('- 의사 이미지 개수:', doctorImages.length);
-      console.log('🔍 ================================');
-
-      // FormData를 저장하고 미리보기 모달 표시
-      setPreparedFormData(formData);
-      setShowConfirmModal(true);
-      
-    } catch (error) {
-      console.log("미리보기 데이터 준비 중 오류:", error);
-      setFormState({ message: "미리보기 데이터 준비 중 오류가 발생했습니다.", status: "error" });
-    }
-  };
-
-  // 최종 제출 함수 (SubmitConfirmationModal에서 호출)
-  const handleFinalSubmit = async () => {
-    if (!preparedFormData) return;
-    
-    try {
-      console.log('🚀 최종 제출 시작...');
-      console.log('📤 POST 요청 URL:', "/api/upload");
-      console.log('📦 FormData 내용 확인:');
-      
-      // FormData 내용을 로그로 출력
-      for (const [key, value] of preparedFormData.entries()) {
-        if (value instanceof File) {
-          console.log(`  - ${key}: [File] ${value.name} (${value.size} bytes)`);
-        } else {
-          console.log(`  - ${key}:`, value);
-        }
-      }
-      
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: preparedFormData,
-      });
-      
-      console.log('📡 응답 상태:', {
-        status: res.status,
-        statusText: res.statusText,
-        ok: res.ok,
-        headers: Object.fromEntries(res.headers.entries())
-      });
-      
-      // 응답이 성공이 아닌 경우 상세 정보 출력
-      if (!res.ok) {
-        console.error('❌ HTTP 응답 에러:');
-        console.error('  - Status:', res.status);
-        console.error('  - Status Text:', res.statusText);
+      // 파일명을 안전하게 변환하는 함수
+      const sanitizeFileName = (originalName: string, uuid: string): string => {
+        // 확장자 추출
+        const lastDotIndex = originalName.lastIndexOf('.');
+        const extension = lastDotIndex !== -1 ? originalName.substring(lastDotIndex) : '';
+        const nameWithoutExt = lastDotIndex !== -1 ? originalName.substring(0, lastDotIndex) : originalName;
         
-        try {
-          const errorText = await res.text();
-          console.error('  - 응답 본문:', errorText);
-          
-          // JSON 파싱 시도
-          try {
-            const errorJson = JSON.parse(errorText);
-            console.error('  - 파싱된 에러 JSON:', errorJson);
-          } catch (jsonError) {
-            console.error('  - JSON 파싱 실패, 원본 텍스트:', errorText);
-          }
-        } catch (textError) {
-          console.error('  - 응답 본문 읽기 실패:', textError);
-        }
+        // 파일명에서 한글, 공백, 특수문자 제거/치환
+        const sanitizedName = nameWithoutExt
+          .replace(/[^\w\-_.]/g, '_') // 영문, 숫자, _, -, . 외의 모든 문자를 _로 치환
+          .replace(/_{2,}/g, '_') // 연속된 언더스코어를 하나로 통합
+          .replace(/^_+|_+$/g, '') // 앞뒤 언더스코어 제거
+          .substring(0, 20); // 길이 제한 (20자)
         
+        // 타임스탬프 + UUID 부분 + 정제된 이름 + 확장자
+        const timestamp = Date.now();
+        const uuidShort = uuid.split('-')[0]; // UUID의 첫 번째 부분만 사용
+        
+        // 정제된 이름이 비어있으면 기본명 사용
+        const finalName = sanitizedName || 'image';
+        
+        return `${timestamp}_${uuidShort}_${finalName}${extension}`;
+      };
+      
+      // 기본 validation 체크
+      const clinicNameInput = document.querySelector('input[name="name"]') as HTMLInputElement;
+      const clinicName = clinicNameInput?.value || '';
+      
+      if (!clinicName || clinicName.trim() === '') {
         setFormState({ 
-          message: `서버 응답 에러: ${res.status} ${res.statusText}`, 
+          message: "병원명을 입력해주세요.", 
           status: "error" 
         });
-        setShowConfirmModal(false);
-        setPreparedFormData(null);
         return;
       }
       
-      // 성공 응답 처리
+      if (!addressForSendForm || !addressForSendForm.address_full_road) {
+        setFormState({ 
+          message: "주소를 선택해주세요.", 
+          status: "error" 
+        });
+        return;
+      }
+      
+      if (!selectedLocation) {
+        setFormState({ 
+          message: "지역을 선택해주세요.", 
+          status: "error" 
+        });
+        return;
+      }
+      
+      if (selectedTreatments.length === 0) {
+        setFormState({ 
+          message: "최소 1개 이상의 시술을 선택해주세요.", 
+          status: "error" 
+        });
+        return;
+      }
+      
+      if (clinicImages.length === 0) {
+        setFormState({ 
+          message: "병원 이미지를 최소 1개 이상 업로드해주세요.", 
+          status: "error" 
+        });
+        return;
+      }
+      
+      // 이미지 업로드 상태 추가
+      setIsSubmitting(true);
+      
+      // 병원 고유 UUID 생성 (이미지 업로드 경로용)
+      const id_uuid = crypto.randomUUID();
+      
+      console.log('이미지 업로드 시작...');
+      console.log('병원 UUID:', id_uuid);
+      
+      // 업로드된 이미지 URL 추적 (실패 시 삭제용)
+      const uploadedImageUrls: string[] = [];
+      
       try {
-        const result = await res.json();
-        console.log('✅ 서버 응답 성공:', result);
-        setFormState(result);
-      } catch (jsonError) {
-        console.error('❌ 응답 JSON 파싱 에러:', jsonError);
-        console.error('응답이 JSON 형식이 아닙니다.');
+        // 1. 병원 이미지 업로드
+        const clinicImageUrls: string[] = [];
+        if (clinicImages.length > 0) {
+          console.log(`병원 이미지 업로드 중... (${clinicImages.length}개)`);
+          
+          for (let i = 0; i < clinicImages.length; i++) {
+            const file = clinicImages[i];
+            console.log(`  업로드 중 ${i + 1}/${clinicImages.length}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+            
+            // 안전한 파일명 생성
+            const safeFileName = sanitizeFileName(file.name, id_uuid);
+            const filePath = `hospitalimg/${id_uuid}/${safeFileName}`;
+            
+            console.log(`    원본 파일명: ${file.name}`);
+            console.log(`    안전한 파일명: ${safeFileName}`);
+            console.log(`    업로드 경로: ${filePath}`);
+            
+            const { data, error } = await supabase.storage
+              .from('images')
+              .upload(filePath, file);
+            
+            if (error) {
+              console.error(`병원 이미지 업로드 실패: ${file.name}`, error);
+              throw new Error(`병원 이미지 업로드 실패: ${error.message}`);
+            }
+            
+            const imageUrl = `${process.env.NEXT_PUBLIC_IMG_URL}${data.path}`;
+            clinicImageUrls.push(imageUrl);
+            uploadedImageUrls.push(imageUrl);
+            
+            console.log(`  업로드 완료: ${safeFileName} → ${imageUrl}`);
+          }
+        }
         
-        // 응답 텍스트 확인
-        try {
-          const responseText = await res.text();
-          console.error('응답 텍스트:', responseText);
-        } catch (textError) {
-          console.error('응답 텍스트 읽기 실패:', textError);
+        // 2. 의사 이미지 업로드
+        const doctorImageUrls: string[] = [];
+        if (doctorImages.length > 0) {
+          console.log(`의사 이미지 업로드 중... (${doctorImages.length}개)`);
+          
+          for (let i = 0; i < doctorImages.length; i++) {
+            const file = doctorImages[i];
+            console.log(`  업로드 중 ${i + 1}/${doctorImages.length}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+            
+            // 안전한 파일명 생성
+            const safeFileName = sanitizeFileName(file.name, id_uuid);
+            const filePath = `doctors/${id_uuid}/${safeFileName}`;
+            
+            console.log(`    원본 파일명: ${file.name}`);
+            console.log(`    안전한 파일명: ${safeFileName}`);
+            console.log(`    업로드 경로: ${filePath}`);
+            
+            const { data, error } = await supabase.storage
+              .from('images')
+              .upload(filePath, file);
+            
+            if (error) {
+              console.error(`의사 이미지 업로드 실패: ${file.name}`, error);
+              throw new Error(`의사 이미지 업로드 실패: ${error.message}`);
+            }
+            
+            const imageUrl = `${process.env.NEXT_PUBLIC_IMG_URL}${data.path}`;
+            doctorImageUrls.push(imageUrl);
+            uploadedImageUrls.push(imageUrl);
+            
+            console.log(`  업로드 완료: ${safeFileName} → ${imageUrl}`);
+          }
+        }
+        
+        console.log('모든 이미지 업로드 완료!');
+        console.log(`병원 이미지: ${clinicImageUrls.length}개`);
+        console.log(`의사 이미지: ${doctorImageUrls.length}개`);
+        
+        // FormData 구성 (이미지 URL만 포함, 파일 객체 제외)
+        const formData = new FormData();
+        
+        // 기본 정보
+        formData.append('id_uuid', id_uuid);
+        formData.append('name', clinicName);
+        formData.append('searchkey', clinicName);
+        formData.append('search_key', clinicName);
+        
+        // 이미지 URL들 (파일 객체가 아닌 URL 문자열)
+        formData.append('clinic_image_urls', JSON.stringify(clinicImageUrls));
+        formData.append('doctor_image_urls', JSON.stringify(doctorImageUrls));
+        
+        // 주소 latitude, longitude, 주소상세 포함
+        if (addressForSendForm) {
+          formData.append('address_full_road', addressForSendForm.address_full_road ?? "");
+          formData.append('address_full_road_en', addressForSendForm.address_full_road_en ?? "");
+          formData.append('address_full_jibun', addressForSendForm.address_full_jibun ?? "");
+          formData.append('address_full_jibun_en', addressForSendForm.address_full_jibun_en ?? "");
+          formData.append('address_si', addressForSendForm.address_si ?? "");
+          formData.append('address_si_en', addressForSendForm.address_si_en ?? "");
+          formData.append('address_gu', addressForSendForm.address_gu ?? "");
+          formData.append('address_gu_en', addressForSendForm.address_gu_en ?? "");
+          formData.append('address_dong', addressForSendForm.address_dong ?? "");
+          formData.append('address_dong_en', addressForSendForm.address_dong_en ?? "");
+          formData.append('zipcode', addressForSendForm.zipcode ?? "");
+          formData.append('latitude', addressForSendForm.latitude !== undefined ? String(addressForSendForm.latitude) : "");
+          formData.append('longitude', addressForSendForm.longitude !== undefined ? String(addressForSendForm.longitude) : "");
+          formData.append('address_detail', addressForSendForm.address_detail ?? "");
+          formData.append('address_detail_en', addressForSendForm.address_detail_en ?? "");
+        }
+        
+        // 지역
+        if (selectedLocation) {
+          formData.append('location', JSON.stringify(selectedLocation));
+        }
+
+        // 선택된 치료 항목들을 formData에 추가
+        if (selectedTreatments.length > 0) {
+          formData.append('selected_treatments', JSON.stringify(selectedTreatments));
+        }
+        
+        // 상품옵션 데이터를 formData에 추가
+        if (treatmentOptions.length > 0) {
+          formData.append('treatment_options', JSON.stringify(treatmentOptions));
+          console.log('상품옵션 formData 추가:', {
+            length: treatmentOptions.length,
+            data: treatmentOptions,
+            jsonString: JSON.stringify(treatmentOptions)
+          });
+        } else {
+          console.log('상품옵션이 없습니다.');
+        }
+        
+        // 가격노출 설정 추가
+        formData.append('price_expose', priceExpose.toString());
+        console.log('가격노출 설정:', priceExpose);
+        
+        // 시설정보
+        formData.append('extra_options', JSON.stringify(optionState));
+
+        // opening hour schedules info 
+        formData.append('opening_hours', JSON.stringify(openingHours));
+        
+        // 미리보기용 데이터 전체 로그 출력
+        console.log('===== 미리보기용 데이터 전체 목록 =====');
+        console.log('미리보기 데이터:');
+        console.log('- 병원 UUID:', id_uuid);
+        console.log('- 병원명:', formData.get('name'));
+        console.log('- 검색키:', searchkey);
+        console.log('- 검색키2:', search_key);
+        console.log('- 주소 정보:', addressForSendForm);
+        console.log('- 선택된 위치:', selectedLocation);
+        console.log('- 선택된 치료 항목들:', selectedTreatments);
+        console.log('- 상품옵션:', treatmentOptions);
+        console.log('- 영업시간:', openingHours);
+        console.log('- 부가 시설 옵션:', optionState);
+        console.log('- 병원 이미지 URL:', clinicImageUrls);
+        console.log('- 의사 이미지 URL:', doctorImageUrls);
+        console.log('================================');
+
+        // FormData를 저장하고 미리보기 모달 표시
+        setPreparedFormData(formData);
+        setShowConfirmModal(true);
+        
+      } catch (imageUploadError) {
+        console.error('이미지 업로드 중 오류:', imageUploadError);
+        
+        // 업로드된 이미지들 삭제 (롤백)
+        if (uploadedImageUrls.length > 0) {
+          console.log('업로드된 이미지 삭제 중...');
+          
+          for (const imageUrl of uploadedImageUrls) {
+            try {
+              // URL에서 경로 추출 (images/ 이후 부분)
+              const urlPath = imageUrl.replace(process.env.NEXT_PUBLIC_IMG_URL || '', '');
+              
+              const { error: deleteError } = await supabase.storage
+                .from('images')
+                .remove([urlPath]);
+              
+              if (deleteError) {
+                console.error(`이미지 삭제 실패: ${imageUrl}`, deleteError);
+              } else {
+                console.log(`이미지 삭제 완료: ${imageUrl}`);
+              }
+            } catch (deleteErr) {
+              console.error(`이미지 삭제 중 오류: ${imageUrl}`, deleteErr);
+            }
+          }
+        }
+        
+        // 에러 메시지 표시
+        let errorMessage = "이미지 업로드 중 오류가 발생했습니다.";
+        if (imageUploadError instanceof Error) {
+          errorMessage = imageUploadError.message;
         }
         
         setFormState({ 
-          message: "서버 응답 형식 오류 (JSON 파싱 실패)", 
+          message: errorMessage, 
           status: "error" 
         });
       }
+        
+    } catch (error) {
+      console.error('미리보기 데이터 준비 중 오류:', error);
+      setFormState({ message: "미리보기 데이터 준비 중 오류가 발생했습니다.", status: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 최종 제출 함수 (PreviewModal에서 호출)
+  const handleFinalSubmit = async () => {
+    if (!preparedFormData) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('최종 제출 시작...');
+      
+      // FormData 크기 측정 함수
+      const calculateFormDataSize = (formData: FormData) => {
+        let totalSize = 0;
+        let textDataSize = 0;
+        const details: any[] = [];
+        
+        for (const [key, value] of formData.entries()) {
+          // 모든 데이터가 텍스트 데이터 (이미지는 URL 문자열)
+          const textBytes = new TextEncoder().encode(value.toString()).length;
+          textDataSize += textBytes;
+          totalSize += textBytes;
+          
+          details.push({
+            key,
+            type: 'TextData',
+            value: value.toString().substring(0, 100) + (value.toString().length > 100 ? '...' : ''),
+            size: textBytes,
+            sizeKB: (textBytes / 1024).toFixed(4),
+            category: getCategoryForKey(key)
+          });
+        }
+        
+        return {
+          totalSize,
+          textDataSize,
+          totalSizeKB: (totalSize / 1024).toFixed(2),
+          totalSizeMB: (totalSize / (1024 * 1024)).toFixed(4),
+          textDataSizeKB: (textDataSize / 1024).toFixed(4),
+          details
+        };
+      };
+      
+      // 키에 따른 카테고리 분류 함수
+      const getCategoryForKey = (key: string) => {
+        if (key.includes('image_urls')) return 'Image URLs';
+        if (key.includes('address')) return 'Address Info';
+        if (key.includes('treatment') || key.includes('selected_treatments')) return 'Treatment Info';
+        if (key.includes('opening_hours')) return 'Business Hours';
+        if (key.includes('extra_options')) return 'Facility Options';
+        if (key.includes('location')) return 'Location';
+        if (key === 'name' || key === 'searchkey' || key === 'search_key' || key === 'id_uuid') return 'Basic Info';
+        return 'Other';
+      };
+      
+      // FormData 크기 분석
+      const sizeInfo = calculateFormDataSize(preparedFormData);
+      
+      console.log('===== FormData 크기 분석 (개선된 구조) =====');
+      console.log(`전체 크기 (Server Actions로 전송): ${sizeInfo.totalSizeMB} MB (${sizeInfo.totalSizeKB} KB)`);
+      console.log(`텍스트 데이터 크기: ${sizeInfo.textDataSizeKB} KB (이미지 URL 포함)`);
+      console.log('');
+      console.log('이미지 파일은 이미 Supabase Storage에 업로드 완료!');
+      console.log('Server Actions에는 이미지 URL만 전송되므로 크기 제한 해결!');
+      console.log('상세 내역:');
+      
+      // 카테고리별로 그룹화
+      const groupedByCategory = sizeInfo.details.reduce((acc: any, item) => {
+        const category = item.category || item.type;
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(item);
+        return acc;
+      }, {});
+      
+      Object.entries(groupedByCategory).forEach(([category, items]: [string, any]) => {
+        console.log(`\n  ${category}:`);
+        items.forEach((item: any) => {
+          console.log(`    ${item.key}: ${item.sizeKB} KB - "${item.value}"`);
+        });
+      });
+      
+      // 1MB 제한과 비교 (이제는 통과할 것)
+      const limitMB = 1;
+      const limitBytes = limitMB * 1024 * 1024;
+      const isOverLimit = sizeInfo.totalSize > limitBytes;
+      
+      if (isOverLimit) {
+        console.warn(`여전히 Server Actions 크기 제한 초과 (예상되지 않음)`);
+        console.warn(`현재: ${sizeInfo.totalSizeMB} MB, 제한: ${limitMB} MB`);
+        
+        setFormState({
+          message: `데이터 크기가 여전히 큽니다: ${sizeInfo.totalSizeMB} MB`,
+          status: "error"
+        });
+        
+        setShowConfirmModal(false);
+        setPreparedFormData(null);
+        return;
+      } else {
+        console.log(`Server Actions 크기 제한 통과: ${sizeInfo.totalSizeMB} MB < ${limitMB} MB`);
+        console.log(`모든 데이터가 텍스트: ${sizeInfo.textDataSizeKB} KB`);
+      }
+      
+      console.log('FormData 내용 확인:');
+      
+      // FormData 내용을 간단히 로그로 출력
+      for (const [key, value] of preparedFormData.entries()) {
+        if (value instanceof File) {
+          console.log(`  - ${key}: [File] ${value.name} (${(value.size / 1024).toFixed(2)} KB)`);
+        } else {
+          const preview = value.toString().length > 50 
+            ? value.toString().substring(0, 50) + '...' 
+            : value.toString();
+          console.log(`  - ${key}: "${preview}"`);
+        }
+      }
+      
+      // 직접 uploadActions 호출
+      const result = await uploadActions(null, preparedFormData);
+      
+      console.log('uploadActions 응답:', result);
+      setFormState(result);
       
       setShowConfirmModal(false);
       setPreparedFormData(null);
       
     } catch (error) {
-      console.error('🚨 네트워크 또는 요청 에러:');
-      console.error('  - Error Type:', error?.constructor?.name || 'Unknown');
-      console.error('  - Error Message:', error instanceof Error ? error.message : String(error));
-      console.error('  - Error Stack:', error instanceof Error ? error.stack : 'No stack available');
-      console.error('  - Full Error Object:', error);
+      console.error('uploadActions 호출 에러:', error);
       
       let errorMessage = "업로드 중 오류가 발생했습니다.";
       
-      if (error instanceof TypeError) {
-        errorMessage = "네트워크 연결 오류가 발생했습니다.";
-      } else if (error instanceof Error && error.message) {
-        errorMessage = `요청 오류: ${error.message}`;
+      if (error instanceof Error && error.message) {
+        errorMessage = `업로드 오류: ${error.message}`;
       }
       
       setFormState({ message: errorMessage, status: "error" });
       setShowConfirmModal(false);
       setPreparedFormData(null);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -476,15 +725,7 @@ const UploadClient = () => {
   return (
     <main>
       <PageHeader name="병원 정보를 입력하세요" />
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.currentTarget);
-          handlePreview(formData);
-        }}
-        className="my-8 mx-auto px-6"
-        style={{ width: '100vw', maxWidth: '1024px' }}
-      >
+      <div className="my-8 mx-auto px-6" style={{ width: '100vw', maxWidth: '1024px' }}>
       <div className="space-y-4 w-full">
         <InputField label="clinic name" name="name" required />
         {/* <InputField label="searchkey" name="searchkey" required />
@@ -501,6 +742,7 @@ const UploadClient = () => {
         />
         <div className="w-full">
           {/* <SurgeriesModal itemList={surgeryList} /> */}
+          {/* 가능시술 선택하기  선택 모달 */}
           {categories && (
             <TreatmentSelectBox 
               onSelectionChange={handleTreatmentSelectionChange}
@@ -567,25 +809,30 @@ const UploadClient = () => {
 
       
       <div className="flex justify-center mt-8 gap-8">
-        <Button type="reset" color="red">cancel</Button>
-        <Button color="blue" disabled={state.pending}>
-          {state.pending ? "...submit" : "preview"}
+        <Button color="red">cancel</Button>
+        <Button 
+          color="blue" 
+          disabled={isSubmitting}
+          onClick={handlePreview}
+        >
+          {isSubmitting ? "...submit" : "preview"}
         </Button>
       </div>
 
-      </form>
+      </div>
 
       <AlertModal onCancel={handleModal} open={open}>
         Upload Client Test error: {Array.isArray(formState?.message) ? formState?.message[0] : formState?.message}
       </AlertModal>
 
-      {/* 제출 확인 모달 */}
+      {/* 제출 확인 모달 안에서는 제출할 내용만 출력할뿐 안에서 POST관련 처리는 없음  */}
       {showConfirmModal && preparedFormData && (
-        <SubmitConfirmationModal
+        <PreviewModal
           open={showConfirmModal}
           formData={prepareFormDataSummary(preparedFormData)}
           onConfirm={handleFinalSubmit}
           onCancel={handleModalCancel}
+          isSubmitting={isSubmitting}
         />
       )}
     </main>

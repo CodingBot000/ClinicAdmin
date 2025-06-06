@@ -23,7 +23,7 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
 
   // 초기값이 변경될 때 상태 업데이트
   useEffect(() => {
-    console.log(`🔧 ProductOptionInput [${id}] - 초기값 업데이트:`, {
+    console.log(` ProductOptionInput [${id}] - 초기값 업데이트:`, {
       initialValue1,
       initialValue2,
       currentValue1: value1,
@@ -35,7 +35,7 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
 
   // 컴포넌트가 마운트될 때 초기값을 부모에게 알림
   useEffect(() => {
-    console.log(`⚡ ProductOptionInput [${id}] - 마운트:`, {
+    console.log(` ProductOptionInput [${id}] - 마운트:`, {
       initialValue1,
       initialValue2,
       willCallOnChange: initialValue1 !== 0 || initialValue2 !== 0

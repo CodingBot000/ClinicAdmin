@@ -60,7 +60,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
   };
 
   const handleOpen = () => {
-    console.log('🔓 TreatmentSelectBox - 모달 열기:', {
+    console.log(' TreatmentSelectBox - 모달 열기:', {
       selectedKeys: selectedKeys,
       selectedKeysLength: selectedKeys.length,
       productOptions: productOptions,
@@ -74,7 +74,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
     setSelectedKeys(data.selectedKeys);
     setProductOptions(data.productOptions);
     
-    console.log("💾 TreatmentSelectBox - 저장된 데이터:", {
+    console.log(" TreatmentSelectBox - 저장된 데이터:", {
       selectedKeys: data.selectedKeys,
       productOptions: data.productOptions
     });

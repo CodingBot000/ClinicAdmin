@@ -8,8 +8,96 @@ import { makeUploadImageFileName } from '@/utils/makeUploadImageFileName';
 
 export const uploadActions = async (prevState: any, formData: FormData) => {
   const startTime = Date.now();
-  console.log("🚀 uploadActions 시작:", new Date().toISOString());
+  console.log("uploadActions 시작:", new Date().toISOString());
   
+  // 트랜잭션 및 롤백을 위한 변수들
+  let uploadedImages: string[] = [];
+  let uploadedDoctorImages: string[] = [];
+  let insertedHospitalId: string | null = null;
+  let insertedDoctorId: string | null = null;
+  
+  // 에러 발생 시 모든 작업을 롤백하는 함수
+  const rollbackAll = async (errorMessage: string) => {
+    console.log("롤백 시작:", errorMessage);
+    
+    // 1. 업로드된 병원 이미지 삭제
+    if (uploadedImages.length > 0) {
+      try {
+        await supabase.storage
+          .from(STORAGE_IMAGES)
+          .remove(uploadedImages.map(url => {
+            const path = url.replace(`${process.env.NEXT_PUBLIC_IMG_URL}`, '');
+            return path;
+          }));
+        console.log("병원 이미지 롤백 완료");
+      } catch (e) {
+        console.error("병원 이미지 롤백 실패:", e);
+      }
+    }
+    
+    // 2. 업로드된 의사 이미지 삭제
+    if (uploadedDoctorImages.length > 0) {
+      try {
+        await supabase.storage
+          .from(STORAGE_IMAGES)
+          .remove(uploadedDoctorImages.map(url => {
+            const path = url.replace(`${process.env.NEXT_PUBLIC_IMG_URL}`, '');
+            return path;
+          }));
+        console.log("의사 이미지 롤백 완료");
+      } catch (e) {
+        console.error("의사 이미지 롤백 실패:", e);
+      }
+    }
+    
+    // 3. 삽입된 데이터베이스 레코드들 삭제 (역순으로)
+    if (id_uuid) {
+      try {
+        // hospital_treatment 삭제
+        await supabase
+          .from(TABLE_HOSPITAL_TREATMENT)
+          .delete()
+          .eq('id_uuid_hospital', id_uuid);
+        
+        // hospital_details 삭제
+        await supabase
+          .from(TABLE_HOSPITAL_DETAIL)
+          .delete()
+          .eq('id_uuid_hospital', id_uuid);
+          
+        // hospital_business_hour 삭제
+        await supabase
+          .from(TABLE_HOSPITAL_BUSINESS_HOUR)
+          .delete()
+          .eq('id_uuid_hospital', id_uuid);
+          
+        // doctor 삭제
+        await supabase
+          .from(TABLE_DOCTOR)
+          .delete()
+          .eq('id_uuid_hospital', id_uuid);
+          
+        // hospital 삭제
+        await supabase
+          .from(TABLE_HOSPITAL)
+          .delete()
+          .eq('id_uuid', id_uuid);
+          
+        console.log("데이터베이스 롤백 완료");
+      } catch (e) {
+        console.error("데이터베이스 롤백 실패:", e);
+      }
+    }
+    
+    console.log("롤백 완료");
+    
+    return {
+      ...prevState,
+      message: errorMessage,
+      status: "error",
+    };
+  };
+
   // const supabase = createClient();
 // const TABLE_HOSPITAL = "hospital";
 // const TABLE_DOCTOR = "doctor";
@@ -23,7 +111,7 @@ const TABLE_HOSPITAL_TREATMENT = "hospital_treatment_test";
 const TABLE_HOSPITAL_BUSINESS_HOUR = "hospital_business_hour_test";
 const STORAGE_IMAGES = "images";
 const STORAGE_HOSPITAL_IMG = "hospitalimg";
-const STORAGE_DOCTOR_IMG = "doctor";
+const STORAGE_DOCTOR_IMG = "doctors";
 
 
   const name = formData.get("name") as string;
@@ -66,7 +154,7 @@ const STORAGE_DOCTOR_IMG = "doctor";
   
   // 가격노출 설정 파싱 (string을 boolean으로 변환)
   const price_expose = price_expose_raw === 'true';
-  console.log("💰 Actions - price_expose:", {
+  console.log("Actions - price_expose:", {
     raw: price_expose_raw,
     parsed: price_expose,
     type: typeof price_expose
@@ -75,20 +163,20 @@ const STORAGE_DOCTOR_IMG = "doctor";
   // 상품옵션 데이터 파싱
   let treatment_options_parsed = [];
   
-  console.log("💊 Actions - treatment_options 원본:", treatment_options);
-  console.log("💊 Actions - treatment_options 타입:", typeof treatment_options);
+  console.log("Actions - treatment_options 원본:", treatment_options);
+  console.log("Actions - treatment_options 타입:", typeof treatment_options);
   
   if (treatment_options) {
     try {
       treatment_options_parsed = JSON.parse(treatment_options);
-      console.log("💊 Actions - treatment_options 파싱 성공:", treatment_options_parsed);
-      console.log("💊 Actions - 파싱된 배열 길이:", treatment_options_parsed.length);
+      console.log("Actions - treatment_options 파싱 성공:", treatment_options_parsed);
+      console.log("Actions - 파싱된 배열 길이:", treatment_options_parsed.length);
     } catch (error) {
-      console.error("💊 Actions - treatment_options 파싱 에러:", error);
+      console.error("Actions - treatment_options 파싱 에러:", error);
       treatment_options_parsed = [];
     }
   } else {
-    console.log("💊 Actions - treatment_options가 없습니다.");
+    console.log("Actions - treatment_options가 없습니다.");
   }
 
   // opening_hours JSON 파싱
@@ -106,11 +194,11 @@ const STORAGE_DOCTOR_IMG = "doctor";
 
   // opening_hours_parsed가 null이거나 배열이 아닌 경우 기본값 설정
   if (!opening_hours_parsed || !Array.isArray(opening_hours_parsed)) {
-    console.warn("⚠️ opening_hours 데이터가 올바르지 않습니다:", opening_hours_parsed);
+    console.warn("opening_hours 데이터가 올바르지 않습니다:", opening_hours_parsed);
     opening_hours_parsed = []; // 빈 배열로 초기화
   }
 
-  console.log("🔧 파싱된 opening_hours (배열):", opening_hours_parsed);
+  console.log("파싱된 opening_hours (배열):", opening_hours_parsed);
   
   // extra_options JSON 파싱 및 boolean 변환
   let extra_options_parsed;
@@ -144,580 +232,355 @@ const STORAGE_DOCTOR_IMG = "doctor";
     specialistCount: parseInt(extra_options_parsed.specialistCount) || 0,
   };
 
-  console.log("🔧 변환된 opening_hours (배열):", opening_hours_parsed);
-  console.log("🔧 변환된 extra_options:", extra_options);
+  console.log("변환된 opening_hours (배열):", opening_hours_parsed);
+  console.log("변환된 extra_options:", extra_options);
   
-  const clinicImages = formData.getAll("clinicImages");
-  const doctorImages = formData.getAll("doctorImages");
+  // 클라이언트에서 이미 업로드된 이미지 URL들 받기
+  const clinic_image_urls_raw = formData.get("clinic_image_urls") as string;
+  const doctor_image_urls_raw = formData.get("doctor_image_urls") as string;
+  const id_uuid = formData.get("id_uuid") as string; // 클라이언트에서 생성한 UUID 사용
 
-  // const imageurls = formData.getAll("imageurls");
-  const id_uuid = uuidv4(); // 병원 고유 id 
+  // 이미지 URL 파싱
+  let clinic_image_urls: string[] = [];
+  let doctor_image_urls: string[] = [];
   
-
-
-
-
-console.log("uploadActions") 
-/// 병원 전경 이미지 업로드 하기 
-const hospitalFileNames = await Promise.all(
-  clinicImages
-    .filter((entry) => entry instanceof File)
-    .map(async (e) => {
-
-       // 업로드 경로
-       const filename = makeUploadImageFileName(id_uuid, name, e.name);
-       const path = `hospitalimg/${id_uuid}/${filename}`;
-      const upload = await supabase.storage
-        .from(STORAGE_IMAGES)
-        .upload(path, e);
-
-      if (upload.error) {
-        console.log("uploadActions filenames upload.error: ", upload.error) ;
-        return {
-          ...prevState,
-          message: upload.error.message,
-          status: "error",
-        };
-      }
-      console.log("uploadActions filenames return") ;
-      return `${process.env.NEXT_PUBLIC_IMG_URL}${upload.data?.path}`;
-    })
-);
-
-if (hospitalFileNames.find((e) => e.message)) {
-  console.log("uploadActions -a hospitalFileNames.find error: ", hospitalFileNames[0].message) ;
-  return {
-    ...prevState,
-    message: hospitalFileNames[0].message,
-    status: "error",
-  };
-}
-/// 병원 전경 이미지 업로드 하기  끝
-
-
-
-// legacy id . 나중에 id_uuid로 완전전환후 삭제해야됨 
-const lastUnique = await supabase
-  .from(TABLE_HOSPITAL)
-  .select("id_unique")
-  .order("id_unique", { ascending: false })
-  .limit(1);
-
-if (!lastUnique.data || lastUnique.error) {
-  console.log("uploadActions -b") ;
-  return {
-    ...prevState,
-    message: lastUnique.error.code || lastUnique.error.message,
-    status: "error",
-  };
-}
-// legacy id . 나중에 id_uuid로 완전전환후 삭제해야됨  끝
-
-const nextIdUnique = (lastUnique.data && lastUnique.data.length > 0)
-  ? lastUnique.data[0].id_unique + 1
-  : 0;
-const id_surgeries = (surgeries && surgeries.length > 0) ? surgeries.split(",") : [1010];
-const form_hospital = {
-  id_unique: nextIdUnique,  // legacy id  나중에 삭제 
-  id_uuid,
-  name,
-  id_surgeries: id_surgeries,
-  searchkey: name,
-  search_key: name,
-
-  address_full_road,
-  address_full_road_en,
-  address_full_jibun,
-  address_full_jibun_en,
-  address_si,
-  address_si_en,
-  address_gu,
-  address_gu_en,
-  address_dong,
-  address_dong_en,
-  zipcode,
-  latitude,
-  longitude,
-  address_detail,
-  address_detail_en,
-  location,
-  imageurls: hospitalFileNames,
-};
-
-const insertHospital = await supabase
-  .from(TABLE_HOSPITAL)
-  .insert(form_hospital)
-  .select("*");
-
-const removeStorageImg = async () => {
-  console.log("uploadActions removeStorageImg");
-  const filenames = clinicImages.filter((entry) => entry instanceof File);
-
-  const remove = await supabase.storage
-    .from(STORAGE_IMAGES)
-    .remove(filenames.map((e) => `hospitalimg/${id_uuid}/${e.name}`));
-
-  const error = remove.error || insertHospital.error;
-
-  if (error) {
-    console.log("uploadActions removeStorageImg error : ", error);
+  try {
+    if (clinic_image_urls_raw) {
+      clinic_image_urls = JSON.parse(clinic_image_urls_raw);
+    }
+    if (doctor_image_urls_raw) {
+      doctor_image_urls = JSON.parse(doctor_image_urls_raw);
+    }
+  } catch (error) {
+    console.error("이미지 URL 파싱 오류:", error);
     return {
       ...prevState,
-      message: error.message,
+      message: "이미지 URL 데이터 파싱에 실패했습니다.",
       status: "error",
     };
   }
-} 
-
-console.log("uploadActions insertHospital error 1 : ", insertHospital.error);
-if (insertHospital.error) {
-  // error 발생 시 업로드 했더 이미지 삭제
-  removeStorageImg();
-  console.log("uploadActions insertHospital error 2 : ", insertHospital.error);
-  return {
-    ...prevState,
-    message: insertHospital.error.message,
-    status: "error",
-  };
-}
-
-
-///////////////////////////////
-// doctor 테이블 입력 
-
-console.log("📸 Doctor 이미지 업로드 시작");
-console.log("  - doctorImages 개수:", doctorImages.length);
-console.log("  - doctorImages 타입:", doctorImages.map(img => ({ name: img instanceof File ? img.name : 'Not File', size: img instanceof File ? img.size : 'N/A' })));
-
-const doctorFileNames = await Promise.all(
-  doctorImages
-    .filter((entry) => entry instanceof File)
-    .map(async (e, index) => {
-      console.log(`    📸 업로드 중 ${index + 1}/${doctorImages.length}: ${e.name}`);
-      
-      const filename = makeUploadImageFileName(id_uuid, name, e.name);
-      const path = `doctor/${id_uuid}/${filename}`;
-      
-      console.log(`    - 업로드 경로: ${path}`);
-      
-      const upload = await supabase.storage
-        .from(STORAGE_IMAGES)
-        .upload(path, e);
-
-      if (upload.error) {
-        console.log(`    ❌ 업로드 실패 ${e.name}:`, upload.error);
-        return {
-          ...prevState,
-          message: upload.error.message,
-          status: "error",
-        };
-      }
-      
-      const url = `${process.env.NEXT_PUBLIC_IMG_URL}${upload.data?.path}`;
-      console.log(`    ✅ 업로드 성공 ${e.name}: ${url}`);
-      return url;
-    })
-);
-
-console.log("📸 Doctor 이미지 업로드 완료");
-console.log("  - 성공한 파일 개수:", doctorFileNames.length);
-console.log("  - 생성된 URL들:", doctorFileNames);
-
-if (doctorFileNames.find((e) => e.message)) {
-  console.log("uploadActions -a filenames.find error: ", doctorFileNames[0].message) ;
-  return {
-    ...prevState,
-    message: doctorFileNames[0].message,
-    status: "error",
-  };
-}
-
-
-const form_doctor = {
-  hospital_id: 0,
-  id_uuid_hospital: id_uuid,
-  image_url: doctorFileNames,
-  bio: "약력",
-  name: "이름",
-  // position: "직책",
-  // id_surgeries: surgeries.split(","),
-};
-
-console.log("🏥 Doctor insert 시도:");
-console.log("  - form_doctor 데이터:", JSON.stringify(form_doctor, null, 2));
-console.log("  - doctorFileNames 길이:", doctorFileNames.length);
-console.log("  - TABLE_DOCTOR:", TABLE_DOCTOR);
-
-const insertDoctor = await supabase
-  .from(TABLE_DOCTOR)
-  .insert(form_doctor)
-  .select("*");
-
-console.log("🏥 Doctor insert 결과:");
-console.log("  - insertDoctor.data:", insertDoctor.data);
-console.log("  - insertDoctor.error:", insertDoctor.error);
-console.log("  - insertDoctor.status:", insertDoctor.status);
-console.log("  - insertDoctor.statusText:", insertDoctor.statusText);
-
-const removeStorageDoctorImg = async () => {
-  console.log("🗑️ uploadActions removeStorageDoctorImg 시작");
-  const filenames = doctorImages.filter((entry) => entry instanceof File);
-  console.log("  - 삭제할 파일 개수:", filenames.length);
-  console.log("  - 삭제할 파일들:", filenames.map(f => f.name));
-
-  const pathsToRemove = filenames.map((e) => `doctor/${id_uuid}/${e.name}`);
-  console.log("  - 삭제할 경로들:", pathsToRemove);
-
-  const remove = await supabase.storage
-    .from(STORAGE_IMAGES)
-    .remove(pathsToRemove);
-
-  console.log("🗑️ Storage 삭제 결과:");
-  console.log("  - remove.data:", remove.data);
-  console.log("  - remove.error:", remove.error);
   
-  const error = remove.error || insertDoctor.error;
+  console.log("받은 이미지 URL 정보:");
+  console.log("  - 병원 이미지:", clinic_image_urls.length, "개");
+  console.log("  - 의사 이미지:", doctor_image_urls.length, "개");
+  console.log("  - 병원 UUID:", id_uuid);
 
-  if (error) {
-    console.log("🚨 removeStorageDoctorImg error:", error);
-    console.log("  - error type:", typeof error);
-    console.log("  - error keys:", Object.keys(error));
+  // 이미지 URL 검증 (존재하는지 확인)
+  if (clinic_image_urls.length === 0) {
     return {
       ...prevState,
-      message: error.message || "이미지 삭제 중 오류 발생",
+      message: "병원 이미지가 업로드되지 않았습니다.",
       status: "error",
     };
   }
-} 
 
-console.log("uploadActions insertDoctor error 1 : ", insertDoctor.error);
-if (insertDoctor.error) {
-  // error 발생 시 업로드 했더 이미지 삭제
-  removeStorageDoctorImg();
-  console.log("uploadActions insertDoctor error 2 : ", insertDoctor.error);
-  return {
-    ...prevState,
-    message: insertDoctor.error.message,
-    status: "error",
+  console.log("uploadActions") 
+
+  // 이미지는 이미 업로드됨 - URL만 사용
+  const hospitalFileNames = clinic_image_urls;
+  
+  // 이미 업로드된 이미지 URL을 추적용 배열에 추가
+  uploadedImages.push(...clinic_image_urls);
+  uploadedDoctorImages.push(...doctor_image_urls);
+
+  // legacy id . 나중에 id_uuid로 완전전환후 삭제해야됨 
+  const lastUnique = await supabase
+    .from(TABLE_HOSPITAL)
+    .select("id_unique")
+    .order("id_unique", { ascending: false })
+    .limit(1);
+
+  if (!lastUnique.data || lastUnique.error) {
+    console.log("uploadActions -b") ;
+    return {
+      ...prevState,
+      message: lastUnique.error.code || lastUnique.error.message,
+      status: "error",
+    };
+  }
+  // legacy id . 나중에 id_uuid로 완전전환후 삭제해야됨  끝
+
+  const nextIdUnique = (lastUnique.data && lastUnique.data.length > 0)
+    ? lastUnique.data[0].id_unique + 1
+    : 0;
+  const id_surgeries = (surgeries && surgeries.length > 0) ? surgeries.split(",") : [1010];
+  const form_hospital = {
+    id_unique: nextIdUnique,  // legacy id  나중에 삭제 
+    id_uuid,
+    name,
+    id_surgeries: id_surgeries,
+    searchkey: name,
+    search_key: name,
+
+    address_full_road,
+    address_full_road_en,
+    address_full_jibun,
+    address_full_jibun_en,
+    address_si,
+    address_si_en,
+    address_gu,
+    address_gu_en,
+    address_dong,
+    address_dong_en,
+    zipcode,
+    latitude,
+    longitude,
+    address_detail,
+    address_detail_en,
+    location,
+    imageurls: hospitalFileNames,
   };
-}
+
+  const insertHospital = await supabase
+    .from(TABLE_HOSPITAL)
+    .insert(form_hospital)
+    .select("*");
+
+  console.log("uploadActions insertHospital error 1 : ", insertHospital.error);
+  if (insertHospital.error) {
+    console.log("uploadActions insertHospital error 2 : ", insertHospital.error);
+    return await rollbackAll(insertHospital.error.message);
+  }
 
 
+  ///////////////////////////////
+  // doctor 테이블 입력 
 
+  console.log("Doctor 이미지 업로드 시작");
+  console.log("  - doctor 이미지 URL 개수:", doctor_image_urls.length);
+  console.log("  - doctor 이미지 URL들:", doctor_image_urls);
 
-///////////////////////////////
-// openning hour  선택 테이블 입력 
+  // 의사 이미지는 이미 업로드됨 - URL만 사용
+  const doctorFileNames = doctor_image_urls;
 
-// 각 요일별로 개별 레코드 생성 및 insert
-const businessHourInserts = [];
+  console.log("Doctor 이미지 처리 완료");
+  console.log("  - 사용할 URL 개수:", doctorFileNames.length);
+  console.log("  - 사용할 URL들:", doctorFileNames);
 
-for (let i = 0; i < opening_hours_parsed.length; i++) {
-  const hour = opening_hours_parsed[i];
-  
-  // from과 to를 시간 문자열로 변환 (HH:MM 형식)
-  const openTime = hour.from ? `${hour.from.hour.toString().padStart(2, '0')}:${hour.from.minute.toString().padStart(2, '0')}` : null;
-  const closeTime = hour.to ? `${hour.to.hour.toString().padStart(2, '0')}:${hour.to.minute.toString().padStart(2, '0')}` : null;
-  
-  let status = '';
-if (hour.open) {
-  status = 'open';
-} else if (hour.closed) {
-  status = 'closed';
-} else if (hour.ask) {
-  status = 'ask';
-}
-
-
-  const form_business_hour = {
+  const form_doctor = {
+    hospital_id: 0,
     id_uuid_hospital: id_uuid,
-    day_of_week: hour.day || '',
-    open_time: openTime,
-    close_time: closeTime,
-    status: status,
+    image_url: doctorFileNames,
+    bio: "약력",
+    name: "이름",
+    // position: "직책",
+    // id_surgeries: surgeries.split(","),
   };
-  
-  businessHourInserts.push(form_business_hour);
-}
 
-console.log("🕒 영업시간 데이터:", businessHourInserts);
+  console.log("Doctor insert 시도:");
+  console.log("  - form_doctor 데이터:", JSON.stringify(form_doctor, null, 2));
+  console.log("  - doctorFileNames 길이:", doctorFileNames.length);
+  console.log("  - TABLE_DOCTOR:", TABLE_DOCTOR);
 
-// 모든 영업시간 데이터를 한 번에 insert
-const insertBusinessHour = await supabase
-  .from(TABLE_HOSPITAL_BUSINESS_HOUR)
-  .insert(businessHourInserts)
-  .select("*");
+  const insertDoctor = await supabase
+    .from(TABLE_DOCTOR)
+    .insert(form_doctor)
+    .select("*");
 
-if (insertBusinessHour.error) {
-  console.log("uploadActions error 3 : ", insertBusinessHour.error);
-  // removeStorageImg();
+  console.log("Doctor insert 결과:");
+  console.log("  - insertDoctor.data:", insertDoctor.data);
+  console.log("  - insertDoctor.error:", insertDoctor.error);
+  console.log("  - insertDoctor.status:", insertDoctor.status);
+  console.log("  - insertDoctor.statusText:", insertDoctor.statusText);
 
-  return {
-    ...prevState,
-    message: insertBusinessHour.error.message,
-    status: "error",
-  };
-}
-
-
-
-
-
-///////////////////////////////
-// treatment 선택 테이블 입력 
-
-// const doctorFileNames = await Promise.all(
-//   doctorImages
-//     .filter((entry) => entry instanceof File)
-
-//        const filename = makeUploadImageFileName(id_uuid, name, e.name);
-//        // 업로드 경로
-//        const path = `doctor/${id_uuid}/${filename}`;
-//       const upload = await supabase.storage
-//         .from("images")
-//         .upload(path, e);
-
-//       if (upload.error) {
-//         console.log("uploadActions doctorFileNames upload.error: ", upload.error) ;
-//         return {
-//           ...prevState,
-//           message: upload.error.message,
-//           status: "error",
-//         };
-//       }
-//       console.log("uploadActions doctorFileNames return") ;
-//       return `${process.env.NEXT_PUBLIC_IMG_URL}${upload.data?.path}`;
-//     })
-// // );
-
-// if (doctorFileNames.find((e) => e.message)) {
-//   console.log("uploadActions -a filenames.find error: ", doctorFileNames[0].message) ;
-//   return {
-//     ...prevState,
-//     message: doctorFileNames[0].message,
-//     status: "error",
-//   };
-// }
-
-
-// const form_doctor = {
-//   0,
-//   id_uuid,
-//   image_url: doctorFileNames,
-//   bio: "약력",
-//   name: "이름",
-//   // position: "직책",
-//   // id_surgeries: surgeries.split(","),
-  
-// };
-
-// const insertDoctor = await supabase
-//   .from("doctor")
-//   .insert(form_doctor)
-//   .select("*");
-
-// const removeStorageDoctorImg = async () => {
-//   console.log("uploadActions removeStorageDoctorImg");
-//   const filenames = doctorImages.filter((entry) => entry instanceof File);
-
-//   const remove = await supabase.storage
-//     .from("images")
-//     .remove(filenames.map((e) => `doctor/${id_uuid}/${e.name}`));
-
-//   const error = remove.error || insertDoctor.error;
-
-//   if (error) {
-//     console.log("uploadActions removeStorageDoctorImg error : ", error);
-//     return {
-//       ...prevState,
-//       message: error.message,
-//       status: "error",
-//     };
-//   }
-// } 
-
-// console.log("uploadActions insertDoctor error 1 : ", insertDoctor.error);
-// if (insertDoctor.error) {
-//   // error 발생 시 업로드 했더 이미지 삭제
-//   removeStorageDoctorImg();
-//   console.log("uploadActions insertDoctor error 2 : ", insertDoctor.error);
-//   return {
-//     ...prevState,
-//     message: insertDoctor.error.message,
-//     status: "error",
-//   };
-// }
-
-
-
-
-
-
-
-
-
-///////////////////////////////
-// hospital_details 테이블 입력 
-// extra options 포함
- 
-
-
-const hospitalDetailDefaultValue = (id_unique: string) => ({
-  id_hospital: id_unique,
-  id_uuid_hospital: id_uuid,
-  tel: "0507-1433-0210",
-  kakaotalk: "",
-  homepage: "http://www.reoneskin.com",
-  instagram: "https://www.instagram.com/reone__clinic/",
-  facebook: "",
-  blog: "https://blog.naver.com/reone21",
-  youtube: "https://www.youtube.com/watch?v=Yaa1HZJXIJY",
-  ticktok:
-    "https://www.tiktok.com/@vslineclinicglobal/video/7255963489192168711?is_from_webapp=1&sender_device=pc&web_id=7373256937738012176",
-  snapchat: "",
-  map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3164.348038374547!2d127.02511807637043!3d37.52329227204984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca39ea4618cdb%3A0xd0ad0677746be4c7!2z7Jyg7KeE7Iqk7J2Y7JuQ!5e0!3m2!1sko!2skr!4v1716566609639!5m2!1sko!2skr",
-  desc_address: "327, Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
-  desc_openninghour: `
-    MON
-    10:00 - 19:00
-    13:00 - 14:00 BreakTime
-    TUE
-    10:00 - 19:00
-    13:00 - 14:00 BreakTime
-    WED
-    10:00 - 19:00
-    13:00 - 14:00 BreakTime
-    THU
-    10:00 - 19:00
-    13:00 - 14:00 BreakTime
-    FRI
-    10:00 - 19:00
-    13:00 - 14:00 BreakTime
-    SAT
-    10:00 - 16:00
-    SUN
-    Regular holiday (Event Week SunDay)
-  `,
-  desc_facilities:
-    "Separate Male/Female Restrooms, Wireless Internet, Parking, Valet Parking",
-  desc_doctors_imgurls: [
-    // "https://tqyarvckzieoraneohvv.supabase.co/storage/v1/object/public/images/doctors/doctor_reone1.png",
-    // "https://tqyarvckzieoraneohvv.supabase.co/storage/v1/object/public/images/doctors/doctor_reone2.png",
-    // "https://tqyarvckzieoraneohvv.supabase.co/storage/v1/object/public/images/doctors/doctor_reone3.png",
-  ],
-  etc: "",
-  has_private_recovery_room: extra_options.has_private_recovery_room,
-  has_parking: extra_options.has_parking,
-  has_cctv: extra_options.has_cctv, 
-  has_night_counseling: extra_options.has_night_counseling,
-  has_female_doctor: extra_options.has_female_doctor,
-  has_anesthesiologist: extra_options.has_anesthesiologist,
-  specialist_count: extra_options.specialistCount,
-});
-
-
-const { error } = await supabase
-  .from(TABLE_HOSPITAL_DETAIL)
-  // .insert([hospitalDetailDefaultValue(id_uuid)]);
-  .insert([hospitalDetailDefaultValue(insertHospital.data[0].id_unique)]);
-
-if (error) {
-  console.log("uploadActions error 3 : ", error);
-  removeStorageImg();
-
-  return {
-    ...prevState,
-    message: error.message,
-    status: "error",
-  };
-}
-
-///////////////////////////////
-// hospital_treatment 테이블 입력 (상품옵션)
-
-if (treatment_options_parsed.length > 0) {
-  console.log("💊 시술 상품옵션 데이터 처리 시작");
-  
-  // treatment 테이블에서 code와 id_uuid 매핑 데이터 가져오기
-  const { data: treatmentData, error: treatmentError } = await supabase
-    .from('treatment')
-    .select('code, id_uuid');
-  
-  if (treatmentError) {
-    console.error("treatment 테이블 조회 실패:", treatmentError);
-    removeStorageImg();
-    return {
-      ...prevState,
-      message: "시술 데이터 조회에 실패했습니다.",
-      status: "error",
-    };
+  console.log("uploadActions insertDoctor error 1 : ", insertDoctor.error);
+  if (insertDoctor.error) {
+    console.log("uploadActions insertDoctor error 2 : ", insertDoctor.error);
+    return await rollbackAll(insertDoctor.error.message);
   }
-  
-  // code를 키로 하는 매핑 맵 생성
-  const codeToUuidMap = new Map();
-  treatmentData?.forEach((treatment: any) => {
-    codeToUuidMap.set(treatment.code, treatment.id_uuid);
-  });
-  
-  console.log("🗂️ 시술 코드 매핑 맵:", Object.fromEntries(codeToUuidMap));
-  
-  // hospital_treatment 테이블에 insert할 데이터 준비
-  const hospitalTreatmentInserts = [];
-  
-  for (const option of treatment_options_parsed) {
-    const treatmentUuid = codeToUuidMap.get(option.treatmentKey);
+
+
+
+
+  ///////////////////////////////
+  // openning hour  선택 테이블 입력 
+
+  // 각 요일별로 개별 레코드 생성 및 insert
+  const businessHourInserts = [];
+
+  for (let i = 0; i < opening_hours_parsed.length; i++) {
+    const hour = opening_hours_parsed[i];
     
-    if (!treatmentUuid) {
-      console.warn(`⚠️ 시술 코드 ${option.treatmentKey}에 해당하는 UUID를 찾을 수 없습니다.`);
-      continue;
-    }
+    // from과 to를 시간 문자열로 변환 (HH:MM 형식)
+    const openTime = hour.from ? `${hour.from.hour.toString().padStart(2, '0')}:${hour.from.minute.toString().padStart(2, '0')}` : null;
+    const closeTime = hour.to ? `${hour.to.hour.toString().padStart(2, '0')}:${hour.to.minute.toString().padStart(2, '0')}` : null;
     
-    const hospitalTreatmentData = {
+    let status = '';
+  if (hour.open) {
+    status = 'open';
+  } else if (hour.closed) {
+    status = 'closed';
+  } else if (hour.ask) {
+    status = 'ask';
+  }
+
+
+    const form_business_hour = {
       id_uuid_hospital: id_uuid,
-      id_uuid_treatment: treatmentUuid,
-      option_value: option.value1 || "", // 상품명
-      price: parseInt(option.value2) || 0, // 가격
-      discount_price: 0, // 디폴트 0
-      price_expose: price_expose ? 1 : 0, // 가격노출 설정 (체크되면 1, 해제되면 0)
+      day_of_week: hour.day || '',
+      open_time: openTime,
+      close_time: closeTime,
+      status: status,
     };
     
-    hospitalTreatmentInserts.push(hospitalTreatmentData);
+    businessHourInserts.push(form_business_hour);
   }
-  
-  console.log("📋 hospital_treatment insert 데이터:", hospitalTreatmentInserts);
-  
-  if (hospitalTreatmentInserts.length > 0) {
-    const { error: hospitalTreatmentError } = await supabase
-      .from(TABLE_HOSPITAL_TREATMENT)
-      .insert(hospitalTreatmentInserts);
+
+  console.log("영업시간 데이터:", businessHourInserts);
+
+  // 모든 영업시간 데이터를 한 번에 insert
+  const insertBusinessHour = await supabase
+    .from(TABLE_HOSPITAL_BUSINESS_HOUR)
+    .insert(businessHourInserts)
+    .select("*");
+
+  if (insertBusinessHour.error) {
+    console.log("uploadActions error 3 : ", insertBusinessHour.error);
+    return await rollbackAll(insertBusinessHour.error.message);
+  }
+
+
+
+
+
+  ///////////////////////////////
+  // treatment 선택 테이블 입력 
+
+  if (treatment_options_parsed.length > 0) {
+    console.log("시술 상품옵션 데이터 처리 시작");
     
-    if (hospitalTreatmentError) {
-      console.log("uploadActions hospital_treatment error:", hospitalTreatmentError);
-      removeStorageImg();
-      
-      return {
-        ...prevState,
-        message: hospitalTreatmentError.message,
-        status: "error",
-      };
+    // treatment 테이블에서 code와 id_uuid 매핑 데이터 가져오기
+    const { data: treatmentData, error: treatmentError } = await supabase
+      .from('treatment')
+      .select('code, id_uuid');
+    
+    if (treatmentError) {
+      console.error("treatment 테이블 조회 실패:", treatmentError);
+      return await rollbackAll("시술 데이터 조회에 실패했습니다.");
     }
     
-    console.log("✅ hospital_treatment 데이터 insert 완료");
+    // code를 키로 하는 매핑 맵 생성
+    const codeToUuidMap = new Map();
+    treatmentData?.forEach((treatment: any) => {
+      codeToUuidMap.set(treatment.code, treatment.id_uuid);
+    });
+    
+    console.log("시술 코드 매핑 맵:", Object.fromEntries(codeToUuidMap));
+    
+    // hospital_treatment 테이블에 insert할 데이터 준비
+    const hospitalTreatmentInserts = [];
+    
+    for (const option of treatment_options_parsed) {
+      const treatmentUuid = codeToUuidMap.get(option.treatmentKey);
+      
+      if (!treatmentUuid) {
+        console.warn(`시술 코드 ${option.treatmentKey}에 해당하는 UUID를 찾을 수 없습니다.`);
+        continue;
+      }
+      
+      const hospitalTreatmentData = {
+        id_uuid_hospital: id_uuid,
+        id_uuid_treatment: treatmentUuid,
+        option_value: option.value1 || "", // 상품명
+        price: parseInt(option.value2) || 0, // 가격
+        discount_price: 0, // 디폴트 0
+        price_expose: price_expose ? 1 : 0, // 가격노출 설정 (체크되면 1, 해제되면 0)
+      };
+      
+      hospitalTreatmentInserts.push(hospitalTreatmentData);
+    }
+    
+    console.log("hospital_treatment insert 데이터:", hospitalTreatmentInserts);
+    
+    if (hospitalTreatmentInserts.length > 0) {
+      const { error: hospitalTreatmentError } = await supabase
+        .from(TABLE_HOSPITAL_TREATMENT)
+        .insert(hospitalTreatmentInserts);
+      
+      if (hospitalTreatmentError) {
+        console.log("uploadActions hospital_treatment error:", hospitalTreatmentError);
+        return await rollbackAll(hospitalTreatmentError.message);
+      }
+      
+      console.log("hospital_treatment 데이터 insert 완료");
+    }
   }
-}
 
-revalidatePath("/", "layout");
-console.log("uploadActions No error uploadActions ");
+  ///////////////////////////////
+  // hospital_details 테이블 입력 
+  // extra options 포함
 
-const endTime = Date.now();
-const totalTime = endTime - startTime;
-console.log("✅ uploadActions 완료:", new Date().toISOString());
-console.log(`⏱️ 총 처리 시간: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}초)`);
+  const hospitalDetailDefaultValue = (id_unique: string) => ({
+    id_hospital: id_unique,
+    id_uuid_hospital: id_uuid,
+    tel: "0507-1433-0210",
+    kakaotalk: "",
+    homepage: "http://www.reoneskin.com",
+    instagram: "https://www.instagram.com/reone__clinic/",
+    facebook: "",
+    blog: "https://blog.naver.com/reone21",
+    youtube: "https://www.youtube.com/watch?v=Yaa1HZJXIJY",
+    ticktok:
+      "https://www.tiktok.com/@vslineclinicglobal/video/7255963489192168711?is_from_webapp=1&sender_device=pc&web_id=7373256937738012176",
+    snapchat: "",
+    map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3164.348038374547!2d127.02511807637043!3d37.52329227204984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca39ea4618cdb%3A0xd0ad0677746be4c7!2z7Jyg7KeE7Iqk7J2Y7JuQ!5e0!3m2!1sko!2skr!4v1716566609639!5m2!1sko!2skr",
+    desc_address: "327, Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
+    desc_openninghour: `
+      MON
+      10:00 - 19:00
+      13:00 - 14:00 BreakTime
+      TUE
+      10:00 - 19:00
+      13:00 - 14:00 BreakTime
+      WED
+      10:00 - 19:00
+      13:00 - 14:00 BreakTime
+      THU
+      10:00 - 19:00
+      13:00 - 14:00 BreakTime
+      FRI
+      10:00 - 19:00
+      13:00 - 14:00 BreakTime
+      SAT
+      10:00 - 16:00
+      SUN
+      Regular holiday (Event Week SunDay)
+    `,
+    desc_facilities:
+      "Separate Male/Female Restrooms, Wireless Internet, Parking, Valet Parking",
+    desc_doctors_imgurls: [],
+    etc: "",
+    has_private_recovery_room: extra_options.has_private_recovery_room,
+    has_parking: extra_options.has_parking,
+    has_cctv: extra_options.has_cctv, 
+    has_night_counseling: extra_options.has_night_counseling,
+    has_female_doctor: extra_options.has_female_doctor,
+    has_anesthesiologist: extra_options.has_anesthesiologist,
+    specialist_count: extra_options.specialistCount,
+  });
 
-return {
-  ...prevState,
-  message: "success upload!",
-  status: "success",
-};
+  const { error } = await supabase
+    .from(TABLE_HOSPITAL_DETAIL)
+    .insert([hospitalDetailDefaultValue(insertHospital.data[0].id_unique)]);
+
+  if (error) {
+    console.log("uploadActions hospital_details error:", error);
+    return await rollbackAll(error.message);
+  }
+
+  revalidatePath("/", "layout");
+  console.log("uploadActions No error uploadActions ");
+
+  const endTime = Date.now();
+  const totalTime = endTime - startTime;
+  console.log("uploadActions 완료:", new Date().toISOString());
+  console.log(`총 처리 시간: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}초)`);
+
+  return {
+    ...prevState,
+    message: "success upload!",
+    status: "success",
+  };
 };
 
 

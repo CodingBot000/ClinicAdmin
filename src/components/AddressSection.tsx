@@ -29,7 +29,7 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
     setAddressForSendForm(updatedAddress);
     onSelectAddress?.(updatedAddress);
     
-    console.log('🏥 기본주소 설정 완료:', JSON.stringify(updatedAddress, null, 2));
+    console.log(' 기본주소 설정 완료:', JSON.stringify(updatedAddress, null, 2));
   };
 
   const handleSelectCoordinates = (coords: { latitude: number; longitude: number }) => {
