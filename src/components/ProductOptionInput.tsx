@@ -9,6 +9,7 @@ interface ProductOptionInputProps {
   initialValue2?: number;
   onRemove: (id: string) => void;
   onChange?: (id: string, value1: number, value2: number) => void;
+  isHidden?: boolean;
 }
 
 const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
@@ -16,7 +17,8 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
   initialValue1 = 0,
   initialValue2 = 0,
   onRemove,
-  onChange
+  onChange,
+  isHidden = false
 }) => {
   const [value1, setValue1] = useState<number>(initialValue1);
   const [value2, setValue2] = useState<number>(initialValue2);
@@ -70,13 +72,19 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
       
       <div className="flex items-center gap-2">
         <span className="sm:text-xs text-gray-500">시술옵션: </span>
-        <input
-          value={value1}
-          onChange={handleValue1Change}
-          className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-          // placeholder="0"
-          // min="0"
-        />
+        {isHidden ? (
+          <div className="w-20 px-2 py-1 text-center text-xs text-gray-400 italic bg-gray-100 border border-gray-300 rounded">
+            옵션없음
+          </div>
+        ) : (
+          <input
+            value={value1}
+            onChange={handleValue1Change}
+            className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            // placeholder="0"
+            // min="0"
+          />
+        )}
         <span className="sm:text-xs text-gray-500">  가격(원):</span>
         <input
           type="number"

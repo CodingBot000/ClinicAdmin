@@ -64,9 +64,14 @@ export function TreatmentSelectModal({
   onSave,
   categories,
 }: TreatmentSelectModalProps) {
-  const [selectedKeys, setSelectedKeys] = useState<number[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
+  const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
+  
+  // 옵션없음 체크박스 상태 관리 (treatmentKey별로)
+  const [noOptionChecked, setNoOptionChecked] = useState<Record<number, boolean>>({});
+  // 이전값 저장용 (체크해제 시 복원용)
+  const [previousValues, setPreviousValues] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (open) {
@@ -158,6 +163,51 @@ export function TreatmentSelectModal({
 
   const getOptionsForTreatment = (treatmentKey: number) => {
     return productOptions.filter(option => option.treatmentKey === treatmentKey);
+  };
+
+  // 옵션없음 체크박스 토글 함수
+  const handleNoOptionToggle = (treatmentKey: number) => {
+    const isCurrentlyChecked = noOptionChecked[treatmentKey] || false;
+    const newCheckedState = !isCurrentlyChecked;
+    
+    setNoOptionChecked(prev => ({
+      ...prev,
+      [treatmentKey]: newCheckedState
+    }));
+    
+    // 해당 치료의 모든 옵션들 처리
+    const treatmentOptions = getOptionsForTreatment(treatmentKey);
+    
+    if (newCheckedState) {
+      // 체크됨: 모든 value1을 -1로 설정하기 전에 이전값 저장
+      treatmentOptions.forEach(option => {
+        if (option.value1 !== -1 && option.value1 !== 0) {
+          setPreviousValues(prev => ({
+            ...prev,
+            [option.id]: option.value1
+          }));
+        }
+      });
+      
+      // 모든 value1을 -1로 설정
+      setProductOptions(prev => prev.map(option => 
+        option.treatmentKey === treatmentKey 
+          ? { ...option, value1: -1 }
+          : option
+      ));
+    } else {
+      // 체크해제됨: 이전값이 있으면 복원
+      setProductOptions(prev => prev.map(option => {
+        if (option.treatmentKey === treatmentKey) {
+          const previousValue = previousValues[option.id];
+          if (previousValue !== undefined && previousValue !== -1 && previousValue !== 0) {
+            return { ...option, value1: previousValue };
+          }
+          return { ...option, value1: 0 };
+        }
+        return option;
+      }));
+    }
   };
 
   if (!open) return null;
@@ -284,9 +334,20 @@ export function TreatmentSelectModal({
                     
                     return (
                       <div key={`options-${treatmentKey}`} className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h4 className="text-sm font-semibold text-blue-800 mb-3">
-                          {treatmentItem.label}
-                        </h4>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold text-blue-800">
+                            {treatmentItem.label}
+                          </h4>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 accent-red-600 cursor-pointer"
+                              checked={noOptionChecked[treatmentKey] || false}
+                              onChange={() => handleNoOptionToggle(treatmentKey)}
+                            />
+                            <span className="text-xs text-red-600 font-medium">옵션없음</span>
+                          </label>
+                        </div>
                         
                         {options.length === 0 ? (
                           <p className="text-xs text-gray-500 italic">
@@ -302,6 +363,7 @@ export function TreatmentSelectModal({
                                 initialValue2={option.value2}
                                 onRemove={handleRemoveOption}
                                 onChange={handleOptionChange}
+                                isHidden={noOptionChecked[treatmentKey] || false}
                               />
                             ))}
                           </div>
