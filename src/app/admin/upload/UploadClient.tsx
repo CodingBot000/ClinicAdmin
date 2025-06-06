@@ -285,6 +285,70 @@ const UploadClient = () => {
     };
   };
 
+  // Validation 체크 함수 - 테스트를 위해 주석처리/해제 가능
+  const validateFormData = () => {
+    // ====== VALIDATION 체크 시작 ======
+    // 테스트 시 이 전체 블록을 주석처리하면 validation 건너뜀
+    
+    // 1. 병원명 검증 (필수)
+    const clinicNameInput = document.querySelector('input[name="name"]') as HTMLInputElement;
+    const clinicName = clinicNameInput?.value || '';
+    
+    if (!clinicName || clinicName.trim() === '') {
+      setFormState({ 
+        message: "병원명을 입력해주세요.", 
+        status: "error" 
+      });
+      return false;
+    }
+    
+    // 2. 주소 검증 (필수)
+    if (!addressForSendForm || !addressForSendForm.address_full_road) {
+      setFormState({ 
+        message: "주소를 선택해주세요.", 
+        status: "error" 
+      });
+      return false;
+    }
+    
+    // 3. 지역 검증 (필수)
+    if (!selectedLocation) {
+      setFormState({ 
+        message: "지역을 선택해주세요.", 
+        status: "error" 
+      });
+      return false;
+    }
+    
+    // 4. 시술 선택 검증 (필수)
+    if (selectedTreatments.length === 0) {
+      setFormState({ 
+        message: "일정저장 버튼을 눌러서 일정저장을 확정하세요.", 
+        status: "error" 
+      });
+      return false;
+    }
+    
+    // 5. 병원 이미지 검증 (필수)
+    if (clinicImages.length === 0) {
+      setFormState({ 
+        message: "병원 이미지를 최소 1개 이상 업로드해주세요.", 
+        status: "error" 
+      });
+      return false;
+    }
+    
+    // 6. 의사 이미지 검증 (선택사항 - 빈값 허용)
+    // doctorImages는 검증하지 않음
+    
+    // 7. 부가시설 옵션 검증 (선택사항 - 빈값 허용)
+    // optionState는 검증하지 않음
+    
+    // ====== VALIDATION 체크 끝 ======
+    
+    return true; // 모든 검증 통과
+  };
+
   // 미리보기 모달 표시를 위한 데이터 준비
   const handlePreview = async () => {
     try {
@@ -312,49 +376,14 @@ const UploadClient = () => {
         return `${timestamp}_${uuidShort}_${finalName}${extension}`;
       };
       
-      // 기본 validation 체크
+      // Validation 체크
+      if (!validateFormData()) {
+        return; // validation 실패 시 중단
+      }
+      
+      // validation 통과 후 병원명 다시 가져오기
       const clinicNameInput = document.querySelector('input[name="name"]') as HTMLInputElement;
       const clinicName = clinicNameInput?.value || '';
-      
-      if (!clinicName || clinicName.trim() === '') {
-        setFormState({ 
-          message: "병원명을 입력해주세요.", 
-          status: "error" 
-        });
-        return;
-      }
-      
-      if (!addressForSendForm || !addressForSendForm.address_full_road) {
-        setFormState({ 
-          message: "주소를 선택해주세요.", 
-          status: "error" 
-        });
-        return;
-      }
-      
-      if (!selectedLocation) {
-        setFormState({ 
-          message: "지역을 선택해주세요.", 
-          status: "error" 
-        });
-        return;
-      }
-      
-      if (selectedTreatments.length === 0) {
-        setFormState({ 
-          message: "최소 1개 이상의 시술을 선택해주세요.", 
-          status: "error" 
-        });
-        return;
-      }
-      
-      if (clinicImages.length === 0) {
-        setFormState({ 
-          message: "병원 이미지를 최소 1개 이상 업로드해주세요.", 
-          status: "error" 
-        });
-        return;
-      }
       
       // 이미지 업로드 상태 추가
       setIsSubmitting(true);
@@ -822,7 +851,10 @@ const UploadClient = () => {
       </div>
 
       <AlertModal onCancel={handleModal} open={open}>
-        Upload Client Test error: {Array.isArray(formState?.message) ? formState?.message[0] : formState?.message}
+      {formState?.status === "success"
+        ? "등록 성공"
+        : `등록 실패 (본 메시지를 스크린샷을 찍거나 복사해서 알려주세요): ${Array.isArray(formState?.message) ? formState.message[0] : formState?.message}`}
+
       </AlertModal>
 
       {/* 제출 확인 모달 안에서는 제출할 내용만 출력할뿐 안에서 POST관련 처리는 없음  */}
