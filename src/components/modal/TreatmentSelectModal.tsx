@@ -72,8 +72,6 @@ export function TreatmentSelectModal({
   const [noOptionChecked, setNoOptionChecked] = useState<Record<number, boolean>>({});
   // 이전값 저장용 (체크해제 시 복원용)
   const [previousValues, setPreviousValues] = useState<Record<string, number>>({});
-  // 숨겨진 옵션들을 저장 (체크박스 해제 시 복원용)
-  const [hiddenOptions, setHiddenOptions] = useState<ProductOption[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -112,39 +110,10 @@ export function TreatmentSelectModal({
       const isCurrentlySelected = prev.includes(key);
       
       if (isCurrentlySelected) {
-        // 체크 해제: 선택 목록에서 제거하고 해당 옵션들을 숨김 (삭제하지 않음)
-        const currentOptions = productOptions.filter(option => option.treatmentKey === key);
-        
-        // 현재 옵션들을 hiddenOptions에 저장
-        setHiddenOptions(prevHidden => {
-          const filtered = prevHidden.filter(option => option.treatmentKey !== key);
-          return [...filtered, ...currentOptions];
-        });
-        
-        // productOptions에서 제거
-        setProductOptions(prevOptions => 
-          prevOptions.filter(option => option.treatmentKey !== key)
-        );
-        
-        // 옵션없음 체크박스 상태도 제거
-        setNoOptionChecked(prevChecked => {
-          const newChecked = { ...prevChecked };
-          delete newChecked[key];
-          return newChecked;
-        });
+        // 체크 해제: 선택 목록에서만 제거 (옵션들은 유지)
         return prev.filter((k) => k !== key);
       } else {
-        // 체크: 선택 목록에 추가하고 숨겨둔 옵션이 있으면 복원, 없으면 빈 상태
-        
-        // 숨겨진 옵션 중 해당 treatmentKey의 옵션들 찾기
-        const restoredOptions = hiddenOptions.filter(option => option.treatmentKey === key);
-        
-        if (restoredOptions.length > 0) {
-          // 이전 옵션들 복원
-          setProductOptions(prevOptions => [...prevOptions, ...restoredOptions]);
-          setHiddenOptions(prevHidden => prevHidden.filter(option => option.treatmentKey !== key));
-        }
-        
+        // 체크: 선택 목록에 추가
         return [...prev, key];
       }
     });
@@ -167,8 +136,9 @@ export function TreatmentSelectModal({
       return;
     }
     
-    // 2. 가격이 0원인 항목 체크
-    const zeroPriceOptions = productOptions.filter(option => option.value2 === 0);
+    // 2. 선택된 시술의 옵션 중 가격이 0원인 항목 체크
+    const selectedOptions = productOptions.filter(option => selectedKeys.includes(option.treatmentKey));
+    const zeroPriceOptions = selectedOptions.filter(option => option.value2 === 0);
     
     if (zeroPriceOptions.length > 0) {
       // 가격이 0원인 시술 이름들 찾기
@@ -185,8 +155,6 @@ export function TreatmentSelectModal({
     }
     
     // 선택된 시술의 옵션들만 제출
-    const selectedOptions = productOptions.filter(option => selectedKeys.includes(option.treatmentKey));
-    
     onSave({ selectedKeys: [...selectedKeys], productOptions: selectedOptions });
     handleClose();
   };
@@ -228,6 +196,10 @@ export function TreatmentSelectModal({
   };
 
   const getOptionsForTreatment = (treatmentKey: number) => {
+    // 선택된 시술의 옵션들만 반환
+    if (!selectedKeys.includes(treatmentKey)) {
+      return [];
+    }
     return productOptions.filter(option => option.treatmentKey === treatmentKey);
   };
 
@@ -436,6 +408,7 @@ export function TreatmentSelectModal({
 
         {/* 하단 버튼 영역 */}
         <div className="border-t border-gray-200 p-6 bg-white flex-shrink-0">
+          <p> 주의 : 옵션입력후 상품을 임시로 체크박스를 해제한 경우 완료를 누르면 입력한 상품이 사라집니다. 완료는 가급적 입력/수정이 모두 완료된 후 눌러주세요 </p> 
           <div className="flex gap-4 justify-end">
             <Button 
               variant="outline" 
