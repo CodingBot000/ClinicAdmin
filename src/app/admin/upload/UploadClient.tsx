@@ -42,6 +42,8 @@ type HospitalAddress = {
   longitude?: number;
   address_detail?: string;
   address_detail_en?: string;
+  directions_to_clinic?: string;
+  directions_to_clinic_en?: string;
 };
 
 interface Surgery {
@@ -562,6 +564,8 @@ const UploadClient = () => {
           formData.append('longitude', addressForSendForm.longitude !== undefined ? String(addressForSendForm.longitude) : "");
           formData.append('address_detail', addressForSendForm.address_detail ?? "");
           formData.append('address_detail_en', addressForSendForm.address_detail_en ?? "");
+          formData.append('directions_to_clinic', addressForSendForm.directions_to_clinic ?? "");
+          formData.append('directions_to_clinic_en', addressForSendForm.directions_to_clinic_en ?? "");
         }
         
         // 지역

@@ -13,6 +13,8 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [addressDetail, setAddressDetail] = useState("");
   const [addressDetailEn, setAddressDetailEn] = useState("");
+  const [directionsToClinic, setDirectionsToClinic] = useState("");
+  const [directionsToClinicEn, setDirectionsToClinicEn] = useState("");
 
   const handleSelectShowingAddress = (showingAddress: string) => {
     setShowingAddress(showingAddress);
@@ -24,6 +26,8 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
       ...address,
       address_detail: addressDetail || undefined,
       address_detail_en: addressDetailEn || undefined,
+      directions_to_clinic: directionsToClinic || undefined,
+      directions_to_clinic_en: directionsToClinicEn || undefined,
     };
     
     setAddressForSendForm(updatedAddress);
@@ -38,29 +42,41 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
   };
 
   // 상세주소가 변경될 때 addressForSendForm 업데이트
-  const updateAddressDetail = (detail: string, detailEn?: string) => {
+  const updateAddressDetail = (detail: string, detailEn?: string, directions?: string, directionsEn?: string) => {
     if (addressForSendForm) {
       const updatedAddress = {
         ...addressForSendForm,
         address_detail: detail || undefined,
         address_detail_en: detailEn !== undefined ? detailEn : addressForSendForm.address_detail_en,
+        directions_to_clinic: directions !== undefined ? directions : addressForSendForm.directions_to_clinic,
+        directions_to_clinic_en: directionsEn !== undefined ? directionsEn : addressForSendForm.directions_to_clinic_en,
       };
       
       setAddressForSendForm(updatedAddress);
       onSelectAddress?.(updatedAddress);
       
-      console.log('🏠 상세주소 업데이트:', JSON.stringify(updatedAddress, null, 2));
+      console.log('🏠 주소 정보 업데이트:', JSON.stringify(updatedAddress, null, 2));
     }
   };
 
   const handleAddressDetailChange = (value: string) => {
     setAddressDetail(value);
-    updateAddressDetail(value, addressDetailEn);
+    updateAddressDetail(value, addressDetailEn, directionsToClinic, directionsToClinicEn);
   };
 
   const handleAddressDetailEnChange = (value: string) => {
     setAddressDetailEn(value);
-    updateAddressDetail(addressDetail, value);
+    updateAddressDetail(addressDetail, value, directionsToClinic, directionsToClinicEn);
+  };
+
+  const handleDirectionsToClinicChange = (value: string) => {
+    setDirectionsToClinic(value);
+    updateAddressDetail(addressDetail, addressDetailEn, value, directionsToClinicEn);
+  };
+
+  const handleDirectionsToClinicEnChange = (value: string) => {
+    setDirectionsToClinicEn(value);
+    updateAddressDetail(addressDetail, addressDetailEn, directionsToClinic, value);
   };
 
   return (
@@ -105,6 +121,24 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
         />
       </div>
       
+      <div className="space-y-2">
+        <InputField
+          label="찾아오는 방법 상세안내"
+          name="directions_to_clinic"
+          placeholder="찾아오는 방법을 더 쉽게 설명해주세요 예시) xx지하철역 3번출구로 나와서 직진후 yy건물에서 우회전"
+          value={directionsToClinic}
+          onChange={(e) => handleDirectionsToClinicChange(e.target.value)}
+        />
+        <InputField
+          label="찾아오는 방법 상세안내 영문"
+          name="directions_to_clinic_en"
+          placeholder="위에 입력한 찾아오는 방법을 영문으로 입력해주세요 (선택)"
+          value={directionsToClinicEn}
+          onChange={(e) => handleDirectionsToClinicEnChange(e.target.value)}
+          disabled={!directionsToClinic}
+        />
+      </div>
+      
       {/* 최종 주소 정보 표시 (디버깅용) */}
       {addressForSendForm && (
         <div className="mt-4 p-3 bg-blue-50 rounded border text-sm">
@@ -117,6 +151,12 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
             )}
             {addressForSendForm.address_detail_en && (
               <div><strong>상세주소(영문):</strong> {addressForSendForm.address_detail_en}</div>
+            )}
+            {addressForSendForm.directions_to_clinic && (
+              <div><strong>찾아오는 방법:</strong> {addressForSendForm.directions_to_clinic}</div>
+            )}
+            {addressForSendForm.directions_to_clinic_en && (
+              <div><strong>찾아오는 방법(영문):</strong> {addressForSendForm.directions_to_clinic_en}</div>
             )}
             {addressForSendForm.latitude && addressForSendForm.longitude && (
               <div><strong>좌표:</strong> {addressForSendForm.latitude}, {addressForSendForm.longitude}</div>

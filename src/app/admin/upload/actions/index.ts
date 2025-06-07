@@ -135,6 +135,8 @@ const STORAGE_DOCTOR_IMG = "doctors";
   const longitudeRaw = formData.get("longitude") as string;
   const address_detail = formData.get("address_detail") as string;
   const address_detail_en = formData.get("address_detail_en") as string;
+  const directions_to_clinic = formData.get("directions_to_clinic") as string;
+  const directions_to_clinic_en = formData.get("directions_to_clinic_en") as string;
 
   // 숫자 필드는 파싱해줘야 안전합니다!
   const latitude = latitudeRaw ? Number(latitudeRaw) : undefined;
@@ -330,6 +332,8 @@ const STORAGE_DOCTOR_IMG = "doctors";
     longitude,
     address_detail,
     address_detail_en,
+    directions_to_clinic,
+    directions_to_clinic_en,
     location,
     imageurls: hospitalFileNames,
   };
