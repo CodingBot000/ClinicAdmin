@@ -152,7 +152,7 @@ const DaumPost: React.FC<DaumPostProps> = ({ setShowingAddress, setAddress, setC
     const hospitalAddress = mapDaumDataToHospitalAddress(daumAddressData, coordinates);
     
     // 수파베이스 전송 전 최종 데이터 확인
-    console.log('🚀 수파베이스 전송 준비 완료 - HospitalAddress:', JSON.stringify(hospitalAddress, null, 2));
+    console.log('수파베이스 전송 준비 완료 - HospitalAddress:', JSON.stringify(hospitalAddress, null, 2));
     setAddress(hospitalAddress);
   };
 

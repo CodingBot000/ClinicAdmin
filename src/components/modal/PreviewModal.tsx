@@ -45,21 +45,32 @@ interface FormDataSummary {
     clinicImages: number;
     doctorImages: number;
   };
+  doctors?: {
+    count: number;
+    items: Array<{
+      name: string;
+      bio: string;
+      isChief: string;
+      hasImage: string;
+    }>;
+  };
 }
 
-interface SubmitConfirmationModalProps {
+interface PreviewModalProps {
   open: boolean;
   formData: FormDataSummary;
   onConfirm: () => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
-export function SubmitConfirmationModal({
+export function PreviewModal({
   open,
   formData,
   onConfirm,
   onCancel,
-}: SubmitConfirmationModalProps) {
+  isSubmitting = false,
+}: PreviewModalProps) {
   if (!open) return null;
 
   return (
@@ -175,7 +186,7 @@ export function SubmitConfirmationModal({
                   <strong>시설:</strong> {formData.extraOptions.facilities.join(', ')}
                 </div>
                 <div>
-                  <strong>전문의 수:</strong> {formData.extraOptions.specialistCount}명
+                  <strong>의사 수:</strong> {formData.extraOptions.specialistCount}명
                 </div>
               </div>
             </div>
@@ -188,6 +199,40 @@ export function SubmitConfirmationModal({
                 <div><strong>의사 이미지:</strong> {formData.images.doctorImages}장</div>
               </div>
             </div>
+
+            {/* 의사 정보 */}
+            {formData.doctors && formData.doctors.count > 0 && (
+              <div className="bg-teal-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-teal-800 mb-3">👨‍⚕️ 의사 정보</h3>
+                <div className="text-sm">
+                  <strong>등록된 의사 ({formData.doctors.count}명):</strong>
+                  <div className="mt-2 space-y-3">
+                    {formData.doctors.items.map((doctor, idx) => (
+                      <div key={idx} className="bg-white p-3 rounded border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-gray-900">{doctor.name}</span>
+                          <div className="flex gap-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              doctor.isChief === '대표원장' 
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {doctor.isChief}
+                            </span>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                              {doctor.hasImage}
+                            </span>
+                          </div>
+                        </div>
+                        {doctor.bio && (
+                          <p className="text-gray-600 text-xs">{doctor.bio}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -204,10 +249,20 @@ export function SubmitConfirmationModal({
             </Button>
             <Button 
               onClick={onConfirm}
-              className="px-8 py-3 text-base bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="px-8 py-3 text-base bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              <Check className="w-4 h-4 mr-2" />
-              최종 제출
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  제출 중...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  최종 제출
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -9,6 +9,7 @@ interface ProductOptionInputProps {
   initialValue2?: number;
   onRemove: (id: string) => void;
   onChange?: (id: string, value1: number, value2: number) => void;
+  isHidden?: boolean;
 }
 
 const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
@@ -16,30 +17,20 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
   initialValue1 = 0,
   initialValue2 = 0,
   onRemove,
-  onChange
+  onChange,
+  isHidden = false
 }) => {
   const [value1, setValue1] = useState<number>(initialValue1);
   const [value2, setValue2] = useState<number>(initialValue2);
 
   // 초기값이 변경될 때 상태 업데이트
   useEffect(() => {
-    console.log(`🔧 ProductOptionInput [${id}] - 초기값 업데이트:`, {
-      initialValue1,
-      initialValue2,
-      currentValue1: value1,
-      currentValue2: value2
-    });
     setValue1(initialValue1);
     setValue2(initialValue2);
   }, [initialValue1, initialValue2]);
 
   // 컴포넌트가 마운트될 때 초기값을 부모에게 알림
   useEffect(() => {
-    console.log(`⚡ ProductOptionInput [${id}] - 마운트:`, {
-      initialValue1,
-      initialValue2,
-      willCallOnChange: initialValue1 !== 0 || initialValue2 !== 0
-    });
     if (initialValue1 !== 0 || initialValue2 !== 0) {
       onChange?.(id, initialValue1, initialValue2);
     }
@@ -70,13 +61,19 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
       
       <div className="flex items-center gap-2">
         <span className="sm:text-xs text-gray-500">시술옵션: </span>
-        <input
-          value={value1}
-          onChange={handleValue1Change}
-          className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-          // placeholder="0"
-          // min="0"
-        />
+        {isHidden ? (
+          <div className="w-20 px-2 py-1 text-center text-xs text-gray-400 italic bg-gray-100 border border-gray-300 rounded">
+            옵션없음
+          </div>
+        ) : (
+          <input
+            value={value1}
+            onChange={handleValue1Change}
+            className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            // placeholder="0"
+            // min="0"
+          />
+        )}
         <span className="sm:text-xs text-gray-500">  가격(원):</span>
         <input
           type="number"

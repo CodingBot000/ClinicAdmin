@@ -105,7 +105,7 @@ export const AlertModal = ({
         </div>
       }
     >
-      <div className="text-sm break-words py-4 text-center">
+      <div className="text-sm break-words py-4 text-center select-text">
         {children}
       </div>
     </ModalBase>

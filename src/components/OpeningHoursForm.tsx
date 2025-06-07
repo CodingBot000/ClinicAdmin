@@ -107,7 +107,7 @@ export default function OpeningHoursForm({ onSelectOpeningHours } : OpeningHours
     e.stopPropagation();
     setSavedHours([...hoursState]);
     onSelectOpeningHours?.(hoursState);
-    console.log("📅 일정저장 - 영업시간 데이터:", hoursState);
+    console.log(" 일정저장 - 영업시간 데이터:", hoursState);
   };
 
   return (

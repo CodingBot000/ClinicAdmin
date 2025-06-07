@@ -1,8 +1,9 @@
 'use client';
 
-import React, { ChangeEvent, MouseEvent, useRef, useState, useEffect } from "react";
+import React, { ChangeEvent, MouseEvent, useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { XCircleIcon } from "lucide-react";
+import { XCircleIcon, Upload, Image as ImageIcon } from "lucide-react";
+import { useDropzone } from 'react-dropzone';
 
 interface ImageUploadSectionProps {
   maxImages: number;
@@ -26,9 +27,10 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   name,
   type,
 }) => {
-  const ref = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<Array<string | undefined>>([]);
   const [files, setFiles] = useState<Array<File>>([]);
+  // 파일 개수 초과 경고 메시지 상태
+  const [overLimitWarning, setOverLimitWarning] = useState<string>("");
 
   // Avatar용 default 이미지 체크 상태
   const [defaultChecked, setDefaultChecked] = useState<{ man: boolean; woman: boolean }>({
@@ -39,29 +41,55 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   // Avatar 타입은 추가 버튼을 통해 동적으로 업로드 영역 추가
   const [avatarCount, setAvatarCount] = useState(1);
 
-  // Avatar 추가 버튼, Banner는 maxImages
-  const slots = type === "Avatar" ? avatarCount : maxImages;
-
   // default 이미지 체크 시 업로드/추가 버튼 비활성화
   const disableUpload = type === "Avatar" && (defaultChecked.man || defaultChecked.woman);
 
-  // Banner는 미리보기 개수로 제한, Avatar는 무제한
   useEffect(() => {
     onFilesChange(files);
   }, [files, onFilesChange]);
 
-  // 파일 업로드 처리
-  const handleUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const { files: selectedFiles } = e.target;
-    if (!selectedFiles || disableUpload) return;
+  // 파일 처리 함수
+  const processFiles = useCallback((acceptedFiles: File[]) => {
+    if (disableUpload) return;
 
-    // Avatar는 개수 제한 없이 추가, Banner는 maxImages - preview.length
-    const allowedCount =
-      type === "Avatar"
-        ? selectedFiles.length // Avatar는 한번에 여러장도 허용 (필요시 1장으로 고정 가능)
-        : maxImages - preview.length;
+    // Banner는 maxImages(7개) 제한, Avatar는 개수 제한 없음
+    const currentCount = preview.length;
+    const newFilesCount = acceptedFiles.length;
+    const totalCount = currentCount + newFilesCount;
 
-    const fileList = Array.from(selectedFiles).slice(0, allowedCount);
+    // Banner 타입에서 개수 제한 체크
+    if (type === "Banner") {
+      if (totalCount > maxImages) {
+        const exceeded = totalCount - maxImages;
+        setOverLimitWarning(`최대 ${maxImages}개까지만 업로드 가능합니다. ${exceeded}개 파일이 제외되었습니다.`);
+        
+        // 허용된 개수만큼만 처리
+        const allowedCount = Math.max(0, maxImages - currentCount);
+        const fileList = acceptedFiles.slice(0, allowedCount);
+        
+        if (fileList.length > 0) {
+          setFiles((prev) => [...prev, ...fileList]);
+          
+          fileList.forEach((file) => {
+            const fileReader = new FileReader();
+            fileReader.onload = () => {
+              const result = fileReader.result as string;
+              setPreview((prev) => prev.concat(result));
+            };
+            fileReader.readAsDataURL(file);
+          });
+        }
+        return;
+      } else {
+        // 7개 이하면 경고메시지 제거
+        setOverLimitWarning("");
+      }
+    }
+
+    const fileList = acceptedFiles;
+    
+    if (fileList.length === 0) return;
+
     setFiles((prev) => [...prev, ...fileList]);
 
     fileList.forEach((file) => {
@@ -72,28 +100,61 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
       };
       fileReader.readAsDataURL(file);
     });
-  };
+
+    // Avatar의 경우 슬롯 수 증가
+    if (type === "Avatar") {
+      setAvatarCount((prev) => prev + fileList.length);
+    }
+  }, [disableUpload, type, maxImages, preview.length]);
+
+  // dropzone 설정
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    isDragReject,
+    isDragAccept,
+  } = useDropzone({
+    onDrop: processFiles,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+    },
+    disabled: disableUpload,
+    // maxFiles 제한을 제거하여 processFiles에서 직접 처리
+  });
 
   // 미리보기/파일 삭제
-  const handleDeletePreview = (e: MouseEvent<HTMLDivElement>, i: number) => {
+  const handleDeletePreview = (e: MouseEvent<HTMLButtonElement>, i: number) => {
     e.preventDefault();
-
-    // input 파일에서도 삭제
-    if (ref.current && ref.current.files) {
-      const dataTransfer = new DataTransfer();
-      const fileList = ref.current.files;
-      const fileId = (e.target as HTMLDivElement).id;
-      Array.from(fileList)
-        .filter((file) => file.lastModified !== +fileId)
-        .forEach((file) => {
-          dataTransfer.items.add(file);
-        });
-      ref.current.files = dataTransfer.files;
-    }
+    e.stopPropagation();
 
     setPreview((prev) => prev.filter((_, idx) => i !== idx));
     setFiles((prev) => prev.filter((_, idx) => i !== idx));
-    if (type === "Avatar") setAvatarCount((c) => Math.max(1, c - 1));
+    
+    if (type === "Avatar") {
+      setAvatarCount((c) => Math.max(1, c - 1));
+    }
+
+    // 삭제 후 7개 이하가 되면 경고메시지 제거
+    if (type === "Banner" && preview.length - 1 <= maxImages) {
+      setOverLimitWarning("");
+    }
+  };
+
+  // 전체 삭제 함수
+  const handleClearAll = () => {
+    setPreview([]);
+    setFiles([]);
+    setOverLimitWarning("");
+    
+    if (type === "Avatar") {
+      setAvatarCount(1);
+    }
+    
+    // default 이미지 체크도 해제
+    if (type === "Avatar") {
+      setDefaultChecked({ man: false, woman: false });
+    }
   };
 
   // Avatar에서 추가 버튼
@@ -114,23 +175,51 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
       setPreview([DEFAULT_IMAGES.find((img) => img.key === key)!.src]);
       setFiles([]);
       setAvatarCount(1);
+      setOverLimitWarning(""); // 경고메시지도 제거
     } else {
       // 체크 해제시 모두 리셋
       setPreview([]);
       setFiles([]);
       setAvatarCount(1);
+      setOverLimitWarning(""); // 경고메시지도 제거
     }
   };
 
-  // Banner grid, Avatar flex
-  const gridClass =
-    type === "Banner"
-      ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full"
-      : "flex flex-row gap-4 flex-wrap";
+  // dropzone 스타일
+  const getDropzoneStyle = () => {
+    let baseStyle = "border-2 border-dashed transition-colors duration-200 ease-in-out ";
+    
+    if (isDragAccept) {
+      baseStyle += "border-green-400 bg-green-50 ";
+    } else if (isDragReject) {
+      baseStyle += "border-red-400 bg-red-50 ";
+    } else if (isDragActive) {
+      baseStyle += "border-blue-400 bg-blue-50 ";
+    } else {
+      baseStyle += "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 ";
+    }
+
+    if (disableUpload) {
+      baseStyle += "opacity-50 cursor-not-allowed ";
+    } else {
+      baseStyle += "cursor-pointer ";
+    }
+
+    return baseStyle;
+  };
+
+  // Banner는 grid, Avatar는 flex
+  const containerClass = type === "Banner" 
+    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" 
+    : "flex flex-row gap-4 flex-wrap";
+
+  // 현재 슬롯 수 계산
+  const slots = type === "Avatar" ? avatarCount : maxImages;
+  const canAddMore = type === "Banner" ? preview.length < maxImages : true;
 
   return (
     <div className="w-full">
-      <div className="flex justify-between my-4">
+      <div className="flex justify-between items-start my-4">
         <div>
           <h2 className="font-semibold text-lg mb-2">{title}</h2>
           {description && (
@@ -139,111 +228,184 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
             </div>
           )}
         </div>
-        {type === "Banner" && (
-          <p className="text-sm">등록 {preview.length}/{maxImages}</p>
-        )}
-        {type === "Avatar" && (
-          <p className="text-sm">등록 {preview.length}</p>
-        )}
+        <div className="flex flex-col items-end gap-2">
+          {type === "Banner" && (
+            <p className="text-sm text-gray-600">등록 {preview.length}/{maxImages}</p>
+          )}
+          {type === "Avatar" && (
+            <p className="text-sm text-gray-600">등록 {preview.length}</p>
+          )}
+          {/* 전체 삭제 버튼 - 파일이 있을 때만 표시 */}
+          {preview.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="text-sm text-red-500 hover:text-red-700 hover:underline transition-colors"
+            >
+              전체 삭제
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* 파일 개수 초과 경고 메시지 - 상단에 배치 */}
+      {overLimitWarning && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600 font-medium">
+            ⚠️ {overLimitWarning}
+          </p>
+        </div>
+      )}
 
       {/* Avatar 타입일 때만 default 체크박스 + 이미지 */}
       {type === "Avatar" && (
-        <div className="flex flex-row items-center gap-6 mb-3">
+        <div className="flex flex-row items-center gap-6 mb-4">
           {DEFAULT_IMAGES.map((img) => (
-            <label key={img.key} className="flex items-center gap-2">
+            <label key={img.key} className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={defaultChecked[img.key as "man" | "woman"]}
                 onChange={handleDefaultChange(img.key as "man" | "woman")}
                 disabled={disableUpload && !defaultChecked[img.key as "man" | "woman"]}
+                className="w-4 h-4"
               />
-              <Image src={img.src} alt={img.label} width={36} height={36} className="rounded-full border" />
-              <span className="text-xs">{img.label}</span>
+              <Image 
+                src={img.src} 
+                alt={img.label} 
+                width={36} 
+                height={36} 
+                className="rounded-full border-2 border-gray-200" 
+              />
+              <span className="text-sm text-gray-700">{img.label}</span>
             </label>
           ))}
         </div>
       )}
 
-      <div className={gridClass}>
-        {Array.from({ length: slots }, (_, i) => (
-          <div
-            key={i}
-            className={
-              type === "Avatar"
-                ? "relative w-[100px] h-[100px] bg-gray-100 flex items-center justify-center rounded-full overflow-hidden"
-                : "relative w-full aspect-[16/9] bg-gray-100 flex items-center justify-center rounded-fulloverflow-hidden"
-            }
-          >
-       
-            {preview[i] ? (
-       !(defaultChecked.man || defaultChecked.woman) && (
-        <button
-          type="button"
-          onClick={(e) => handleDeletePreview(e as any, i)}
-          className="
-            absolute top-1 right-1 z-20 
-            opacity-60 hover:opacity-100 
-            transition-opacity
-            cursor-pointer
-            rounded-full
-            p-0.5
-          "
-          style={disableUpload ? { pointerEvents: "none", opacity: 0.5 } : {}}
-          tabIndex={-1}
+      {/* Dropzone 영역 */}
+      {canAddMore && !disableUpload && (
+        <div
+          {...getRootProps()}
+          className={`${getDropzoneStyle()} rounded-lg p-8 mb-4 text-center`}
         >
-          <XCircleIcon color="black" size={24} strokeWidth={2.5} className="drop-shadow" />
-        </button>
-      )
-            ) : !disableUpload ? (
-              <label
-                htmlFor={`${name}-upload`}
-                className="flex items-center justify-center w-full h-full cursor-pointer"
-              >
-                <span className="text-gray-500">이미지 업로드</span>
-              </label>
+          <input {...getInputProps()} />
+          <div className="flex flex-col items-center justify-center space-y-3">
+            {isDragActive ? (
+              <>
+                <Upload className="w-12 h-12 text-blue-500" />
+                <p className="text-lg font-medium text-blue-600">
+                  {isDragAccept ? "파일을 여기에 놓으세요!" : "지원하지 않는 파일입니다"}
+                </p>
+              </>
             ) : (
-              // default이미지 표시
-              <></>
-            )}
-            {preview[i] && (
-              <Image
-                src={preview[i]}
-                alt={`preview-${i}`}
-                fill={type === "Banner" ? true : false}
-                width={type === "Avatar" ? 100 : undefined}
-                height={type === "Avatar" ? 100 : undefined}
-                className="object-cover rounded-full"
-                style={type === "Avatar" ? { width: 100, height: 100 } : undefined}
-              />
+              <>
+                <ImageIcon className="w-12 h-12 text-gray-400" />
+                <div className="space-y-1">
+                  <p className="text-lg font-medium text-gray-600">
+                    이미지를 드래그하거나 클릭하여 업로드
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    JPEG, PNG, GIF, WebP 형식 지원
+                    {type === "Banner" && ` (최대 ${maxImages}개)`}
+                  </p>
+                </div>
+              </>
             )}
           </div>
-        ))}
+        </div>
+      )}
 
-        {/* Avatar일 때만 추가 버튼(디폴트 이미지 선택시 비활성) */}
-        {type === "Avatar" && !disableUpload && (
-          <button
-            type="button"
-            onClick={handleAddAvatar}
-            className="w-[100px] h-[100px] border-2 border-dashed border-gray-300 flex flex-col items-center justify-center rounded-full text-4xl text-gray-400 hover:border-blue-500 transition"
-          >
-            +
-            {/* <span className="text-base mt-2">추가</span> */}
-          </button>
-        )}
+      {/* 미리보기 영역 */}
+      {preview.length > 0 && (
+        <div className={containerClass}>
+          {preview.map((src, i) => (
+            <div
+              key={i}
+              className={`
+                relative group
+                ${type === "Avatar" 
+                  ? "w-[120px] h-[120px] rounded-full" 
+                  : "w-full aspect-[16/9] rounded-lg"
+                } 
+                overflow-hidden bg-gray-100 border-2 border-gray-200
+              `}
+            >
+              {src && (
+                <>
+                  <Image
+                    src={src}
+                    alt={`preview-${i}`}
+                    fill={type === "Banner"}
+                    width={type === "Avatar" ? 120 : undefined}
+                    height={type === "Avatar" ? 120 : undefined}
+                    className={`object-cover ${type === "Avatar" ? "rounded-full" : "rounded-lg"}`}
+                  />
+                  
+                  {/* 삭제 버튼 - default 이미지가 아닐 때만 표시 */}
+                  {!(defaultChecked.man || defaultChecked.woman) && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeletePreview(e, i)}
+                      className="
+                        absolute top-2 right-2 
+                        opacity-0 group-hover:opacity-100 
+                        transition-opacity duration-200
+                        bg-white rounded-full p-1
+                        hover:bg-red-50 hover:scale-110
+                        transform transition-transform
+                      "
+                    >
+                      <XCircleIcon 
+                        size={20} 
+                        className="text-red-500 hover:text-red-600" 
+                        strokeWidth={2}
+                      />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
 
-        <input
-          ref={ref}
-          id={`${name}-upload`}
-          multiple
-          name={name}
-          accept="image/*"
-          type="file"
-          className="hidden"
-          onChange={handleUpload}
-          disabled={disableUpload}
-        />
-      </div>
+          {/* Avatar일 때만 추가 버튼 */}
+          {type === "Avatar" && !disableUpload && (
+            <button
+              type="button"
+              onClick={handleAddAvatar}
+              className="
+                w-[120px] h-[120px] 
+                border-2 border-dashed border-gray-300 
+                flex flex-col items-center justify-center 
+                rounded-full text-gray-400 
+                hover:border-blue-500 hover:text-blue-500
+                hover:bg-blue-50
+                transition-all duration-200
+              "
+            >
+              <Upload className="w-8 h-8 mb-2" />
+              <span className="text-sm font-medium">추가</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Banner에서 최대 개수 도달 시 안내 */}
+      {type === "Banner" && preview.length >= maxImages && (
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            최대 {maxImages}개의 이미지를 업로드했습니다.
+          </p>
+        </div>
+      )}
+
+      {/* Default 이미지 선택 시 안내 */}
+      {disableUpload && (
+        <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="text-sm text-gray-600">
+            기본 이미지가 선택되어 있습니다. 커스텀 이미지를 업로드하려면 기본 이미지 선택을 해제하세요.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

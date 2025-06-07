@@ -18,6 +18,7 @@ interface TreatmentData {
   selectedKeys: number[];
   productOptions: ProductOption[];
   priceExpose: boolean;
+  etc: string;
 }
 
 interface TreatmentSelectBoxProps {
@@ -44,14 +45,15 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
   const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
   const [priceExpose, setPriceExpose] = useState<boolean>(true); // 기본값 true (체크된 상태)
+  const [etc, setEtc] = useState<string>(""); // 기타 정보 상태 추가
   const [modalOpen, setModalOpen] = useState(false);
 
   // 선택된 항목이나 상품옵션이 변경될 때마다 상위 컴포넌트에 알림
   useEffect(() => {
     if (onSelectionChange) {
-      onSelectionChange({ selectedKeys, productOptions, priceExpose });
+      onSelectionChange({ selectedKeys, productOptions, priceExpose, etc });
     }
-  }, [selectedKeys, productOptions, priceExpose, onSelectionChange]);
+  }, [selectedKeys, productOptions, priceExpose, etc, onSelectionChange]);
 
   const handleRemove = (key: number) => {
     setSelectedKeys((prev) => prev.filter((k) => k !== key));
@@ -60,7 +62,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
   };
 
   const handleOpen = () => {
-    console.log('🔓 TreatmentSelectBox - 모달 열기:', {
+    console.log(' TreatmentSelectBox - 모달 열기:', {
       selectedKeys: selectedKeys,
       selectedKeysLength: selectedKeys.length,
       productOptions: productOptions,
@@ -70,13 +72,15 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
   };
   const handleClose = () => setModalOpen(false);
 
-  const handleSave = (data: { selectedKeys: number[], productOptions: ProductOption[] }) => {
+  const handleSave = (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string }) => {
     setSelectedKeys(data.selectedKeys);
     setProductOptions(data.productOptions);
+    setEtc(data.etc);
     
-    console.log("💾 TreatmentSelectBox - 저장된 데이터:", {
+    console.log(" TreatmentSelectBox - 저장된 데이터:", {
       selectedKeys: data.selectedKeys,
-      productOptions: data.productOptions
+      productOptions: data.productOptions,
+      etc: data.etc
     });
   };
 
@@ -103,7 +107,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
   return (
     <div>
       <div className="flex items-center gap-4 mb-2">
-        <Button size="sm" onClick={handleOpen}>
+        <Button size="sm" type="button" onClick={handleOpen}>
           가능시술 선택하기
         </Button>
         
@@ -156,7 +160,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
       </div>
       
       {/* 디버깅 정보 표시 */}
-      {(selectedKeys.length > 0 || productOptions.length > 0) && (
+      {(selectedKeys.length > 0 || productOptions.length > 0 || etc.trim() !== "") && (
         <div className="mt-3 p-3 bg-green-50 rounded border text-sm">
           <div className="font-semibold text-green-800 mb-1">📊 선택된 시술 데이터:</div>
           <div className="text-green-700 space-y-2">
@@ -185,9 +189,19 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
                 <div className="ml-4 mt-1 space-y-1">
                   {productOptions.map((option, index) => (
                     <div key={option.id} className="text-gray-600">
-                      {index + 1}. [{getLabelByKey(option.treatmentKey)}] {option.value1} - {option.value2?.toLocaleString()}원
+                      {index + 1}. [{getLabelByKey(option.treatmentKey)}] {option.value1} : {option.value2?.toLocaleString()}원
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+            
+            {/* 기타 정보 */}
+            {etc.trim() !== "" && (
+              <div>
+                <strong>기타 정보:</strong>
+                <div className="ml-4 mt-1 text-gray-600">
+                  {etc}
                 </div>
               </div>
             )}
@@ -200,6 +214,7 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
         open={modalOpen}
         initialSelectedKeys={selectedKeys}
         initialProductOptions={productOptions}
+        initialEtc={etc}
         onClose={handleClose}
         onSave={handleSave}
         categories={categories}
