@@ -72,20 +72,13 @@ export function TreatmentSelectModal({
   const [noOptionChecked, setNoOptionChecked] = useState<Record<number, boolean>>({});
   // 이전값 저장용 (체크해제 시 복원용)
   const [previousValues, setPreviousValues] = useState<Record<string, number>>({});
+  // 숨겨진 옵션들을 저장 (체크박스 해제 시 복원용)
+  const [hiddenOptions, setHiddenOptions] = useState<ProductOption[]>([]);
 
   useEffect(() => {
     if (open) {
-      console.log(' TreatmentSelectModal 열림 - 초기값 설정:', {
-        initialSelectedKeys,
-        selectedKeysLength: initialSelectedKeys?.length || 0,
-        initialProductOptions,
-        productOptionsLength: initialProductOptions?.length || 0
-      });
-      
       setSelectedKeys(initialSelectedKeys ?? []);
       setProductOptions(initialProductOptions ?? []);
-      
-      console.log(' TreatmentSelectModal 상태 설정 완료');
     }
   }, [open, initialSelectedKeys, initialProductOptions]);
 
@@ -115,13 +108,86 @@ export function TreatmentSelectModal({
   const checkboxDepthSet = new Set(flatList.filter(x => x.isLastDepth).map(x => x.depth));
 
   const handleToggle = (key: number) => {
-    setSelectedKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    setSelectedKeys((prev) => {
+      const isCurrentlySelected = prev.includes(key);
+      
+      if (isCurrentlySelected) {
+        // 체크 해제: 선택 목록에서 제거하고 해당 옵션들을 숨김 (삭제하지 않음)
+        const currentOptions = productOptions.filter(option => option.treatmentKey === key);
+        
+        // 현재 옵션들을 hiddenOptions에 저장
+        setHiddenOptions(prevHidden => {
+          const filtered = prevHidden.filter(option => option.treatmentKey !== key);
+          return [...filtered, ...currentOptions];
+        });
+        
+        // productOptions에서 제거
+        setProductOptions(prevOptions => 
+          prevOptions.filter(option => option.treatmentKey !== key)
+        );
+        
+        // 옵션없음 체크박스 상태도 제거
+        setNoOptionChecked(prevChecked => {
+          const newChecked = { ...prevChecked };
+          delete newChecked[key];
+          return newChecked;
+        });
+        return prev.filter((k) => k !== key);
+      } else {
+        // 체크: 선택 목록에 추가하고 숨겨둔 옵션이 있으면 복원, 없으면 빈 상태
+        
+        // 숨겨진 옵션 중 해당 treatmentKey의 옵션들 찾기
+        const restoredOptions = hiddenOptions.filter(option => option.treatmentKey === key);
+        
+        if (restoredOptions.length > 0) {
+          // 이전 옵션들 복원
+          setProductOptions(prevOptions => [...prevOptions, ...restoredOptions]);
+          setHiddenOptions(prevHidden => prevHidden.filter(option => option.treatmentKey !== key));
+        }
+        
+        return [...prev, key];
+      }
+    });
   };
 
   const handleSave = () => {
-    onSave({ selectedKeys: [...selectedKeys], productOptions: [...productOptions] });
+    // 1. 선택된 시술 중 옵션이 없는 것들 체크
+    const selectedTreatmentsWithoutOptions = selectedKeys.filter(key => {
+      const options = getOptionsForTreatment(key);
+      return options.length === 0;
+    });
+    
+    if (selectedTreatmentsWithoutOptions.length > 0) {
+      const treatmentNames = selectedTreatmentsWithoutOptions.map(key => {
+        const treatmentItem = flatList.find(item => item.key === key);
+        return treatmentItem?.label || `시술 ${key}`;
+      });
+      
+      alert(`다음 시술에 상품옵션이 없습니다:\n${treatmentNames.join(', ')}\n\n"상품옵션 추가" 버튼을 눌러서 최소 1개 이상의 옵션을 추가해주세요.`);
+      return;
+    }
+    
+    // 2. 가격이 0원인 항목 체크
+    const zeroPriceOptions = productOptions.filter(option => option.value2 === 0);
+    
+    if (zeroPriceOptions.length > 0) {
+      // 가격이 0원인 시술 이름들 찾기
+      const problematicTreatments = zeroPriceOptions.map(option => {
+        const treatmentItem = flatList.find(item => item.key === option.treatmentKey);
+        return treatmentItem?.label || `시술 ${option.treatmentKey}`;
+      });
+      
+      const uniqueTreatments = [...new Set(problematicTreatments)];
+      const treatmentNames = uniqueTreatments.join(', ');
+      
+      alert(`다음 시술의 가격 정보가 적절하지 않습니다:\n${treatmentNames}\n\n가격을 0원보다 큰 값으로 설정해주세요.`);
+      return;
+    }
+    
+    // 선택된 시술의 옵션들만 제출
+    const selectedOptions = productOptions.filter(option => selectedKeys.includes(option.treatmentKey));
+    
+    onSave({ selectedKeys: [...selectedKeys], productOptions: selectedOptions });
     handleClose();
   };
 
@@ -286,24 +352,6 @@ export function TreatmentSelectModal({
                           >
                             {item.label}
                           </span>
-                          <button
-                            type="button"
-                            disabled={!selectedKeys.includes(item.key)}
-                            className={`ml-3 px-3 py-1 text-xs rounded transition-colors ${
-                              selectedKeys.includes(item.key)
-                                ? 'text-white bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                                : 'text-gray-400 bg-gray-200 cursor-not-allowed'
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (selectedKeys.includes(item.key)) {
-                                handleAddOption(item.key);
-                              }
-                            }}
-                            aria-label="상품옵션 추가"
-                          >
-                            상품옵션 추가
-                          </button>
                         </>
                       )}
                     </div>
@@ -338,15 +386,24 @@ export function TreatmentSelectModal({
                           <h4 className="text-sm font-semibold text-blue-800">
                             {treatmentItem.label}
                           </h4>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 accent-red-600 cursor-pointer"
-                              checked={noOptionChecked[treatmentKey] || false}
-                              onChange={() => handleNoOptionToggle(treatmentKey)}
-                            />
-                            <span className="text-xs text-red-600 font-medium">옵션없음</span>
-                          </label>
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 accent-red-600 cursor-pointer"
+                                checked={noOptionChecked[treatmentKey] || false}
+                                onChange={() => handleNoOptionToggle(treatmentKey)}
+                              />
+                              <span className="text-xs text-red-600 font-medium">옵션없음</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleAddOption(treatmentKey)}
+                              className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                            >
+                              상품옵션 추가
+                            </button>
+                          </div>
                         </div>
                         
                         {options.length === 0 ? (
