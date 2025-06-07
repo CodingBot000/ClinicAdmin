@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import DaumPost from "@/components/DaumPost";
 import InputField from "@/components/InputField";
+import { HospitalAddress } from "@/types/address";
 
 interface AddressSectionProps {
     onSelectAddress?: (address: HospitalAddress) => void;
