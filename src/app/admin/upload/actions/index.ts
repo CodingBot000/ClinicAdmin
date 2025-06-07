@@ -151,6 +151,7 @@ const STORAGE_DOCTOR_IMG = "doctors";
   const extra_options_raw = formData.get("extra_options") as string;
   const treatment_options = formData.get("treatment_options") as string;
   const price_expose_raw = formData.get("price_expose") as string;
+  const etc = formData.get("etc") as string;
   
   // 가격노출 설정 파싱 (string을 boolean으로 변환)
   const price_expose = price_expose_raw === 'true';
@@ -159,6 +160,8 @@ const STORAGE_DOCTOR_IMG = "doctors";
     parsed: price_expose,
     type: typeof price_expose
   });
+  
+  console.log("Actions - etc 정보:", etc);
   
   // 상품옵션 데이터 파싱
   let treatment_options_parsed = [];
@@ -503,6 +506,32 @@ const STORAGE_DOCTOR_IMG = "doctors";
       }
       
       console.log("hospital_treatment 데이터 insert 완료");
+    }
+    
+    // 기타 시술 정보가 있는 경우 별도 레코드로 저장
+    if (etc && etc.trim() !== "") {
+      console.log("기타 시술 정보 저장 중:", etc);
+      
+      const etcTreatmentData = {
+        id_uuid_hospital: id_uuid,
+        id_uuid_treatment: null, // 기타 정보는 특정 시술에 속하지 않음
+        option_value: "기타", // 옵션명을 "기타"로 설정
+        price: 0, // 기타 정보는 가격 없음
+        discount_price: 0,
+        price_expose: 0, // 기타 정보는 가격 노출하지 않음
+        etc: etc.trim() // 기타 정보 내용
+      };
+      
+      const { error: etcTreatmentError } = await supabase
+        .from(TABLE_HOSPITAL_TREATMENT)
+        .insert([etcTreatmentData]);
+      
+      if (etcTreatmentError) {
+        console.log("uploadActions hospital_treatment (기타) error:", etcTreatmentError);
+        return await rollbackAll(etcTreatmentError.message);
+      }
+      
+      console.log("기타 시술 정보 저장 완료");
     }
   }
 

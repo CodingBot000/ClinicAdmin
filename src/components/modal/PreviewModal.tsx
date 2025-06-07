@@ -45,6 +45,15 @@ interface FormDataSummary {
     clinicImages: number;
     doctorImages: number;
   };
+  doctors?: {
+    count: number;
+    items: Array<{
+      name: string;
+      bio: string;
+      isChief: string;
+      hasImage: string;
+    }>;
+  };
 }
 
 interface PreviewModalProps {
@@ -190,6 +199,40 @@ export function PreviewModal({
                 <div><strong>의사 이미지:</strong> {formData.images.doctorImages}장</div>
               </div>
             </div>
+
+            {/* 의사 정보 */}
+            {formData.doctors && formData.doctors.count > 0 && (
+              <div className="bg-teal-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-teal-800 mb-3">👨‍⚕️ 의사 정보</h3>
+                <div className="text-sm">
+                  <strong>등록된 의사 ({formData.doctors.count}명):</strong>
+                  <div className="mt-2 space-y-3">
+                    {formData.doctors.items.map((doctor, idx) => (
+                      <div key={idx} className="bg-white p-3 rounded border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-gray-900">{doctor.name}</span>
+                          <div className="flex gap-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              doctor.isChief === '대표원장' 
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {doctor.isChief}
+                            </span>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                              {doctor.hasImage}
+                            </span>
+                          </div>
+                        </div>
+                        {doctor.bio && (
+                          <p className="text-gray-600 text-xs">{doctor.bio}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

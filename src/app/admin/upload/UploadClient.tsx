@@ -22,6 +22,8 @@ import ExtraOptions, { ExtraOptionState } from "@/components/ExtraOptions";
 import { useCategories } from "@/hooks/useCategories";
 import { PreviewModal } from "@/components/modal/PreviewModal";
 import { CategoryNode } from "@/types/category";
+import DoctorInfoSection from "@/components/DoctorInfoSection";
+import { DoctorInfo } from "@/components/DoctorInfoForm";
 
 // HospitalAddress 타입 정의
 type HospitalAddress = {
@@ -77,8 +79,8 @@ const UploadClient = () => {
   const [selectedTreatments, setSelectedTreatments] = useState<number[]>([]);
   const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
   const [priceExpose, setPriceExpose] = useState<boolean>(true);
+  const [treatmentEtc, setTreatmentEtc] = useState<string>("");
   const [clinicImages, setClinicImages] = useState<File[]>([]);
-  const [doctorImages, setDoctorImages] = useState<File[]>([]);
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([]);
   const [optionState, setOptionState] = useState<ExtraOptionState>({
     has_private_recovery_room: false,
@@ -93,6 +95,7 @@ const UploadClient = () => {
   const [search_key, setSearch_Key] = useState<string>("");
   // const supabase = createClient();
   const [formState, setFormState] = useState<{ message?: string; status?: string } | null>(null);
+  const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
   
   // 확인 모달 상태 추가
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -151,15 +154,17 @@ const UploadClient = () => {
   };
 
   // 선택된 치료 항목들과 상품옵션을 처리하는 함수
-  const handleTreatmentSelectionChange = (data: { selectedKeys: number[], productOptions: any[], priceExpose: boolean }) => {
+  const handleTreatmentSelectionChange = (data: { selectedKeys: number[], productOptions: any[], priceExpose: boolean, etc: string }) => {
     setSelectedTreatments(data.selectedKeys);
     setTreatmentOptions(data.productOptions);
     setPriceExpose(data.priceExpose);
+    setTreatmentEtc(data.etc);
     
     console.log('UploadClient - 시술 데이터 업데이트:', {
       selectedTreatments: data.selectedKeys,
       productOptions: data.productOptions,
-      priceExpose: data.priceExpose
+      priceExpose: data.priceExpose,
+      etc: data.etc
     });
   };
 
@@ -198,9 +203,38 @@ const UploadClient = () => {
     };
 
     const formatTime = (hour: number, minute: number) => {
+      if (hour === 0 && minute === 0) return '00:00';
       return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     };
 
+    // 영업시간 요약
+    const openingHoursSummary = openingHours.map(hour => ({
+      day: hour.day,
+      status: getStatusText(hour),
+      time: hour.open 
+        ? `${formatTime(hour.from.hour, hour.from.minute)} - ${formatTime(hour.to.hour, hour.to.minute)}`
+        : ''
+    }));
+
+    // 선택된 시술 이름들 가져오기
+    const selectedTreatmentNames = selectedTreatments.map(id => {
+      const name = treatmentMap.get(id);
+      return name || `알 수 없는 시술 (ID: ${id})`;
+    });
+
+    // 좌표 정보 문자열로 변환
+    const coordinatesText = coordinates 
+      ? `위도: ${coordinates.latitude}, 경도: ${coordinates.longitude}`
+      : '설정되지 않음';
+
+    // 치료옵션 요약
+    const treatmentOptionsSummary = treatmentOptions.map(option => ({
+      treatmentKey: option.treatmentId,
+      optionName: option.options.length > 0 ? option.options[0].name : '옵션 없음',
+      price: option.options.length > 0 ? option.options[0].price : 0
+    }));
+
+    // 부가옵션 요약 - 배열 형태로 변환
     const facilities = Object.entries(optionState)
       .filter(([key, value]) => key !== 'specialistCount' && value === true)
       .map(([key]) => {
@@ -217,62 +251,42 @@ const UploadClient = () => {
 
     // 이미지 URL 개수 계산
     let clinicImageCount = 0;
-    let doctorImageCount = 0;
     
     try {
       const clinicUrls = formData.get('clinic_image_urls') as string;
-      const doctorUrls = formData.get('doctor_image_urls') as string;
       
       if (clinicUrls) {
         const parsedClinicUrls = JSON.parse(clinicUrls);
         clinicImageCount = Array.isArray(parsedClinicUrls) ? parsedClinicUrls.length : 0;
       }
-      
-      if (doctorUrls) {
-        const parsedDoctorUrls = JSON.parse(doctorUrls);
-        doctorImageCount = Array.isArray(parsedDoctorUrls) ? parsedDoctorUrls.length : 0;
-      }
     } catch (e) {
       // 파싱 실패 시 기본값 유지
-      console.warn('이미지 URL 파싱 실패:', e);
     }
 
     return {
       basicInfo: {
-        name: (formData.get('name') as string) || '',
-        searchkey: searchkey || '',
-        search_key: search_key || '',
+        name: formData.get('name') as string || '',
+        searchkey: searchkey,
+        search_key: search_key
       },
       address: {
         road: addressForSendForm?.address_full_road || '',
         jibun: addressForSendForm?.address_full_jibun || '',
-        detail: `${addressForSendForm?.address_detail || ''} ${addressForSendForm?.address_detail_en || ''}`.trim(),
-        coordinates: addressForSendForm?.latitude && addressForSendForm?.longitude 
-          ? `위도: ${addressForSendForm.latitude}, 경도: ${addressForSendForm.longitude}` 
-          : '좌표 없음',
+        detail: addressForSendForm?.address_detail || '',
+        coordinates: coordinatesText
       },
-      location: selectedLocation?.label || '선택 안됨',
+      location: selectedLocation?.label || '선택되지 않음',
       treatments: {
         count: selectedTreatments.length,
-        items: selectedTreatments.map(code => treatmentMap.get(code) || `코드 ${code}`)
+        items: selectedTreatmentNames
       },
       treatmentOptions: {
-        count: treatmentOptions.length,
-        items: treatmentOptions.map(option => ({
-          treatmentKey: option.treatmentKey,
-          optionName: option.value1.toString(),
-          price: option.value2
-        }))
+        count: treatmentOptionsSummary.length,
+        items: treatmentOptionsSummary
       },
       openingHours: {
         count: openingHours.length,
-        items: openingHours.map(hour => ({
-          day: hour.day,
-          time: (hour.closed || hour.ask) 
-            ? '시간 설정 없음'
-            : `${formatTime(hour.from.hour, hour.from.minute)} ~ ${formatTime(hour.to.hour, hour.to.minute)}`,
-          status: getStatusText(hour)
-        }))
+        items: openingHoursSummary
       },
       extraOptions: {
         facilities,
@@ -280,8 +294,17 @@ const UploadClient = () => {
       },
       images: {
         clinicImages: clinicImageCount,
-        doctorImages: doctorImageCount
-      }
+        doctorImages: doctors.length
+      },
+      doctors: doctors.length > 0 ? {
+        count: doctors.length,
+        items: doctors.map(doctor => ({
+          name: doctor.name,
+          bio: doctor.bio || '소개 없음',
+          isChief: doctor.isChief ? '대표원장' : '일반의',
+          hasImage: doctor.useDefaultImage ? '기본 이미지' : '업로드 이미지'
+        }))
+      } : undefined
     };
   };
 
@@ -340,6 +363,28 @@ const UploadClient = () => {
     
     // 6. 의사 이미지 검증 (선택사항 - 빈값 허용)
     // doctorImages는 검증하지 않음
+    
+    // 6-1. 의사 정보 검증 (선택사항이지만 입력된 경우 검증)
+    if (doctors.length > 0) {
+      for (const doctor of doctors) {
+        if (!doctor.name || doctor.name.trim() === '') {
+          setFormState({ 
+            message: "의사 이름을 입력해주세요.", 
+            status: "error" 
+          });
+          return false;
+        }
+        
+        // 이미지가 없고 기본 이미지도 선택하지 않은 경우
+        if (!doctor.useDefaultImage && !doctor.imageFile) {
+          setFormState({ 
+            message: `${doctor.name} 의사의 이미지를 업로드하거나 기본 이미지를 선택해주세요.`, 
+            status: "error" 
+          });
+          return false;
+        }
+      }
+    }
     
     // 7. 부가시설 옵션 검증 (선택사항 - 빈값 허용)
     // optionState는 검증하지 않음
@@ -434,35 +479,52 @@ const UploadClient = () => {
         
         // 2. 의사 이미지 업로드
         const doctorImageUrls: string[] = [];
-        if (doctorImages.length > 0) {
-          console.log(`의사 이미지 업로드 중... (${doctorImages.length}개)`);
+        if (doctors.length > 0) {
+          console.log(`의사 이미지 업로드 중... (${doctors.length}개)`);
           
-          for (let i = 0; i < doctorImages.length; i++) {
-            const file = doctorImages[i];
-            console.log(`  업로드 중 ${i + 1}/${doctorImages.length}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+          for (let i = 0; i < doctors.length; i++) {
+            const doctor = doctors[i];
             
-            // 안전한 파일명 생성
-            const safeFileName = sanitizeFileName(file.name, id_uuid);
-            const filePath = `doctors/${id_uuid}/${safeFileName}`;
-            
-            console.log(`    원본 파일명: ${file.name}`);
-            console.log(`    안전한 파일명: ${safeFileName}`);
-            console.log(`    업로드 경로: ${filePath}`);
-            
-            const { data, error } = await supabase.storage
-              .from('images')
-              .upload(filePath, file);
-            
-            if (error) {
-              console.error(`의사 이미지 업로드 실패: ${file.name}`, error);
-              throw new Error(`의사 이미지 업로드 실패: ${error.message}`);
+            // 기본 이미지를 사용하는 경우 업로드하지 않고 기본 이미지 URL 사용
+            if (doctor.useDefaultImage) {
+              const defaultImageUrl = doctor.defaultImageType === 'woman' 
+                ? '/default/doctor_default_woman.png'
+                : '/default/doctor_default_man.png';
+              doctorImageUrls.push(defaultImageUrl);
+              console.log(`  기본 이미지 사용: ${doctor.name} → ${defaultImageUrl}`);
+              continue;
             }
             
-            const imageUrl = `${process.env.NEXT_PUBLIC_IMG_URL}${data.path}`;
-            doctorImageUrls.push(imageUrl);
-            uploadedImageUrls.push(imageUrl);
-            
-            console.log(`  업로드 완료: ${safeFileName} → ${imageUrl}`);
+            // 업로드할 이미지 파일이 있는 경우
+            if (doctor.imageFile) {
+              console.log(`  업로드 중 ${i + 1}/${doctors.length}: ${doctor.name} (${(doctor.imageFile.size / 1024).toFixed(2)} KB)`);
+              
+              // 안전한 파일명 생성
+              const safeFileName = sanitizeFileName(doctor.imageFile.name, id_uuid);
+              const filePath = `doctors/${id_uuid}/${safeFileName}`;
+              
+              console.log(`    원본 파일명: ${doctor.imageFile.name}`);
+              console.log(`    안전한 파일명: ${safeFileName}`);
+              console.log(`    업로드 경로: ${filePath}`);
+              
+              const { data, error } = await supabase.storage
+                .from('images')
+                .upload(filePath, doctor.imageFile);
+              
+              if (error) {
+                console.error(`의사 이미지 업로드 실패: ${doctor.name}`, error);
+                throw new Error(`의사 이미지 업로드 실패: ${error.message}`);
+              }
+              
+              const imageUrl = `${process.env.NEXT_PUBLIC_IMG_URL}${data.path}`;
+              doctorImageUrls.push(imageUrl);
+              uploadedImageUrls.push(imageUrl);
+              
+              console.log(`  업로드 완료: ${safeFileName} → ${imageUrl}`);
+            } else {
+              console.log(`  이미지 파일 없음: ${doctor.name}`);
+              doctorImageUrls.push(''); // 빈 URL로 처리
+            }
           }
         }
         
@@ -534,6 +596,31 @@ const UploadClient = () => {
         // opening hour schedules info 
         formData.append('opening_hours', JSON.stringify(openingHours));
         
+        // 기타 시술 정보 추가
+        formData.append('etc', treatmentEtc);
+        console.log('기타 시술 정보:', treatmentEtc);
+        
+        // 의사 정보 추가
+        if (doctors.length > 0) {
+          const doctorsData = doctors.map((doctor, index) => ({
+            name: doctor.name,
+            bio: doctor.bio || '',
+            imageUrl: doctorImageUrls[index] || '',
+            chief: doctor.isChief ? 1 : 0, // chief 컬럼은 int 타입이므로 1 또는 0
+            useDefaultImage: doctor.useDefaultImage,
+            defaultImageType: doctor.defaultImageType
+          }));
+          
+          formData.append('doctors', JSON.stringify(doctorsData));
+          console.log('의사 정보 formData 추가:', {
+            length: doctors.length,
+            data: doctorsData,
+            jsonString: JSON.stringify(doctorsData)
+          });
+        } else {
+          console.log('등록된 의사가 없습니다.');
+        }
+        
         // 미리보기용 데이터 전체 로그 출력
         console.log('===== 미리보기용 데이터 전체 목록 =====');
         console.log('미리보기 데이터:');
@@ -545,10 +632,13 @@ const UploadClient = () => {
         console.log('- 선택된 위치:', selectedLocation);
         console.log('- 선택된 치료 항목들:', selectedTreatments);
         console.log('- 상품옵션:', treatmentOptions);
+        console.log('- 가격노출 설정:', priceExpose);
+        console.log('- 기타 시술 정보:', treatmentEtc);
         console.log('- 영업시간:', openingHours);
         console.log('- 부가 시설 옵션:', optionState);
         console.log('- 병원 이미지 URL:', clinicImageUrls);
         console.log('- 의사 이미지 URL:', doctorImageUrls);
+        console.log('- 의사 정보:', doctors);
         console.log('================================');
 
         // FormData를 저장하고 미리보기 모달 표시
@@ -782,7 +872,7 @@ const UploadClient = () => {
         </div>
         
         {/* 디버깅 정보 표시 */}
-        {(selectedTreatments.length > 0 || coordinates || selectedLocation) && (
+        {(selectedTreatments.length > 0 || coordinates || selectedLocation || treatmentEtc.trim() !== "") && (
           <div className="mt-4 p-4 bg-gray-100 rounded border">
             <h3 className="font-semibold mb-2">선택된 정보:</h3>
             {selectedLocation && (
@@ -793,6 +883,9 @@ const UploadClient = () => {
             )}
             {selectedTreatments.length > 0 && (
               <p className="text-sm"><strong>선택된 치료 개수:</strong> {selectedTreatments.length}개</p>
+            )}
+            {treatmentEtc.trim() !== "" && (
+              <p className="text-sm"><strong>기타 시술 정보:</strong> {treatmentEtc}</p>
             )}
             {
 
@@ -823,17 +916,13 @@ const UploadClient = () => {
         type="Banner"
       />
 
-      {/* 의사 이미지 업로드 */}
-      <ImageUploadSection
-        maxImages={doctorImageUploadLength}
-        title="의사 프로필 이미지 등록"
-        description={`- 의사 프로필 이미지는 정사각형(1:1)으로 업로드해 주세요.
-          * File 한개당 50MB 이하로 업로드 해주세요.
-  · 예시: 권장해상도 500x500px
-  · 알림: 주어진 사진을 중앙을 기준으로 1:1 비율로 넘치는 부분이 자동으로 잘라집니다.`}
-        onFilesChange={setDoctorImages}
-        name="doctor_images"
-        type="Avatar"
+      {/* 의사 정보 등록 */}
+      <DoctorInfoSection
+        title="의사 정보 등록"
+        description={`- 의사 프로필 정보를 입력하고 이미지를 등록하세요.
+- 이미지는 정사각형(1:1) 비율로 자동 조정됩니다.
+- 기본 이미지를 사용하거나 직접 업로드할 수 있습니다.`}
+        onDoctorsChange={setDoctors}
       />
 
       

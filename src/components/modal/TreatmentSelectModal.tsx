@@ -19,8 +19,9 @@ interface TreatmentSelectModalProps {
   open: boolean;
   initialSelectedKeys: number[];
   initialProductOptions?: ProductOption[];
+  initialEtc?: string;
   onClose: () => void;
-  onSave: (data: { selectedKeys: number[], productOptions: ProductOption[] }) => void;
+  onSave: (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string }) => void;
   categories: CategoryNode[];
 }
 
@@ -60,12 +61,14 @@ export function TreatmentSelectModal({
   open,
   initialSelectedKeys,
   initialProductOptions = [],
+  initialEtc = "",
   onClose,
   onSave,
   categories,
 }: TreatmentSelectModalProps) {
   const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
   const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
+  const [etc, setEtc] = useState<string>(initialEtc);
   const [isAnimating, setIsAnimating] = useState(false);
   
   // 옵션없음 체크박스 상태 관리 (treatmentKey별로)
@@ -77,8 +80,9 @@ export function TreatmentSelectModal({
     if (open) {
       setSelectedKeys(initialSelectedKeys ?? []);
       setProductOptions(initialProductOptions ?? []);
+      setEtc(initialEtc ?? "");
     }
-  }, [open, initialSelectedKeys, initialProductOptions]);
+  }, [open, initialSelectedKeys, initialProductOptions, initialEtc]);
 
   useEffect(() => {
     if (open) {
@@ -155,7 +159,7 @@ export function TreatmentSelectModal({
     }
     
     // 선택된 시술의 옵션들만 제출
-    onSave({ selectedKeys: [...selectedKeys], productOptions: selectedOptions });
+    onSave({ selectedKeys: [...selectedKeys], productOptions: selectedOptions, etc });
     handleClose();
   };
 
@@ -329,6 +333,16 @@ export function TreatmentSelectModal({
                     </div>
                   );
                 })}
+                
+                {/* 기타 섹션 추가 */}
+                <div className="mt-6 pt-4 border-t border-gray-300">
+                  <div className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                    <span className="text-lg font-bold text-gray-800">기타</span>
+                  </div>
+                  <div className="ml-6">
+                    <span className="text-sm text-gray-600">별도 기재가 필요한 시술이 있다면 우측 텍스트 영역에 입력해주세요.</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -402,13 +416,27 @@ export function TreatmentSelectModal({
                   })}
                 </div>
               )}
+              
+              {/* 기타 입력 섹션 */}
+              <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">기타 시술 정보</h4>
+                <textarea
+                  value={etc}
+                  onChange={(e) => setEtc(e.target.value)}
+                  placeholder="카테고리에 없는 시술이나 추가 정보가 있다면 여기에 입력해주세요..."
+                  className="w-full h-24 p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  이 정보는 별도로 저장되어 관리됩니다.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* 하단 버튼 영역 */}
         <div className="border-t border-gray-200 p-6 bg-white flex-shrink-0">
-          <p> 주의 : 옵션입력후 상품을 임시로 체크박스를 해제한 경우 완료를 누르면 입력한 상품이 사라집니다. 완료는 가급적 입력/수정이 모두 완료된 후 눌러주세요 </p> 
+          <p> 주의 : 옵션입력후 상품을 임시로 체크박스를 해제한 경우 완료를 누르면 입력한 상품이 사라집니다. 완료는 입력/수정이 모두 완료된 후 눌러주세요 </p> 
           <div className="flex gap-4 justify-end">
             <Button 
               variant="outline" 
