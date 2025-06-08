@@ -244,6 +244,7 @@ const STORAGE_DOCTOR_IMG = "doctors";
   const clinic_image_urls_raw = formData.get("clinic_image_urls") as string;
   const doctor_image_urls_raw = formData.get("doctor_image_urls") as string;
   const id_uuid = formData.get("id_uuid") as string; // 클라이언트에서 생성한 UUID 사용
+  const current_user_uid = formData.get("current_user_uid") as string; // 현재 로그인한 사용자 UID
 
   // 이미지 URL 파싱
   let clinic_image_urls: string[] = [];
@@ -599,6 +600,42 @@ const STORAGE_DOCTOR_IMG = "doctors";
   if (error) {
     console.log("uploadActions hospital_details error:", error);
     return await rollbackAll(error.message);
+  }
+
+  // 모든 insert가 성공적으로 완료되면 admin 테이블의 id_uuid_hospital 업데이트
+  if (current_user_uid) {
+    console.log("Admin 테이블 업데이트 시작 - 현재 사용자 UID:", current_user_uid);
+    
+    // 현재 사용자의 admin 정보 확인
+    const { data: currentAdmin, error: adminSelectError } = await supabase
+      .from("admin")
+      .select("id, id_uuid_hospital")
+      .eq("id_auth_user", current_user_uid)
+      .maybeSingle();
+    
+    if (adminSelectError) {
+      console.error("Admin 정보 조회 실패:", adminSelectError);
+    } else if (currentAdmin && !currentAdmin.id_uuid_hospital) {
+      // id_uuid_hospital이 비어있으면 업데이트
+      console.log("Admin 테이블 업데이트 - 병원 UUID 연결:", id_uuid);
+      
+      const { error: adminUpdateError } = await supabase
+        .from("admin")
+        .update({ id_uuid_hospital: id_uuid })
+        .eq("id_auth_user", current_user_uid);
+      
+      if (adminUpdateError) {
+        console.error("Admin 테이블 업데이트 실패:", adminUpdateError);
+      } else {
+        console.log("Admin 테이블 업데이트 성공 - 병원 정보 연결 완료");
+      }
+    } else if (currentAdmin?.id_uuid_hospital) {
+      console.log("Admin 테이블 - 이미 병원 정보가 연결되어 있음:", currentAdmin.id_uuid_hospital);
+    } else {
+      console.log("Admin 정보를 찾을 수 없음");
+    }
+  } else {
+    console.log("현재 사용자 UID가 제공되지 않았습니다.");
   }
 
   revalidatePath("/", "layout");

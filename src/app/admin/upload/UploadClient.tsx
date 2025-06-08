@@ -39,7 +39,11 @@ interface Surgery {
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
-const UploadClient = () => {
+interface UploadClientProps {
+  currentUserUid: string;
+}
+
+const UploadClient = ({ currentUserUid }: UploadClientProps) => {
   const pageStartTime = Date.now();
   console.log("UploadClient 페이지 시작:", new Date().toISOString());
   
@@ -519,6 +523,7 @@ const UploadClient = () => {
         
         // 기본 정보
         formData.append('id_uuid', id_uuid);
+        formData.append('current_user_uid', currentUserUid);
         formData.append('name', clinicName);
         formData.append('searchkey', clinicName);
         formData.append('search_key', clinicName);

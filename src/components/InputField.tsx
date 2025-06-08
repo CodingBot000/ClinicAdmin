@@ -9,10 +9,11 @@ interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   disabled?: boolean;
   isError?: boolean;
   placeholder?: string;
+  type?: string;
 }
 
 const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
-  ({ label, name, disabled = false, isError, placeholder, ...props }, ref) => {
+  ({ label, name, disabled = false, isError, placeholder, type, ...props }, ref) => {
     return (
       <div className="flex items-center w-full gap-2">
         {/* 왼쪽 라벨 */}
@@ -24,6 +25,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           id={name}
           name={name}
           ref={ref}
+          type={type}
           disabled={disabled}
           placeholder={placeholder}
           className={clsx(
@@ -32,6 +34,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               ? "border-red-500 focus:border-red-500"
               : "border-gray-300 focus:border-blue-500"
           )}
+          onDoubleClick={(e) => e.currentTarget.select()}
           {...props}
         />
       </div>

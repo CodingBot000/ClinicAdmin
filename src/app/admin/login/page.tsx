@@ -1,6 +1,6 @@
 import Image from "next/image";
-import UploadClient from "./admin/upload/UploadClient";
-import AdminLayout from "./admin/upload/layout";
+import UploadClient from "../upload/UploadClient";
+import AdminLayout from "../upload/layout";
 import AdminLoginForm from "@/components/AdminLoginForm";
 
 export default function Home() {
