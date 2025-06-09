@@ -9,16 +9,56 @@ interface DoctorInfoSectionProps {
   title: string;
   description?: string;
   onDoctorsChange: (doctors: DoctorInfo[]) => void;
+  initialDoctors?: DoctorInfo[];
 }
+
+// 안전한 이미지 URL 검증 함수
+const getValidImageUrl = (imageUrl?: string): string => {
+  if (!imageUrl || imageUrl.trim() === '') {
+    return "/default/doctor_default_man.png";
+  }
+  
+  try {
+    // 상대 경로인 경우 (/, ./ 등으로 시작) 그대로 반환
+    if (imageUrl.startsWith('/') || imageUrl.startsWith('./')) {
+      return imageUrl;
+    }
+    
+    // 절대 URL인 경우 유효성 검증
+    new URL(imageUrl);
+    return imageUrl;
+  } catch {
+    // 유효하지 않은 URL인 경우 기본 이미지 반환
+    console.warn('Invalid image URL:', imageUrl);
+    return "/default/doctor_default_man.png";
+  }
+};
 
 const DoctorInfoSection: React.FC<DoctorInfoSectionProps> = ({
   title,
   description,
   onDoctorsChange,
+  initialDoctors,
 }) => {
-  const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
+  const [doctors, setDoctors] = useState<DoctorInfo[]>(initialDoctors || []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<DoctorInfo | undefined>(undefined);
+
+  // 렌더링 시점 디버깅
+  console.log('DoctorInfoSection 렌더링:', {
+    받은initialDoctors: initialDoctors?.length || 0,
+    현재doctors: doctors.length,
+    initialDoctorsData: initialDoctors,
+    현재doctorsData: doctors
+  });
+
+  // props 변경 시 상태 업데이트
+  useEffect(() => {
+    if (initialDoctors && initialDoctors.length > 0 && JSON.stringify(initialDoctors) !== JSON.stringify(doctors)) {
+      setDoctors(initialDoctors);
+      console.log('DoctorInfoSection 초기값 설정 완료:', initialDoctors.length, '명');
+    }
+  }, [initialDoctors]);
 
   // 부모 컴포넌트에 의사 데이터 전달
   useEffect(() => {
@@ -130,7 +170,7 @@ const DoctorInfoSection: React.FC<DoctorInfoSectionProps> = ({
               <div className="flex justify-center mb-3">
                 <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
                   <Image
-                    src={doctor.imagePreview || "/default/doctor_default_man.png"}
+                    src={getValidImageUrl(doctor.imagePreview)}
                     alt={doctor.name}
                     width={80}
                     height={80}

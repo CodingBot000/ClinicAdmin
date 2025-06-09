@@ -25,6 +25,10 @@ import { CategoryNode } from "@/types/category";
 import DoctorInfoSection from "@/components/DoctorInfoSection";
 import { DoctorInfo } from "@/components/DoctorInfoForm";
 import { HospitalAddress } from "@/types/address";
+import { loadExistingHospitalData } from "@/lib/hospitalDataLoader";
+import { ExistingHospitalData } from "@/types/hospital";
+import { mapExistingDataToFormValues } from "@/lib/hospitalDataMapper";
+import { STORAGE_IMAGES } from "@/constants/tables";
 
 interface Surgery {
   created_at: string;
@@ -41,9 +45,10 @@ const clinicImageUploadLength = 7;
 
 interface UploadClientProps {
   currentUserUid: string;
+  isEditMode?: boolean; // 편집 모드 여부
 }
 
-const UploadClient = ({ currentUserUid }: UploadClientProps) => {
+const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps) => {
   const pageStartTime = Date.now();
   console.log("UploadClient 페이지 시작:", new Date().toISOString());
   
@@ -83,6 +88,13 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
   const [formState, setFormState] = useState<{ message?: string; status?: string } | null>(null);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
+  const [isLoadingExistingData, setIsLoadingExistingData] = useState(false);
+  const [existingData, setExistingData] = useState<ExistingHospitalData | null>(null);
+  
+  // 편집 모드를 위한 폼 초기값 상태들
+  const [hospitalName, setHospitalName] = useState<string>('');
+  const [hospitalDirections, setHospitalDirections] = useState<string>('');
+  const [hospitalLocation, setHospitalLocation] = useState<string>('');
   
   // 확인 모달 상태 추가
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -132,6 +144,158 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
       });
     }
   }, [categoriesLoading, isPending, categories, surgeryList, pageStartTime]);
+
+  // 편집 모드일 때 기존 데이터 로딩
+  useEffect(() => {
+    console.log(`isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`);
+    if (isEditMode && currentUserUid) {
+      loadExistingDataForEdit();
+    }
+  }, [isEditMode, currentUserUid]);
+
+  // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
+  useEffect(() => {
+    if (existingData && !hospitalName) { // 한 번만 실행되도록 조건 추가
+      console.log('기존 데이터 상태 반영 시작');
+      const formData = mapExistingDataToFormValues(existingData);
+      
+      // 병원 기본 정보 상태 업데이트
+      if (formData.hospital.name !== hospitalName) {
+        setHospitalName(formData.hospital.name);
+      }
+      if (formData.hospital.directions !== hospitalDirections) {
+        setHospitalDirections(formData.hospital.directions);
+      }
+      if (formData.hospital.location !== hospitalLocation) {
+        setHospitalLocation(formData.hospital.location);
+      }
+      
+      console.log('UploadClient 상태 업데이트 완료:', {
+        hospitalName: formData.hospital.name,
+        hasAddress: !!formData.address.roadAddress,
+        doctorsCount: formData.doctors.length
+      });
+    }
+  }, [existingData]);
+
+  const loadExistingDataForEdit = async () => {
+    try {
+      setIsLoadingExistingData(true);
+      console.log(' 편집 모드 - 기존 데이터 로딩 시작');
+      
+      const data = await loadExistingHospitalData(currentUserUid);
+      if (data) {
+        setExistingData(data);
+        populateFormWithExistingData(data);
+        console.log(' 편집 모드 - 기존 데이터 로딩 완료');
+      } else {
+        console.log(' 편집 모드 - 기존 데이터가 없습니다');
+      }
+    } catch (error) {
+      console.error(' 편집 모드 - 데이터 로딩 실패:', error);
+      setFormState({
+        message: '기존 데이터를 불러오는데 실패했습니다.',
+        status: 'error'
+      });
+      setShowFinalResult(true);
+    } finally {
+      setIsLoadingExistingData(false);
+    }
+  };
+
+  const populateFormWithExistingData = (data: ExistingHospitalData) => {
+    console.log('폼에 기존 데이터 적용 시작');
+    
+    try {
+      // 1. 데이터를 폼 형식으로 변환
+      const formData = mapExistingDataToFormValues(data);
+      console.log('변환된 폼 데이터:', formData);
+      
+      // 2. 병원 기본 정보 설정
+      setHospitalName(formData.hospital.name);
+      setHospitalDirections(formData.hospital.directions);
+      setHospitalLocation(formData.hospital.location);
+      console.log('병원 기본 정보 설정 완료:', formData.hospital.name);
+      
+      // 3. 의사 정보 설정
+      setDoctors(formData.doctors);
+      console.log('의사 정보 설정 완료:', formData.doctors.length, '명');
+      
+      // 3. 주소 정보 설정
+      if (formData.address.roadAddress) {
+        setAddress(formData.address.roadAddress);
+        setAddressForSendForm({
+          address_full_road: formData.address.roadAddress,
+          address_full_jibun: formData.address.jibunAddress,
+          zipcode: formData.address.zonecode,
+          address_si: formData.address.sido,
+          address_gu: formData.address.sigungu,
+          address_dong: formData.address.bname,
+          address_detail: data.hospital.address_detail,
+          address_detail_en: data.hospital.address_detail_en,
+          directions_to_clinic: data.hospital.directions_to_clinic,
+          directions_to_clinic_en: data.hospital.directions_to_clinic_en
+        });
+        
+        if (formData.address.coordinates.lat && formData.address.coordinates.lng) {
+          setCoordinates({
+            latitude: formData.address.coordinates.lat,
+            longitude: formData.address.coordinates.lng
+          });
+        }
+        console.log('주소 정보 설정 완료');
+      }
+      
+      // 4. 영업시간 설정 - 현재 영업시간 컴포넌트와 호환되지 않는 형태이므로 스킵
+      // TODO: 영업시간 데이터 형식 통일 필요
+      console.log('영업시간 설정 스킵 (형식 불일치)');
+      
+      // 5. 편의시설 설정
+      setOptionState({
+        has_private_recovery_room: formData.facilities.has_private_recovery_room,
+        has_parking: formData.facilities.has_parking,
+        has_cctv: formData.facilities.has_cctv,
+        has_night_counseling: formData.facilities.has_night_counseling,
+        has_female_doctor: formData.facilities.has_female_doctor,
+        has_anesthesiologist: formData.facilities.has_anesthesiologist,
+        specialistCount: formData.facilities.specialist_count
+      });
+      console.log('편의시설 설정 완료');
+      
+      // 6. 위치 정보 설정
+      if (data.hospital.location) {
+        try {
+          const locationData = JSON.parse(data.hospital.location);
+          if (locationData.key && locationData.label && locationData.name) {
+            setSelectedLocation(locationData);
+            console.log('위치 정보 설정 완료:', locationData);
+          }
+        } catch (error) {
+          console.error('위치 정보 파싱 실패:', data.hospital.location, error);
+        }
+      }
+      
+      // 6. 시술 정보 설정 - 현재 형식과 호환되지 않으므로 스킵
+      // TODO: 시술 정보 데이터 형식 통일 필요
+      console.log('시술 정보 설정 스킵 (형식 불일치)');
+      
+      console.log('기존 데이터 적용 완료!');
+      console.log('적용된 데이터:', {
+        병원명: formData.hospital.name,
+        의사수: formData.doctors.length,
+        영업시간: Object.keys(formData.businessHours).length,
+        시술정보: Object.keys(formData.treatments).length
+      });
+      
+    } catch (error) {
+      console.error('❌ 폼 데이터 적용 중 오류:', error);
+      setFormState({
+        message: '기존 데이터 적용 중 오류가 발생했습니다.',
+        status: 'error'
+      });
+      setShowFinalResult(true);
+    }
+  };
 
   const handleModal = () => {
     if (formState?.status === "success") {
@@ -460,7 +624,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
             console.log(`    업로드 경로: ${filePath}`);
             
             const { data, error } = await supabase.storage
-              .from('images')
+              .from(STORAGE_IMAGES)
               .upload(filePath, file);
             
             if (error) {
@@ -507,7 +671,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
               console.log(`    업로드 경로: ${filePath}`);
               
               const { data, error } = await supabase.storage
-                .from('images')
+                .from(STORAGE_IMAGES)
                 .upload(filePath, doctor.imageFile);
               
               if (error) {
@@ -660,7 +824,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
               const urlPath = imageUrl.replace(process.env.NEXT_PUBLIC_IMG_URL || '', '');
               
               const { error: deleteError } = await supabase.storage
-                .from('images')
+                .from(STORAGE_IMAGES)
                 .remove([urlPath]);
               
               if (deleteError) {
@@ -843,20 +1007,48 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
     setPreparedFormData(null);
   };
 
-  if (isPending || categoriesLoading) return <LoadingSpinner backdrop />;
+  // 렌더링 시점 디버깅
+  console.log('UploadClient 렌더링:', {
+    isEditMode,
+    hospitalName,
+    address,
+    addressForSendForm,
+    coordinates,
+    selectedLocation,
+    doctorsCount: doctors.length,
+    hasExistingData: !!existingData,
+    isLoadingExistingData,
+    optionState,
+    전달할주소props: {
+      initialAddress: address,
+      initialAddressDetail: addressForSendForm?.address_detail,
+      initialAddressDetailEn: addressForSendForm?.address_detail_en,
+      initialDirections: addressForSendForm?.directions_to_clinic,
+      initialDirectionsEn: addressForSendForm?.directions_to_clinic_en
+    }
+  });
+
+  if (isPending || categoriesLoading || isLoadingExistingData) return <LoadingSpinner backdrop />;
 
   return (
     <main>
       <PageHeader name="병원 정보를 입력하세요" />
       <div className="my-8 mx-auto px-6" style={{ width: '100vw', maxWidth: '1024px' }}>
       <div className="space-y-4 w-full">
-        <InputField label="clinic name" name="name" required />
+                    <InputField label="clinic name" name="name" required value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} />
         {/* <InputField label="searchkey" name="searchkey" required />
         <InputField label="search_key" name="search_key" required /> */}
         <div className="w-full">
           <AddressSection 
             onSelectAddress={setAddressForSendForm} 
             onSelectCoordinates={setCoordinates}
+            initialAddress={address}
+            initialAddressForSendForm={addressForSendForm ?? undefined}
+            initialCoordinates={coordinates ?? undefined}
+            initialAddressDetail={addressForSendForm?.address_detail}
+            initialAddressDetailEn={addressForSendForm?.address_detail_en}
+            initialDirections={addressForSendForm?.directions_to_clinic}
+            initialDirectionsEn={addressForSendForm?.directions_to_clinic_en}
           />
         </div>
         <LocationSelect 
@@ -903,7 +1095,10 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
         <OpeningHoursForm onSelectOpeningHours={setOpeningHours}/>
         {/* </div> */}
         <div className="w-full mt-4">
-           <ExtraOptions onSelectOptionState={handleExtraOptionsChange}/>
+           <ExtraOptions 
+             onSelectOptionState={handleExtraOptionsChange}
+             initialOptions={optionState}
+           />
         </div>
       {/* 병원 이미지 업로드 */}
       <ImageUploadSection
@@ -918,6 +1113,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
         onFilesChange={setClinicImages}
         name="clinic_images"
         type="Banner"
+        initialImages={existingData?.hospital.imageurls || []}
       />
 
       {/* 의사 정보 등록 */}
@@ -927,6 +1123,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
 - 이미지는 정사각형(1:1) 비율로 자동 조정됩니다.
 - 기본 이미지를 사용하거나 직접 업로드할 수 있습니다.`}
         onDoctorsChange={setDoctors}
+        initialDoctors={doctors}
       />
 
       

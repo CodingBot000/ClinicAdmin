@@ -1,24 +1,59 @@
 // components/AdminLoginForm.tsx
 "use client";
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 import InputField from "./InputField";
 import { Button } from "./ui/button";
 
 
 export default function AdminLoginForm() {
-  const supabase = createClientComponentClient();
+  const router = useRouter();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
-    else window.location.href = "/admin"; // 로그인 성공 시 대시보드로 이동
+    setIsLoading(true);
+    
+    try {
+      console.log('로그인 시도:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) {
+        console.error('로그인 에러:', error);
+        setError(error.message);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (data.user && data.session) {
+        console.log('로그인 성공:', data.user.email);
+        console.log('세션 생성됨:', data.session.access_token ? '토큰 존재' : '토큰 없음');
+        
+        // Next.js router 사용
+        router.push('/admin');
+      } else {
+        setError('로그인 정보가 올바르지 않습니다.');
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error('로그인 처리 중 오류:', err);
+      setError('로그인 중 오류가 발생했습니다.');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,7 +79,9 @@ export default function AdminLoginForm() {
             required
           />
 
-        <Button type="submit" className="w-full">Login</Button>
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? '로그인 중...' : 'Login'}
+        </Button>
         {error && <p className="text-red-500">{error}</p>}
       </form>
       </div>

@@ -1,6 +1,7 @@
 import { CategoryNode } from '@/types/category';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { TABLE_TREATMENT } from '@/constants/tables';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +14,7 @@ export async function GET() {
   
   const dbQueryStart = Date.now();
   const { data, error } = await supabase
-    .from('treatment')
+    .from(TABLE_TREATMENT)
     .select('code, department, level1, level2, name');
   
   const dbQueryEnd = Date.now();

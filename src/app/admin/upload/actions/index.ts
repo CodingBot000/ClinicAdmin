@@ -5,6 +5,18 @@ import { supabase } from "@/lib/supabaseClient";
 import { revalidatePath } from "next/cache";
 import { getTimestamp } from '@/utils/address/getTimeStamp';
 import { makeUploadImageFileName } from '@/utils/makeUploadImageFileName';
+import {
+  TABLE_HOSPITAL,
+  TABLE_DOCTOR,
+  TABLE_HOSPITAL_DETAIL,
+  TABLE_HOSPITAL_TREATMENT,
+  TABLE_HOSPITAL_BUSINESS_HOUR,
+  TABLE_ADMIN,
+  TABLE_TREATMENT,
+  STORAGE_IMAGES,
+  STORAGE_HOSPITAL_IMG,
+  STORAGE_DOCTOR_IMG
+} from '@/constants/tables';
 
 export const uploadActions = async (prevState: any, formData: FormData) => {
   const startTime = Date.now();
@@ -99,19 +111,6 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   };
 
   // const supabase = createClient();
-// const TABLE_HOSPITAL = "hospital";
-// const TABLE_DOCTOR = "doctor";
-// const TABLE_HOSPITAL_DETAIL = "hospital_details";
-// const TABLE_HOSPITAL_TREATMENT = "hospital_treatment";
-// const TABLE_HOSPITAL_BUSINESS_HOUR = "hospital_business_hour";
-const TABLE_HOSPITAL = "hospital_test";
-const TABLE_DOCTOR = "doctor_test";
-const TABLE_HOSPITAL_DETAIL = "hospital_details_test";
-const TABLE_HOSPITAL_TREATMENT = "hospital_treatment_test";
-const TABLE_HOSPITAL_BUSINESS_HOUR = "hospital_business_hour_test";
-const STORAGE_IMAGES = "images";
-const STORAGE_HOSPITAL_IMG = "hospitalimg";
-const STORAGE_DOCTOR_IMG = "doctors";
 
 
   const name = formData.get("name") as string;
@@ -374,7 +373,7 @@ const STORAGE_DOCTOR_IMG = "doctors";
       const form_doctor = {
         hospital_id: 0,
         id_uuid_hospital: id_uuid,
-        image_url: [imageUrl], // 배열 형태로 저장 (기존 구조 유지)
+        image_url: imageUrl, // 단일 URL로 저장 (의사 이미지는 1개만 허용)
         bio: doctor.bio || "",
         name: doctor.name || "",
         chief: doctor.chief || 0, // 대표원장 여부 (1 또는 0)
@@ -467,7 +466,7 @@ const STORAGE_DOCTOR_IMG = "doctors";
     
     // treatment 테이블에서 code와 id_uuid 매핑 데이터 가져오기
     const { data: treatmentData, error: treatmentError } = await supabase
-      .from('treatment')
+      .from(TABLE_TREATMENT)
       .select('code, id_uuid');
     
     if (treatmentError) {
@@ -616,7 +615,7 @@ const STORAGE_DOCTOR_IMG = "doctors";
     
     // 현재 사용자의 admin 정보 확인
     const { data: currentAdmin, error: adminSelectError } = await supabase
-      .from("admin")
+      .from(TABLE_ADMIN)
       .select("id, id_uuid_hospital")
       .eq("id_auth_user", current_user_uid)
       .maybeSingle();
@@ -628,7 +627,7 @@ const STORAGE_DOCTOR_IMG = "doctors";
       console.log("Admin 테이블 업데이트 - 병원 UUID 연결:", id_uuid);
       
       const { error: adminUpdateError } = await supabase
-        .from("admin")
+        .from(TABLE_ADMIN)
         .update({ id_uuid_hospital: id_uuid })
         .eq("id_auth_user", current_user_uid);
       
