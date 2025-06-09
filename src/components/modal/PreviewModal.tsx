@@ -29,6 +29,7 @@ interface FormDataSummary {
       price: number;
     }>;
   };
+  treatmentEtc: string;
   openingHours: {
     count: number;
     items: Array<{
@@ -147,6 +148,15 @@ export function PreviewModal({
                           • {option.optionName}: {option.price.toLocaleString()}원
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+                
+                {formData.treatmentEtc && formData.treatmentEtc.trim() !== "" && (
+                  <div className="text-sm">
+                    <strong>기타 시술 정보:</strong>
+                    <div className="mt-1 pl-4 text-gray-700 bg-gray-50 p-3 rounded border-l-4 border-purple-300">
+                      {formData.treatmentEtc}
                     </div>
                   </div>
                 )}

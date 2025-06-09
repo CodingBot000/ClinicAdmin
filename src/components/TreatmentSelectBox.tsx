@@ -183,18 +183,23 @@ export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = []
             <div><strong>상품옵션 개수:</strong> {productOptions.length}개</div>
             
             {/* 상품옵션 내용 목록 */}
-            {productOptions.length > 0 && (
-              <div>
-                <strong>상품옵션 내용:</strong>
-                <div className="ml-4 mt-1 space-y-1">
-                  {productOptions.map((option, index) => (
-                    <div key={option.id} className="text-gray-600">
-                      {index + 1}. [{getLabelByKey(option.treatmentKey)}] {option.value1} : {option.value2?.toLocaleString()}원
-                    </div>
-                  ))}
-                </div>
+            {productOptions.map((option, index) => (
+              <div key={option.id} className="text-gray-600">
+                {index + 1}. [{getLabelByKey(option.treatmentKey)}]{" "}
+                {option.value1 && Number(option.value1) >= 1
+                  ? (
+                      <>
+                        {option.value1} : {option.value2?.toLocaleString()}원
+                      </>
+                    )
+                  : (
+                      <>
+                        옵션없음 가격: {option.value2?.toLocaleString()}원
+                      </>
+                    )
+                }
               </div>
-            )}
+            ))}
             
             {/* 기타 정보 */}
             {etc.trim() !== "" && (
