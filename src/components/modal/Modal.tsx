@@ -34,7 +34,7 @@ export const ModalBase = ({
             <DialogTitle className="text-[1.5rem] font-bold py-4">{title}</DialogTitle>
           </DialogHeader>
         )}
-        <div className="h-[60vh] max-h-full overflow-y-auto break-words">
+        <div className="max-h-[60vh] overflow-y-auto break-words">
           {children}
         </div>
         {footer && <DialogFooter className="pt-4">{footer}</DialogFooter>}

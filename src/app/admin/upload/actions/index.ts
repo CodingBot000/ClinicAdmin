@@ -243,12 +243,14 @@ const STORAGE_DOCTOR_IMG = "doctors";
   // 클라이언트에서 이미 업로드된 이미지 URL들 받기
   const clinic_image_urls_raw = formData.get("clinic_image_urls") as string;
   const doctor_image_urls_raw = formData.get("doctor_image_urls") as string;
+  const doctors_raw = formData.get("doctors") as string; // 의사 정보
   const id_uuid = formData.get("id_uuid") as string; // 클라이언트에서 생성한 UUID 사용
   const current_user_uid = formData.get("current_user_uid") as string; // 현재 로그인한 사용자 UID
 
-  // 이미지 URL 파싱
+  // 이미지 URL 및 의사 정보 파싱
   let clinic_image_urls: string[] = [];
   let doctor_image_urls: string[] = [];
+  let doctors_parsed: any[] = [];
   
   try {
     if (clinic_image_urls_raw) {
@@ -257,11 +259,15 @@ const STORAGE_DOCTOR_IMG = "doctors";
     if (doctor_image_urls_raw) {
       doctor_image_urls = JSON.parse(doctor_image_urls_raw);
     }
+    if (doctors_raw) {
+      doctors_parsed = JSON.parse(doctors_raw);
+      console.log("의사 정보 파싱 완료:", doctors_parsed);
+    }
   } catch (error) {
-    console.error("이미지 URL 파싱 오류:", error);
+    console.error("데이터 파싱 오류:", error);
     return {
       ...prevState,
-      message: "이미지 URL 데이터 파싱에 실패했습니다.",
+      message: "데이터 파싱에 실패했습니다.",
       status: "error",
     };
   }
@@ -354,47 +360,49 @@ const STORAGE_DOCTOR_IMG = "doctors";
   ///////////////////////////////
   // doctor 테이블 입력 
 
-  console.log("Doctor 이미지 업로드 시작");
+  console.log("Doctor 정보 처리 시작");
   console.log("  - doctor 이미지 URL 개수:", doctor_image_urls.length);
-  console.log("  - doctor 이미지 URL들:", doctor_image_urls);
+  console.log("  - 의사 정보 개수:", doctors_parsed.length);
 
-  // 의사 이미지는 이미 업로드됨 - URL만 사용
-  const doctorFileNames = doctor_image_urls;
+  // 의사 정보가 있는 경우에만 처리
+  if (doctors_parsed.length > 0) {
+    // 각 의사마다 별도 레코드로 insert
+    for (let i = 0; i < doctors_parsed.length; i++) {
+      const doctor = doctors_parsed[i];
+      const imageUrl = doctor.imageUrl || ''; // 해당 의사의 이미지 URL
+      
+      const form_doctor = {
+        hospital_id: 0,
+        id_uuid_hospital: id_uuid,
+        image_url: [imageUrl], // 배열 형태로 저장 (기존 구조 유지)
+        bio: doctor.bio || "",
+        name: doctor.name || "",
+        chief: doctor.chief || 0, // 대표원장 여부 (1 또는 0)
+      };
 
-  console.log("Doctor 이미지 처리 완료");
-  console.log("  - 사용할 URL 개수:", doctorFileNames.length);
-  console.log("  - 사용할 URL들:", doctorFileNames);
+      console.log(`Doctor ${i + 1} insert 시도:`, {
+        name: doctor.name,
+        bio: doctor.bio,
+        imageUrl: imageUrl,
+        chief: doctor.chief
+      });
 
-  const form_doctor = {
-    hospital_id: 0,
-    id_uuid_hospital: id_uuid,
-    image_url: doctorFileNames,
-    bio: "약력",
-    name: "이름",
-    // position: "직책",
-    // id_surgeries: surgeries.split(","),
-  };
+      const insertDoctor = await supabase
+        .from(TABLE_DOCTOR)
+        .insert(form_doctor)
+        .select("*");
 
-  console.log("Doctor insert 시도:");
-  console.log("  - form_doctor 데이터:", JSON.stringify(form_doctor, null, 2));
-  console.log("  - doctorFileNames 길이:", doctorFileNames.length);
-  console.log("  - TABLE_DOCTOR:", TABLE_DOCTOR);
+      if (insertDoctor.error) {
+        console.log(`Doctor ${i + 1} insert 오류:`, insertDoctor.error);
+        return await rollbackAll(insertDoctor.error.message);
+      }
 
-  const insertDoctor = await supabase
-    .from(TABLE_DOCTOR)
-    .insert(form_doctor)
-    .select("*");
-
-  console.log("Doctor insert 결과:");
-  console.log("  - insertDoctor.data:", insertDoctor.data);
-  console.log("  - insertDoctor.error:", insertDoctor.error);
-  console.log("  - insertDoctor.status:", insertDoctor.status);
-  console.log("  - insertDoctor.statusText:", insertDoctor.statusText);
-
-  console.log("uploadActions insertDoctor error 1 : ", insertDoctor.error);
-  if (insertDoctor.error) {
-    console.log("uploadActions insertDoctor error 2 : ", insertDoctor.error);
-    return await rollbackAll(insertDoctor.error.message);
+      console.log(`Doctor ${i + 1} insert 성공:`, insertDoctor.data);
+    }
+    
+    console.log("모든 Doctor 정보 insert 완료");
+  } else {
+    console.log("등록된 의사 정보가 없습니다.");
   }
 
 

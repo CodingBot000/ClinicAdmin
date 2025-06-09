@@ -81,6 +81,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
   const [search_key, setSearch_Key] = useState<string>("");
   // const supabase = createClient();
   const [formState, setFormState] = useState<{ message?: string; status?: string } | null>(null);
+  const [showFinalResult, setShowFinalResult] = useState(false);
   const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
   
   // 확인 모달 상태 추가
@@ -111,10 +112,10 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
   const { handleOpenModal, open } = useModal();
 
   useEffect(() => {
-    if (formState?.message) {
+    if (formState?.message && showFinalResult) {
       handleOpenModal();
     }
-  }, [formState]);
+  }, [formState, showFinalResult]);
 
   // 페이지 로딩 완료 시간 측정
   useEffect(() => {
@@ -136,6 +137,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
     if (formState?.status === "success") {
       router.refresh();
     }
+    setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
     handleOpenModal();
   };
 
@@ -213,12 +215,22 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
       ? `위도: ${coordinates.latitude}, 경도: ${coordinates.longitude}`
       : '설정되지 않음';
 
-    // 치료옵션 요약
-    const treatmentOptionsSummary = treatmentOptions.map(option => ({
-      treatmentKey: option.treatmentId,
-      optionName: option.options.length > 0 ? option.options[0].name : '옵션 없음',
-      price: option.options.length > 0 ? option.options[0].price : 0
-    }));
+    // 치료옵션 요약 - 실제 데이터 구조에 맞게 수정
+    const treatmentOptionsSummary = treatmentOptions.map(option => {
+      // 시술 이름 찾기
+      const treatmentName = treatmentMap.get(option.treatmentKey) || `시술 ${option.treatmentKey}`;
+      
+      // 옵션명 생성
+      const optionName = option.value1 && Number(option.value1) >= 1
+        ? `[${treatmentName}] ${option.value1}`
+        : `[${treatmentName}] 옵션없음`;
+      
+      return {
+        treatmentKey: option.treatmentKey,
+        optionName: optionName,
+        price: Number(option.value2) || 0,
+      };
+    });
 
     // 부가옵션 요약 - 배열 형태로 변환
     const facilities = Object.entries(optionState)
@@ -270,6 +282,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
         count: treatmentOptionsSummary.length,
         items: treatmentOptionsSummary
       },
+      treatmentEtc: treatmentEtc.trim(),
       openingHours: {
         count: openingHours.length,
         items: openingHoursSummary
@@ -801,6 +814,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
       
       console.log('uploadActions 응답:', result);
       setFormState(result);
+      setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
       
       setShowConfirmModal(false);
       setPreparedFormData(null);
@@ -815,6 +829,7 @@ const UploadClient = ({ currentUserUid }: UploadClientProps) => {
       }
       
       setFormState({ message: errorMessage, status: "error" });
+      setShowFinalResult(true); // 에러도 최종 결과로 표시
       setShowConfirmModal(false);
       setPreparedFormData(null);
     } finally {

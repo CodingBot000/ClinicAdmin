@@ -306,7 +306,7 @@ export function TreatmentSelectModal({
 
                   return (
                     <div
-                      key={item.key}
+                      key={`${item.key}-${idx}`}
                       className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
                       style={{ marginLeft: `${(item.depth - 1) * 24}px` }}
                     >
