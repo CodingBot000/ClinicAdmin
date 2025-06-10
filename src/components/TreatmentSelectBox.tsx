@@ -24,6 +24,9 @@ interface TreatmentData {
 interface TreatmentSelectBoxProps {
   onSelectionChange?: (data: TreatmentData) => void;
   initialSelectedKeys?: number[];
+  initialProductOptions?: ProductOption[];
+  initialPriceExpose?: boolean;
+  initialEtc?: string;
   categories: CategoryNode[];
 }
 
@@ -40,13 +43,45 @@ interface TreatmentSelectBoxProps {
 //   return (key: number) => map.get(key) ?? key.toString();
 // })();
 
-export function TreatmentSelectBox({ onSelectionChange, initialSelectedKeys = [], categories }: TreatmentSelectBoxProps) {
-  console.log("categories", categories);
+export function TreatmentSelectBox({ 
+  onSelectionChange, 
+  initialSelectedKeys = [], 
+  initialProductOptions = [],
+  initialPriceExpose = true,
+  initialEtc = "",
+  categories 
+}: TreatmentSelectBoxProps) {
+  console.log("TreatmentSelectBox 초기값:", {
+    initialSelectedKeys,
+    initialProductOptions,
+    initialPriceExpose,
+    initialEtc,
+    categories
+  });
+  
   const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
-  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
-  const [priceExpose, setPriceExpose] = useState<boolean>(true); // 기본값 true (체크된 상태)
-  const [etc, setEtc] = useState<string>(""); // 기타 정보 상태 추가
+  const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
+  const [priceExpose, setPriceExpose] = useState<boolean>(initialPriceExpose);
+  const [etc, setEtc] = useState<string>(initialEtc);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // 초기값이 변경될 때 상태 업데이트
+  useEffect(() => {
+    console.log('TreatmentSelectBox - 초기값 변경됨:', {
+      initialSelectedKeys,
+      initialProductOptions,
+      initialPriceExpose,
+      initialEtc
+    });
+    
+    if (initialSelectedKeys.length > 0 || initialProductOptions.length > 0 || initialEtc || initialPriceExpose !== true) {
+      console.log('TreatmentSelectBox - 초기값으로 상태 업데이트');
+      setSelectedKeys(initialSelectedKeys);
+      setProductOptions(initialProductOptions);
+      setPriceExpose(initialPriceExpose);
+      setEtc(initialEtc);
+    }
+  }, [initialSelectedKeys, initialProductOptions, initialPriceExpose, initialEtc]);
 
   // 선택된 항목이나 상품옵션이 변경될 때마다 상위 컴포넌트에 알림
   useEffect(() => {

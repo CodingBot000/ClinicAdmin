@@ -71,6 +71,12 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
   const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
   const [priceExpose, setPriceExpose] = useState<boolean>(true);
   const [treatmentEtc, setTreatmentEtc] = useState<string>("");
+  const [initialTreatmentData, setInitialTreatmentData] = useState<{
+    selectedKeys: number[];
+    productOptions: any[];
+    priceExpose: boolean;
+    etc: string;
+  } | null>(null);
   const [clinicImages, setClinicImages] = useState<File[]>([]);
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([]);
   const [optionState, setOptionState] = useState<ExtraOptionState>({
@@ -90,6 +96,7 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
   const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
   const [isLoadingExistingData, setIsLoadingExistingData] = useState(false);
   const [existingData, setExistingData] = useState<ExistingHospitalData | null>(null);
+  const [initialBusinessHours, setInitialBusinessHours] = useState<OpeningHour[]>([]);
   
   // 편집 모드를 위한 폼 초기값 상태들
   const [hospitalName, setHospitalName] = useState<string>('');
@@ -246,9 +253,11 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
         console.log('주소 정보 설정 완료');
       }
       
-      // 4. 영업시간 설정 - 현재 영업시간 컴포넌트와 호환되지 않는 형태이므로 스킵
-      // TODO: 영업시간 데이터 형식 통일 필요
-      console.log('영업시간 설정 스킵 (형식 불일치)');
+      // 4. 영업시간 설정
+      console.log('영업시간 설정 시작');
+      console.log('변환된 영업시간 데이터:', formData.businessHours);
+      setInitialBusinessHours(formData.businessHours);
+      console.log('initialBusinessHours 상태 업데이트 완료');
       
       // 5. 편의시설 설정
       setOptionState({
@@ -275,9 +284,11 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
         }
       }
       
-      // 6. 시술 정보 설정 - 현재 형식과 호환되지 않으므로 스킵
-      // TODO: 시술 정보 데이터 형식 통일 필요
-      console.log('시술 정보 설정 스킵 (형식 불일치)');
+      // 6. 시술 정보 설정
+      console.log('시술 정보 설정 시작');
+      console.log('변환된 시술 데이터:', formData.treatments);
+      setInitialTreatmentData(formData.treatments);
+      console.log('initialTreatmentData 상태 업데이트 완료');
       
       console.log('기존 데이터 적용 완료!');
       console.log('적용된 데이터:', {
@@ -481,48 +492,63 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
     const clinicName = clinicNameInput?.value || '';
     
     if (!clinicName || clinicName.trim() === '') {
+      console.log('validateFormData 1');
       setFormState({ 
         message: "병원명을 입력해주세요.", 
         status: "error" 
       });
+      setShowFinalResult(true); 
       return false;
     }
     
     // 2. 주소 검증 (필수)
     if (!addressForSendForm || !addressForSendForm.address_full_road) {
+      console.log('validateFormData 2');
       setFormState({ 
         message: "주소를 선택해주세요.", 
         status: "error" 
       });
+      setShowFinalResult(true); 
       return false;
     }
     
     // 3. 지역 검증 (필수)
     if (!selectedLocation) {
+      console.log('validateFormData 3');
       setFormState({ 
         message: "지역을 선택해주세요.", 
         status: "error" 
       });
+      setShowFinalResult(true); 
       return false;
     }
     
     // 4. 시술 선택 검증 (필수)
     if (selectedTreatments.length === 0) {
+      console.log('validateFormData 4');
       setFormState({ 
-        message: "일정저장 버튼을 눌러서 일정저장을 확정하세요.", 
+        message: "가능시술을 최소 1개 이상 선택해주세요.", 
         status: "error" 
       });
+      setShowFinalResult(true); 
       return false;
     }
     
-    // 5. 병원 이미지 검증 (필수)
-    if (clinicImages.length === 0) {
+    // 5. 병원 이미지 검증 (필수) - 편집 모드에서는 기존 이미지도 고려
+    const existingImageCount = existingData?.hospital.imageurls?.length || 0;
+    const totalImageCount = clinicImages.length + existingImageCount;
+    
+    if (totalImageCount === 0) {
+      console.log('validateFormData 5 - 이미지 없음');
       setFormState({ 
         message: "병원 이미지를 최소 1개 이상 업로드해주세요.", 
         status: "error" 
       });
+      setShowFinalResult(true); 
       return false;
     }
+    
+    console.log(`validateFormData 5 통과 - 새 이미지: ${clinicImages.length}개, 기존 이미지: ${existingImageCount}개, 총: ${totalImageCount}개`);
     
     // 6. 의사 이미지 검증 (선택사항 - 빈값 허용)
     // doctorImages는 검증하지 않음
@@ -535,15 +561,19 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
             message: "의사 이름을 입력해주세요.", 
             status: "error" 
           });
+          setShowFinalResult(true); 
+          console.log('validateFormData 6');
           return false;
         }
         
         // 이미지가 없고 기본 이미지도 선택하지 않은 경우
-        if (!doctor.useDefaultImage && !doctor.imageFile) {
+        if (!doctor.useDefaultImage && !doctor.imageFile && !doctor.imagePreview) {
           setFormState({ 
             message: `${doctor.name} 의사의 이미지를 업로드하거나 기본 이미지를 선택해주세요.`, 
             status: "error" 
           });
+          setShowFinalResult(true); 
+          console.log('validateFormData 7');
           return false;
         }
       }
@@ -553,12 +583,13 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
     // optionState는 검증하지 않음
     
     // ====== VALIDATION 체크 끝 ======
-    
+    console.log('validateFormData final return true');
     return true; // 모든 검증 통과
   };
 
   // 미리보기 모달 표시를 위한 데이터 준비
   const handlePreview = async () => {
+    console.log('handlePreview 1');
     try {
       // 파일명을 안전하게 변환하는 함수
       const sanitizeFileName = (originalName: string, uuid: string): string => {
@@ -583,12 +614,12 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
         
         return `${timestamp}_${uuidShort}_${finalName}${extension}`;
       };
-      
+      console.log('handlePreview 2');
       // Validation 체크
       if (!validateFormData()) {
         return; // validation 실패 시 중단
       }
-      
+      console.log('handlePreview 3');
       // validation 통과 후 병원명 다시 가져오기
       const clinicNameInput = document.querySelector('input[name="name"]') as HTMLInputElement;
       const clinicName = clinicNameInput?.value || '';
@@ -1061,7 +1092,10 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
           {categories && (
             <TreatmentSelectBox 
               onSelectionChange={handleTreatmentSelectionChange}
-              initialSelectedKeys={selectedTreatments}
+              initialSelectedKeys={initialTreatmentData?.selectedKeys || selectedTreatments}
+              initialProductOptions={initialTreatmentData?.productOptions || treatmentOptions}
+              initialPriceExpose={initialTreatmentData?.priceExpose ?? priceExpose}
+              initialEtc={initialTreatmentData?.etc || treatmentEtc}
               categories={categories}
             />
           )}
@@ -1092,7 +1126,10 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
        {/* 영업시간 등록  */}
         {/* <div className="w-full">
         <h3 className="font-semibold mb-2">영업시간 날짜 시간 등록</h3> */}
-        <OpeningHoursForm onSelectOpeningHours={setOpeningHours}/>
+        <OpeningHoursForm 
+          onSelectOpeningHours={setOpeningHours}
+          initialHours={initialBusinessHours}
+        />
         {/* </div> */}
         <div className="w-full mt-4">
            <ExtraOptions 
@@ -1128,7 +1165,7 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
 
       
       <div className="flex justify-center mt-8 gap-8">
-        <Button color="red">cancel</Button>
+        <Button color="red" onClick={() => router.push('/admin')}>cancel</Button>
         <Button 
           color="blue" 
           disabled={isSubmitting}

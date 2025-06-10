@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -30,11 +30,12 @@ const defaultOpenings: Record<DayOfWeek, { from: [number, number]; to: [number, 
 
 interface OpeningHoursFormProps {
   onSelectOpeningHours?: (openingHours: OpeningHour[]) => void;
+  initialHours?: OpeningHour[];
 }
 
-export default function OpeningHoursForm({ onSelectOpeningHours } : OpeningHoursFormProps) {
+export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } : OpeningHoursFormProps) {
   const [hoursState, setHoursState] = useState<OpeningHour[]>(
-    days.map((d) => ({
+    initialHours || days.map((d) => ({
       day: d,
       from: { hour: defaultOpenings[d].from[0], minute: defaultOpenings[d].from[1] },
       to: { hour: defaultOpenings[d].to[0], minute: defaultOpenings[d].to[1] },
@@ -45,6 +46,15 @@ export default function OpeningHoursForm({ onSelectOpeningHours } : OpeningHours
   );
 
   const [savedHours, setSavedHours] = useState<OpeningHour[] | null>(null);
+
+  // 초기값이 변경될 때 상태 업데이트
+  useEffect(() => {
+    console.log('OpeningHoursForm - initialHours 변경됨:', initialHours);
+    if (initialHours && initialHours.length > 0) {
+      console.log('OpeningHoursForm - 초기값으로 상태 업데이트:', initialHours);
+      setHoursState(initialHours);
+    }
+  }, [initialHours]);
 
   function handleChange(
     idx: number,

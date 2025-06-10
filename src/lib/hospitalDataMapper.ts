@@ -21,36 +21,66 @@ function getImageUrlFromData(imageData: any): string {
 }
 
 /**
- * 영업시간 데이터를 폼 형식으로 변환
+ * 영업시간 데이터를 OpeningHoursForm 형식으로 변환
  */
 export function mapBusinessHoursToForm(businessHours: any[]) {
-  const defaultHours = {
-    mon: { open: '', close: '', status: 'open' as const },
-    tue: { open: '', close: '', status: 'open' as const },
-    wed: { open: '', close: '', status: 'open' as const },
-    thu: { open: '', close: '', status: 'open' as const },
-    fri: { open: '', close: '', status: 'open' as const },
-    sat: { open: '', close: '', status: 'open' as const },
-    sun: { open: '', close: '', status: 'open' as const },
-  };
+  console.log('mapBusinessHoursToForm 시작 - 입력 데이터:', JSON.stringify(businessHours, null, 2));
+  
+  // OpeningHoursForm에서 사용하는 요일 형식
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
 
-  const dayMap: { [key: string]: keyof typeof defaultHours } = {
-    '월': 'mon', '화': 'tue', '수': 'wed', '목': 'thu',
-    '금': 'fri', '토': 'sat', '일': 'sun'
-  };
+  // 기본값으로 모든 요일 초기화
+  const result = days.map(day => ({
+    day,
+    from: { hour: 10, minute: 0 },
+    to: { hour: 19, minute: 0 },
+    open: day !== 'SUN',
+    closed: day === 'SUN',
+    ask: false,
+  }));
+  
+  console.log('기본값 초기화 완료:', result);
 
-  businessHours.forEach(hour => {
-    const day = dayMap[hour.day_of_week];
-    if (day) {
-      defaultHours[day] = {
-        open: hour.open_time || '',
-        close: hour.close_time || '',
-        status: hour.status || 'open'
-      };
+  // DB 데이터로 덮어쓰기
+  businessHours.forEach((hour, index) => {
+    console.log(`처리 중인 영업시간 [${index}]:`, {
+      day_of_week: hour.day_of_week,
+      open_time: hour.open_time,
+      close_time: hour.close_time,
+      status: hour.status
+    });
+    
+    const dayIndex = days.indexOf(hour.day_of_week);
+    if (dayIndex === -1) {
+      console.warn(`인덱스를 찾을 수 없는 요일: ${hour.day_of_week}`);
+      return;
     }
+
+    // 시간 문자열을 시:분으로 파싱
+    const parseTime = (timeString: string) => {
+      if (!timeString) return { hour: 0, minute: 0 };
+      const [hourStr, minuteStr] = timeString.split(':');
+      return {
+        hour: parseInt(hourStr, 10) || 0,
+        minute: parseInt(minuteStr, 10) || 0
+      };
+    };
+
+    const newHourData = {
+      day: hour.day_of_week,
+      from: parseTime(hour.open_time),
+      to: parseTime(hour.close_time),
+      open: hour.status === 'open',
+      closed: hour.status === 'closed',
+      ask: hour.status === 'ask',
+    };
+    
+    console.log(`요일 ${hour.day_of_week} (인덱스 ${dayIndex}) 업데이트:`, newHourData);
+    result[dayIndex] = newHourData;
   });
 
-  return defaultHours;
+  console.log('mapBusinessHoursToForm 완료 - 최종 결과:', JSON.stringify(result, null, 2));
+  return result;
 }
 
 /**
@@ -68,26 +98,54 @@ export function mapDoctorsToForm(doctors: any[]): DoctorInfo[] {
 }
 
 /**
- * 시술 데이터를 폼 형식으로 변환
+ * 시술 데이터를 TreatmentSelectBox 형식으로 변환
  */
 export function mapTreatmentsToForm(treatments: any[]) {
-  const treatmentOptions: { [key: string]: any[] } = {};
+  console.log('mapTreatmentsToForm 시작 - 입력 데이터:', treatments);
   
-  treatments.forEach(treatment => {
-    const key = treatment.id_uuid_treatment;
-    if (!treatmentOptions[key]) {
-      treatmentOptions[key] = [];
-    }
-    
-    treatmentOptions[key].push({
-      value1: treatment.option_value || '',
-      value2: treatment.price || 0,
-      discountPrice: treatment.discount_price || 0,
-      exposedPrice: treatment.price_expose || 0
+  // 중복되지 않는 selectedKeys 추출 (treatment code들)
+  const selectedKeysSet = new Set<number>();
+  const productOptions: any[] = [];
+  
+  treatments.forEach((treatment, index) => {
+    console.log(`처리 중인 시술 [${index}]:`, {
+      id_uuid_treatment: treatment.id_uuid_treatment,
+      option_value: treatment.option_value,
+      price: treatment.price,
+      price_expose: treatment.price_expose,
+      etc: treatment.etc,
+      treatment_info: treatment.treatment
     });
+    
+    // treatment 테이블에서 가져온 code 사용
+    const treatmentCode = treatment.treatment?.code;
+    if (treatmentCode) {
+      selectedKeysSet.add(Number(treatmentCode));
+      
+      // 상품옵션 생성
+      const productOption = {
+        id: `${treatment.id_uuid_treatment}_${index}`,
+        treatmentKey: Number(treatmentCode),
+        value1: treatment.option_value || '',
+        value2: Number(treatment.price) || 0
+      };
+      
+      productOptions.push(productOption);
+      console.log(`시술 코드 ${treatmentCode} 추가:`, productOption);
+    } else {
+      console.warn(`시술 코드를 찾을 수 없음:`, treatment);
+    }
   });
-
-  return treatmentOptions;
+  
+  const result = {
+    selectedKeys: Array.from(selectedKeysSet),
+    productOptions: productOptions,
+    priceExpose: treatments.length > 0 ? Boolean(treatments[0].price_expose) : true,
+    etc: treatments.find(t => t.etc)?.etc || ''
+  };
+  
+  console.log('mapTreatmentsToForm 완료 - 결과:', result);
+  return result;
 }
 
 /**
@@ -173,7 +231,10 @@ export function mapExistingDataToFormValues(data: ExistingHospitalData) {
     doctors: mapDoctorsToForm(data.doctors),
     
     // 시술 정보
-    treatments: mapTreatmentsToForm(data.treatments)
+    treatments: mapTreatmentsToForm(data.treatments),
+    
+    // 병원 이미지 URL 배열 (기존 이미지 표시용)
+    hospitalImages: data.hospital.imageurls || []
   };
   
   console.log(' 데이터 변환 완료:', {

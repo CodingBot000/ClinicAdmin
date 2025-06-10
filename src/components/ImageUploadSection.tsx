@@ -364,16 +364,17 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
                       onClick={(e) => handleDeletePreview(e, i)}
                       className="
                         absolute top-2 right-2 
-                        opacity-0 group-hover:opacity-100 
-                        transition-opacity duration-200
-                        bg-white rounded-full p-1
-                        hover:bg-red-50 hover:scale-110
-                        transform transition-transform
+                        bg-red-500 text-white rounded-full p-1
+                        hover:bg-red-600 hover:scale-110
+                        transform transition-all duration-200
+                        shadow-lg border-2 border-white
+                        z-10
                       "
+                      title="이미지 삭제"
                     >
                       <XCircleIcon 
-                        size={20} 
-                        className="text-red-500 hover:text-red-600" 
+                        size={18} 
+                        className="text-white" 
                         strokeWidth={2}
                       />
                     </button>

@@ -421,18 +421,17 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
     const closeTime = hour.to ? `${hour.to.hour.toString().padStart(2, '0')}:${hour.to.minute.toString().padStart(2, '0')}` : null;
     
     let status = '';
-  if (hour.open) {
-    status = 'open';
-  } else if (hour.closed) {
-    status = 'closed';
-  } else if (hour.ask) {
-    status = 'ask';
-  }
-
+    if (hour.open) {
+      status = 'open';
+    } else if (hour.closed) {
+      status = 'closed';
+    } else if (hour.ask) {
+      status = 'ask';
+    }
 
     const form_business_hour = {
       id_uuid_hospital: id_uuid,
-      day_of_week: hour.day || '',
+      day_of_week: hour.day, // 영어 요일 그대로 저장
       open_time: openTime,
       close_time: closeTime,
       status: status,

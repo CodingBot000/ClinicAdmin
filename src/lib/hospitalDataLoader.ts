@@ -6,7 +6,8 @@ import {
   TABLE_HOSPITAL_DETAIL,
   TABLE_HOSPITAL_TREATMENT,
   TABLE_HOSPITAL_BUSINESS_HOUR,
-  TABLE_ADMIN
+  TABLE_ADMIN,
+  TABLE_TREATMENT
 } from '@/constants/tables';
 
 const supabase = createBrowserClient(
@@ -128,23 +129,75 @@ async function loadDoctors(hospitalUuid: string) {
 }
 
 /**
- * 시술 정보를 가져옵니다
+ * 시술 정보를 가져옵니다 - hospital_treatment 먼저 가져오고 별도로 treatment 정보 매칭
  */
 async function loadTreatments(hospitalUuid: string) {
   console.log(' 시술 정보 로딩:', hospitalUuid);
   
-  const { data, error } = await supabase
+  // 1. hospital_treatment 데이터 먼저 가져오기
+  const { data: hospitalTreatments, error: hospitalTreatmentError } = await supabase
     .from(TABLE_HOSPITAL_TREATMENT)
     .select('*')
     .eq('id_uuid_hospital', hospitalUuid);
 
-  if (error) {
-    console.error(' 시술 정보 로딩 실패:', error);
-    throw new Error(`시술 정보 로딩 실패: ${error.message}`);
+  if (hospitalTreatmentError) {
+    console.error(' 병원 시술 정보 로딩 실패:', hospitalTreatmentError);
+    throw new Error(`병원 시술 정보 로딩 실패: ${hospitalTreatmentError.message}`);
   }
 
-  console.log(' 시술 정보 로딩 완료:', data?.length || 0, '건');
-  return data || [];
+  if (!hospitalTreatments || hospitalTreatments.length === 0) {
+    console.log(' 시술 정보가 없습니다');
+    return [];
+  }
+
+  console.log(' 병원 시술 정보 로딩 완료:', hospitalTreatments.length, '건');
+
+  // 2. NULL이 아닌 id_uuid_treatment들만 추출
+  const treatmentUuids = hospitalTreatments
+    .filter(ht => ht.id_uuid_treatment !== null)
+    .map(ht => ht.id_uuid_treatment);
+
+  console.log(' 매칭할 시술 UUID들:', treatmentUuids);
+
+  // 3. treatment 정보 가져오기 (UUID가 있는 경우만)
+  let treatments: any[] = [];
+  if (treatmentUuids.length > 0) {
+    const { data: treatmentData, error: treatmentError } = await supabase
+      .from(TABLE_TREATMENT)
+      .select('id_uuid, code, name')
+      .in('id_uuid', treatmentUuids);
+
+    if (treatmentError) {
+      console.error(' 시술 정보 로딩 실패:', treatmentError);
+      throw new Error(`시술 정보 로딩 실패: ${treatmentError.message}`);
+    }
+
+    treatments = treatmentData || [];
+  }
+
+  console.log(' 시술 마스터 정보 로딩 완료:', treatments.length, '건');
+
+  // 4. hospital_treatment와 treatment 매칭
+  const result = hospitalTreatments.map(hospitalTreatment => {
+    if (hospitalTreatment.id_uuid_treatment === null) {
+      // 기타 항목인 경우
+      return {
+        ...hospitalTreatment,
+        treatment: null // 기타 항목이므로 treatment 정보 없음
+      };
+    } else {
+      // 일반 시술인 경우 treatment 정보 매칭
+      const matchedTreatment = treatments.find(t => t.id_uuid === hospitalTreatment.id_uuid_treatment);
+      return {
+        ...hospitalTreatment,
+        treatment: matchedTreatment || null
+      };
+    }
+  });
+
+  console.log(' 시술 정보 매칭 완료:', result.length, '건');
+  console.log(' 시술 정보 상세:', result);
+  return result;
 }
 
 /**
