@@ -12,6 +12,7 @@ interface ImageUploadSectionProps {
   onFilesChange: (files: File[]) => void;
   name: string;
   type: 'Avatar' | 'Banner';
+  initialImages?: string[]; // 기존 이미지 URL 배열
 }
 
 const DEFAULT_IMAGES = [
@@ -26,9 +27,11 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   onFilesChange,
   name,
   type,
+  initialImages = [],
 }) => {
   const [preview, setPreview] = useState<Array<string | undefined>>([]);
   const [files, setFiles] = useState<Array<File>>([]);
+  const [isExistingImage, setIsExistingImage] = useState<boolean[]>([]);
   // 파일 개수 초과 경고 메시지 상태
   const [overLimitWarning, setOverLimitWarning] = useState<string>("");
 
@@ -47,6 +50,15 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   useEffect(() => {
     onFilesChange(files);
   }, [files, onFilesChange]);
+
+  // 초기 이미지 설정
+  useEffect(() => {
+    if (initialImages.length > 0 && preview.length === 0) {
+      console.log('ImageUploadSection 초기 이미지 설정:', initialImages);
+      setPreview(initialImages);
+      setIsExistingImage(new Array(initialImages.length).fill(true));
+    }
+  }, [initialImages]);
 
   // 파일 처리 함수
   const processFiles = useCallback((acceptedFiles: File[]) => {
@@ -75,6 +87,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
             fileReader.onload = () => {
               const result = fileReader.result as string;
               setPreview((prev) => prev.concat(result));
+              setIsExistingImage((prev) => prev.concat(false));
             };
             fileReader.readAsDataURL(file);
           });
@@ -97,6 +110,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
       fileReader.onload = () => {
         const result = fileReader.result as string;
         setPreview((prev) => prev.concat(result));
+        setIsExistingImage((prev) => prev.concat(false));
       };
       fileReader.readAsDataURL(file);
     });
@@ -130,6 +144,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
 
     setPreview((prev) => prev.filter((_, idx) => i !== idx));
     setFiles((prev) => prev.filter((_, idx) => i !== idx));
+    setIsExistingImage((prev) => prev.filter((_, idx) => i !== idx));
     
     if (type === "Avatar") {
       setAvatarCount((c) => Math.max(1, c - 1));
@@ -145,6 +160,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   const handleClearAll = () => {
     setPreview([]);
     setFiles([]);
+    setIsExistingImage([]);
     setOverLimitWarning("");
     
     if (type === "Avatar") {
@@ -348,16 +364,17 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
                       onClick={(e) => handleDeletePreview(e, i)}
                       className="
                         absolute top-2 right-2 
-                        opacity-0 group-hover:opacity-100 
-                        transition-opacity duration-200
-                        bg-white rounded-full p-1
-                        hover:bg-red-50 hover:scale-110
-                        transform transition-transform
+                        bg-red-500 text-white rounded-full p-1
+                        hover:bg-red-600 hover:scale-110
+                        transform transition-all duration-200
+                        shadow-lg border-2 border-white
+                        z-10
                       "
+                      title="이미지 삭제"
                     >
                       <XCircleIcon 
-                        size={20} 
-                        className="text-red-500 hover:text-red-600" 
+                        size={18} 
+                        className="text-white" 
                         strokeWidth={2}
                       />
                     </button>

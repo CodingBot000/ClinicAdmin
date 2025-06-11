@@ -28,10 +28,11 @@ export interface ExtraOptionState {
 
 interface ExtraOptionStateProps {
   onSelectOptionState?: (address: ExtraOptionState) => void;
+  initialOptions?: ExtraOptionState;
 }
 
-export default function ExtraOptions({ onSelectOptionState } : ExtraOptionStateProps) {
-  const [options, setOptions] = useState<ExtraOptionState>({
+export default function ExtraOptions({ onSelectOptionState, initialOptions } : ExtraOptionStateProps) {
+  const [options, setOptions] = useState<ExtraOptionState>(initialOptions || {
     has_private_recovery_room: false,
     has_parking: false,
     has_cctv: false,
@@ -40,6 +41,20 @@ export default function ExtraOptions({ onSelectOptionState } : ExtraOptionStateP
     has_anesthesiologist: false,
     specialistCount: 1,
   });
+
+  // 렌더링 시점 디버깅
+  console.log('ExtraOptions 렌더링:', {
+    받은initialOptions: initialOptions,
+    현재options: options
+  });
+
+  // props 변경 시 상태 업데이트
+  useEffect(() => {
+    if (initialOptions && JSON.stringify(initialOptions) !== JSON.stringify(options)) {
+      setOptions(initialOptions);
+      console.log('ExtraOptions 초기값 설정 완료');
+    }
+  }, [initialOptions]);
 
   // options가 변경될 때마다 상위 컴포넌트에 알림
   useEffect(() => {

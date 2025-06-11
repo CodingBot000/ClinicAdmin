@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface AdminPageClientProps {
   hasClinicInfo: boolean;
@@ -9,10 +9,14 @@ interface AdminPageClientProps {
 
 export default function AdminPageClient({ hasClinicInfo }: AdminPageClientProps) {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const handleNavigateToUpload = () => {
-    router.push('/admin/upload');
+    const url = hasClinicInfo ? '/admin/upload?mode=edit' : '/admin/upload';
+    router.push(url);
   };
 
   const handleLogout = async () => {

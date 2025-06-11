@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DaumPost from "@/components/DaumPost";
 import InputField from "@/components/InputField";
 import { HospitalAddress } from "@/types/address";
@@ -6,16 +6,117 @@ import { HospitalAddress } from "@/types/address";
 interface AddressSectionProps {
     onSelectAddress?: (address: HospitalAddress) => void;
     onSelectCoordinates?: (coordinates: { latitude: number; longitude: number }) => void;
+    initialAddress?: string;
+    initialAddressForSendForm?: HospitalAddress;
+    initialCoordinates?: { latitude: number; longitude: number };
+    initialAddressDetail?: string;
+    initialAddressDetailEn?: string;
+    initialDirections?: string;
+    initialDirectionsEn?: string;
 }
 
-export default function AddressSection({ onSelectAddress, onSelectCoordinates } : AddressSectionProps) {
-  const [showingAddress, setShowingAddress] = useState("");
-  const [addressForSendForm, setAddressForSendForm] = useState<HospitalAddress | null>(null);
-  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [addressDetail, setAddressDetail] = useState("");
-  const [addressDetailEn, setAddressDetailEn] = useState("");
-  const [directionsToClinic, setDirectionsToClinic] = useState("");
-  const [directionsToClinicEn, setDirectionsToClinicEn] = useState("");
+export default function AddressSection({ 
+  onSelectAddress, 
+  onSelectCoordinates,
+  initialAddress,
+  initialAddressForSendForm,
+  initialCoordinates,
+  initialAddressDetail,
+  initialAddressDetailEn,
+  initialDirections,
+  initialDirectionsEn
+} : AddressSectionProps) {
+  const [showingAddress, setShowingAddress] = useState(initialAddress || "");
+  const [addressForSendForm, setAddressForSendForm] = useState<HospitalAddress | null>(initialAddressForSendForm || null);
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(initialCoordinates || null);
+  const [addressDetail, setAddressDetail] = useState(initialAddressDetail || "");
+  const [addressDetailEn, setAddressDetailEn] = useState(initialAddressDetailEn || "");
+  const [directionsToClinic, setDirectionsToClinic] = useState(initialDirections || "");
+  const [directionsToClinicEn, setDirectionsToClinicEn] = useState(initialDirectionsEn || "");
+
+  // 렌더링 시점 디버깅
+  console.log('AddressSection 렌더링:', {
+    받은props: {
+      initialAddress,
+      initialAddressDetail,
+      initialAddressDetailEn,
+      initialDirections,
+      initialDirectionsEn,
+      hasInitialAddressForSendForm: !!initialAddressForSendForm,
+      hasInitialCoordinates: !!initialCoordinates
+    },
+    현재상태: {
+      showingAddress,
+      addressDetail,
+      addressDetailEn,
+      directionsToClinic,
+      directionsToClinicEn,
+      hasAddressForSendForm: !!addressForSendForm,
+      hasCoordinates: !!coordinates
+    }
+  });
+
+  // props 변경 시 상태 업데이트 (한 번만 실행)
+  useEffect(() => {
+    console.log('AddressSection useEffect 시작');
+    let hasUpdates = false;
+    
+    if (initialAddress !== undefined && initialAddress !== showingAddress) {
+      console.log('주소 업데이트:', initialAddress, '→', showingAddress);
+      setShowingAddress(initialAddress);
+      hasUpdates = true;
+    }
+    
+    if (initialAddressForSendForm && JSON.stringify(initialAddressForSendForm) !== JSON.stringify(addressForSendForm)) {
+      setAddressForSendForm(initialAddressForSendForm);
+      hasUpdates = true;
+    }
+    
+    if (initialCoordinates && JSON.stringify(initialCoordinates) !== JSON.stringify(coordinates)) {
+      setCoordinates(initialCoordinates);
+      hasUpdates = true;
+    }
+    
+    if (initialAddressDetail !== undefined && initialAddressDetail !== addressDetail) {
+      console.log('상세주소 업데이트:', initialAddressDetail, '→', addressDetail);
+      setAddressDetail(initialAddressDetail);
+      hasUpdates = true;
+    }
+    
+    if (initialAddressDetailEn !== undefined && initialAddressDetailEn !== addressDetailEn) {
+      setAddressDetailEn(initialAddressDetailEn);
+      hasUpdates = true;
+    }
+    
+    if (initialDirections !== undefined && initialDirections !== directionsToClinic) {
+      setDirectionsToClinic(initialDirections || '');
+      hasUpdates = true;
+    }
+    
+    if (initialDirectionsEn !== undefined && initialDirectionsEn !== directionsToClinicEn) {
+      setDirectionsToClinicEn(initialDirectionsEn || '');
+      hasUpdates = true;
+    }
+    
+    if (hasUpdates) {
+      console.log('AddressSection 초기값 설정 완료');
+    } else {
+      console.log('AddressSection useEffect 실행됨 - 업데이트 없음:', {
+        initialAddress,
+        현재showingAddress: showingAddress,
+        initialAddressDetail,
+        현재addressDetail: addressDetail
+      });
+    }
+  }, [
+    initialAddress,
+    initialAddressForSendForm,
+    initialCoordinates,
+    initialAddressDetail,
+    initialAddressDetailEn,
+    initialDirections,
+    initialDirectionsEn
+  ]);
 
   const handleSelectShowingAddress = (showingAddress: string) => {
     setShowingAddress(showingAddress);
@@ -118,7 +219,7 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
           placeholder="위에 입력한 상세주소를 영문으로 입력해주세요 (선택)"
           value={addressDetailEn}
           onChange={(e) => handleAddressDetailEnChange(e.target.value)}
-          disabled={!addressDetail}
+          // disabled={!addressDetail}
         />
       </div>
       
@@ -136,7 +237,7 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
           placeholder="위에 입력한 찾아오는 방법을 영문으로 입력해주세요 (선택)"
           value={directionsToClinicEn}
           onChange={(e) => handleDirectionsToClinicEnChange(e.target.value)}
-          disabled={!directionsToClinic}
+          // disabled={!directionsToClinic}
         />
       </div>
       
@@ -165,14 +266,7 @@ export default function AddressSection({ onSelectAddress, onSelectCoordinates } 
           </div>
         </div>
       )}
-      
-      {/* 숨겨진 input으로 좌표 정보를 form에 포함 */}
-      {/* {coordinates && (
-        <>
-          <input type="hidden" name="latitude" value={coordinates.latitude} />
-          <input type="hidden" name="longitude" value={coordinates.longitude} />
-        </>
-      )} */}
+
     </div>
   );
 }
