@@ -10,6 +10,8 @@ interface ProductOptionInputProps {
   onRemove: (id: string) => void;
   onChange?: (id: string, value1: number, value2: number) => void;
   isHidden?: boolean;
+  unit?: string;
+  department?: string;
 }
 
 const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
@@ -18,7 +20,9 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
   initialValue2 = 0,
   onRemove,
   onChange,
-  isHidden = false
+  isHidden = false,
+  unit,
+  department
 }) => {
   const [value1, setValue1] = useState<number>(initialValue1);
   const [value2, setValue2] = useState<number>(initialValue2);
@@ -60,19 +64,30 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
       </button>
       
       <div className="flex items-center gap-2">
-        <span className="sm:text-xs text-gray-500">시술옵션: </span>
-        {isHidden ? (
-          <div className="w-20 px-2 py-1 text-center text-xs text-gray-400 italic bg-gray-100 border border-gray-300 rounded">
-            옵션없음
-          </div>
-        ) : (
-          <input
-            value={value1}
-            onChange={handleValue1Change}
-            className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            // placeholder="0"
-            // min="0"
-          />
+        {department !== 'surgery' && (
+          <>
+            <span className="sm:text-xs text-gray-500">시술옵션: </span>
+            {isHidden ? (
+              <div className="w-20 px-2 py-1 text-center text-xs text-gray-400 italic bg-gray-100 border border-gray-300 rounded">
+                옵션없음
+              </div>
+            ) : (
+              <>
+                <input
+                  value={value1}
+                  onChange={handleValue1Change}
+                  className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  // placeholder="0"
+                  // min="0"
+                />
+                {unit && (
+                  <span className="text-xs text-blue-600 bg-blue-50 px-1 ml-1 rounded">
+                    {unit}
+                  </span>
+                )}
+              </>
+            )}
+          </>
         )}
         <span className="sm:text-xs text-gray-500">  가격(원):</span>
         <input
@@ -97,6 +112,7 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
           appearance: 'none'
         }}
         />
+        
       </div>
     </div>
   );

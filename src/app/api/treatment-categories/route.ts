@@ -15,7 +15,7 @@ export async function GET() {
   const dbQueryStart = Date.now();
   const { data, error } = await supabase
     .from(TABLE_TREATMENT)
-    .select('code, department, level1, level2, name');
+    .select('code, department, level1, name, unit');
   
   const dbQueryEnd = Date.now();
   const dbQueryTime = dbQueryEnd - dbQueryStart;
@@ -30,48 +30,30 @@ export async function GET() {
   const transformStart = Date.now();
   console.log("데이터 변환 시작");
   
-  // group by level1 > level2 (nullable)
-  const level1Map = new Map<string, Map<string | null, any[]>>();
+  // group by level1 (level2는 더 이상 없음)
+  const level1Map = new Map<string, any[]>();
 
   for (const row of data) {
     if (!level1Map.has(row.level1)) {
-      level1Map.set(row.level1, new Map());
+      level1Map.set(row.level1, []);
     }
-    const level2Map = level1Map.get(row.level1)!;
-
-    const level2Key = row.level2 ?? null;
-    if (!level2Map.has(level2Key)) {
-      level2Map.set(level2Key, []);
-    }
-    level2Map.get(level2Key)!.push({
+    level1Map.get(row.level1)!.push({
       key: row.code,
       name: row.name,
       label: row.name,
+      unit: row.unit, // unit 추가
+      department: row.department, // department 추가
     });
   }
 
   const TREATMENT_CATEGORIES: CategoryNode[] = [];
 
-  for (const [level1, level2Map] of level1Map.entries()) {
-    const children: CategoryNode[] = [];
-    for (const [level2, leaves] of level2Map.entries()) {
-      if (level2) {
-        children.push({
-          key: -1,
-          name: level2,
-          label: level2,
-          children: leaves,
-        });
-      } else {
-        // 2뎁스만 있을 때
-        children.push(...leaves);
-      }
-    }
+  for (const [level1, items] of level1Map.entries()) {
     TREATMENT_CATEGORIES.push({
       key: -1,
       name: level1,
       label: level1,
-      children,
+      children: items,
     });
   }
 

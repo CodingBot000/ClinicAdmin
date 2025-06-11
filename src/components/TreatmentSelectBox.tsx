@@ -19,6 +19,7 @@ interface TreatmentData {
   productOptions: ProductOption[];
   priceExpose: boolean;
   etc: string;
+  selectedDepartment: 'skin' | 'surgery';
 }
 
 interface TreatmentSelectBoxProps {
@@ -27,6 +28,7 @@ interface TreatmentSelectBoxProps {
   initialProductOptions?: ProductOption[];
   initialPriceExpose?: boolean;
   initialEtc?: string;
+  initialSelectedDepartment?: 'skin' | 'surgery';
   categories: CategoryNode[];
 }
 
@@ -49,6 +51,7 @@ export function TreatmentSelectBox({
   initialProductOptions = [],
   initialPriceExpose = true,
   initialEtc = "",
+  initialSelectedDepartment = 'skin',
   categories 
 }: TreatmentSelectBoxProps) {
   console.log("TreatmentSelectBox 초기값:", {
@@ -63,6 +66,7 @@ export function TreatmentSelectBox({
   const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
   const [priceExpose, setPriceExpose] = useState<boolean>(initialPriceExpose);
   const [etc, setEtc] = useState<string>(initialEtc);
+  const [selectedDepartment, setSelectedDepartment] = useState<'skin' | 'surgery'>(initialSelectedDepartment);
   const [modalOpen, setModalOpen] = useState(false);
 
   // 초기값이 변경될 때 상태 업데이트
@@ -71,24 +75,26 @@ export function TreatmentSelectBox({
       initialSelectedKeys,
       initialProductOptions,
       initialPriceExpose,
-      initialEtc
+      initialEtc,
+      initialSelectedDepartment
     });
     
-    if (initialSelectedKeys.length > 0 || initialProductOptions.length > 0 || initialEtc || initialPriceExpose !== true) {
+    if (initialSelectedKeys.length > 0 || initialProductOptions.length > 0 || initialEtc || initialPriceExpose !== true || initialSelectedDepartment !== 'skin') {
       console.log('TreatmentSelectBox - 초기값으로 상태 업데이트');
       setSelectedKeys(initialSelectedKeys);
       setProductOptions(initialProductOptions);
       setPriceExpose(initialPriceExpose);
       setEtc(initialEtc);
+      setSelectedDepartment(initialSelectedDepartment);
     }
-  }, [initialSelectedKeys, initialProductOptions, initialPriceExpose, initialEtc]);
+  }, [initialSelectedKeys, initialProductOptions, initialPriceExpose, initialEtc, initialSelectedDepartment]);
 
   // 선택된 항목이나 상품옵션이 변경될 때마다 상위 컴포넌트에 알림
   useEffect(() => {
     if (onSelectionChange) {
-      onSelectionChange({ selectedKeys, productOptions, priceExpose, etc });
+      onSelectionChange({ selectedKeys, productOptions, priceExpose, etc, selectedDepartment });
     }
-  }, [selectedKeys, productOptions, priceExpose, etc, onSelectionChange]);
+  }, [selectedKeys, productOptions, priceExpose, etc, selectedDepartment, onSelectionChange]);
 
   const handleRemove = (key: number) => {
     setSelectedKeys((prev) => prev.filter((k) => k !== key));
@@ -107,15 +113,17 @@ export function TreatmentSelectBox({
   };
   const handleClose = () => setModalOpen(false);
 
-  const handleSave = (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string }) => {
+  const handleSave = (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string, selectedDepartment: 'skin' | 'surgery' }) => {
     setSelectedKeys(data.selectedKeys);
     setProductOptions(data.productOptions);
     setEtc(data.etc);
+    setSelectedDepartment(data.selectedDepartment);
     
     console.log(" TreatmentSelectBox - 저장된 데이터:", {
       selectedKeys: data.selectedKeys,
       productOptions: data.productOptions,
-      etc: data.etc
+      etc: data.etc,
+      selectedDepartment: data.selectedDepartment
     });
   };
 
@@ -132,6 +140,36 @@ export function TreatmentSelectBox({
       return null;
     };
     return findLabel(categories) || key.toString();
+  };
+
+  // 카테고리에서 unit 찾기
+  const getUnitByKey = (key: number): string | null => {
+    const findUnit = (nodes: CategoryNode[]): string | null => {
+      for (const node of nodes) {
+        if (node.key === key) return node.unit || null;
+        if (node.children) {
+          const found = findUnit(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findUnit(categories);
+  };
+
+  // 카테고리에서 department 찾기
+  const getDepartmentByKey = (key: number): string | null => {
+    const findDepartment = (nodes: CategoryNode[]): string | null => {
+      for (const node of nodes) {
+        if (node.key === key) return node.department || null;
+        if (node.children) {
+          const found = findDepartment(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findDepartment(categories);
   };
 
   // 해당 시술에 연결된 상품옵션 개수 계산
@@ -183,6 +221,20 @@ export function TreatmentSelectBox({
                   <X className="w-4 h-4" />
                 </button>
                 <span className="mr-1">{getLabelByKey(key)}</span>
+                {getUnitByKey(key) && (
+                  <span className="text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                    {getUnitByKey(key)}
+                  </span>
+                )}
+                {getDepartmentByKey(key) && (
+                  <span className={`ml-1 text-xs px-1 rounded ${
+                    getDepartmentByKey(key) === 'surgery' 
+                      ? 'text-purple-600 bg-purple-50' 
+                      : 'text-green-600 bg-green-50'
+                  }`}>
+                    {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
+                  </span>
+                )}
                 {optionCount > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 bg-blue-200 text-blue-900 text-xs rounded-full">
                     {optionCount}
@@ -209,6 +261,20 @@ export function TreatmentSelectBox({
                   {selectedKeys.map((key, index) => (
                     <div key={key} className="text-gray-600">
                       {index + 1}. {getLabelByKey(key)}
+                      {getUnitByKey(key) && (
+                        <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                          {getUnitByKey(key)}
+                        </span>
+                      )}
+                      {getDepartmentByKey(key) && (
+                        <span className={`ml-1 text-xs px-1 rounded ${
+                          getDepartmentByKey(key) === 'surgery' 
+                            ? 'text-purple-600 bg-purple-50' 
+                            : 'text-green-600 bg-green-50'
+                        }`}>
+                          {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -220,7 +286,21 @@ export function TreatmentSelectBox({
             {/* 상품옵션 내용 목록 */}
             {productOptions.map((option, index) => (
               <div key={option.id} className="text-gray-600">
-                {index + 1}. [{getLabelByKey(option.treatmentKey)}]{" "}
+                {index + 1}. [{getLabelByKey(option.treatmentKey)}
+                {getUnitByKey(option.treatmentKey) && (
+                  <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                    {getUnitByKey(option.treatmentKey)}
+                  </span>
+                )}
+                {getDepartmentByKey(option.treatmentKey) && (
+                  <span className={`ml-1 text-xs px-1 rounded ${
+                    getDepartmentByKey(option.treatmentKey) === 'surgery' 
+                      ? 'text-purple-600 bg-purple-50' 
+                      : 'text-green-600 bg-green-50'
+                  }`}>
+                    {getDepartmentByKey(option.treatmentKey) === 'surgery' ? '성형' : '피부'}
+                  </span>
+                )}]{" "}
                 {option.value1 && Number(option.value1) >= 1
                   ? (
                       <>
@@ -255,6 +335,7 @@ export function TreatmentSelectBox({
         initialSelectedKeys={selectedKeys}
         initialProductOptions={productOptions}
         initialEtc={etc}
+        initialSelectedDepartment={selectedDepartment}
         onClose={handleClose}
         onSave={handleSave}
         categories={categories}

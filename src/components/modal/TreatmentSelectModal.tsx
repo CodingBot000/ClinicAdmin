@@ -20,8 +20,9 @@ interface TreatmentSelectModalProps {
   initialSelectedKeys: number[];
   initialProductOptions?: ProductOption[];
   initialEtc?: string;
+  initialSelectedDepartment?: 'skin' | 'surgery';
   onClose: () => void;
-  onSave: (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string }) => void;
+  onSave: (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string, selectedDepartment: 'skin' | 'surgery' }) => void;
   categories: CategoryNode[];
 }
 
@@ -31,6 +32,8 @@ const flattenCategoriesWithParentDepth = (categories: CategoryNode[], depth = 1,
     key: number;
     name: string;
     label: string;
+    unit?: string;
+    department?: string;
     depth: number;
     hasChildren: boolean;
     parentKeys: number[];
@@ -43,6 +46,8 @@ const flattenCategoriesWithParentDepth = (categories: CategoryNode[], depth = 1,
       key: node.key,
       name: node.name,
       label: node.label,
+      unit: node.unit,
+      department: node.department,
       depth,
       hasChildren,
       parentKeys,
@@ -62,6 +67,7 @@ export function TreatmentSelectModal({
   initialSelectedKeys,
   initialProductOptions = [],
   initialEtc = "",
+  initialSelectedDepartment = 'skin',
   onClose,
   onSave,
   categories,
@@ -69,6 +75,7 @@ export function TreatmentSelectModal({
   const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
   const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
   const [etc, setEtc] = useState<string>(initialEtc);
+  const [selectedDepartment, setSelectedDepartment] = useState<'skin' | 'surgery'>(initialSelectedDepartment);
   const [isAnimating, setIsAnimating] = useState(false);
   
   // 옵션없음 체크박스 상태 관리 (treatmentKey별로)
@@ -81,8 +88,9 @@ export function TreatmentSelectModal({
       setSelectedKeys(initialSelectedKeys ?? []);
       setProductOptions(initialProductOptions ?? []);
       setEtc(initialEtc ?? "");
+      setSelectedDepartment(initialSelectedDepartment ?? 'skin');
     }
-  }, [open, initialSelectedKeys, initialProductOptions, initialEtc]);
+  }, [open, initialSelectedKeys, initialProductOptions, initialEtc, initialSelectedDepartment]);
 
   useEffect(() => {
     if (open) {
@@ -99,8 +107,34 @@ export function TreatmentSelectModal({
     };
   }, [open]);
 
-  // const flatList = flattenCategoriesWithParentDepth(TREATMENT_CATEGORIES);
-  const flatList = flattenCategoriesWithParentDepth(categories);
+  // department별로 카테고리 필터링
+  const filteredCategories = categories.map(category => ({
+    ...category,
+    children: category.children?.filter(child => 
+      child.department === selectedDepartment || 
+      child.children?.some(grandChild => grandChild.department === selectedDepartment)
+    ).map(child => ({
+      ...child,
+      children: child.children?.filter(grandChild => grandChild.department === selectedDepartment)
+    }))
+  })).filter(category => category.children && category.children.length > 0);
+
+  const flatList = flattenCategoriesWithParentDepth(filteredCategories);
+
+  // 초기 선택된 시술들에 대해 unit 값에 따라 "옵션없음" 기본값 설정
+  useEffect(() => {
+    if (open && (initialSelectedKeys ?? []).length > 0) {
+      const currentFlatList = flattenCategoriesWithParentDepth(categories);
+      const initialNoOptionState: Record<number, boolean> = {};
+      (initialSelectedKeys ?? []).forEach(key => {
+        const treatmentItem = currentFlatList.find(item => item.key === key);
+        if (treatmentItem) {
+          initialNoOptionState[key] = !treatmentItem.unit; // unit이 없으면 true, 있으면 false
+        }
+      });
+      setNoOptionChecked(initialNoOptionState);
+    }
+  }, [open, initialSelectedKeys, categories]);
 
   // depth마다 마지막 depth가 체크박스 위치인지 파악
   const lastDepth = Math.max(...flatList.map((x) => x.depth));
@@ -118,13 +152,24 @@ export function TreatmentSelectModal({
         return prev.filter((k) => k !== key);
       } else {
         // 체크: 선택 목록에 추가
-        return [...prev, key];
+        const newSelectedKeys = [...prev, key];
+        
+        // 새로 선택된 시술에 대해 unit 값에 따라 "옵션없음" 기본값 설정
+        const treatmentItem = flatList.find(item => item.key === key);
+        if (treatmentItem && !noOptionChecked.hasOwnProperty(key)) {
+          setNoOptionChecked(prevState => ({
+            ...prevState,
+            [key]: !treatmentItem.unit // unit이 없으면 true, 있으면 false
+          }));
+        }
+        
+        return newSelectedKeys;
       }
     });
   };
 
   const handleSave = () => {
-    // 1. 선택된 시술 중 옵션이 없는 것들 체크
+    // 1. 선택된 시술 중 ProductOptionInput이 없는 것들 체크
     const selectedTreatmentsWithoutOptions = selectedKeys.filter(key => {
       const options = getOptionsForTreatment(key);
       return options.length === 0;
@@ -159,7 +204,7 @@ export function TreatmentSelectModal({
     }
     
     // 선택된 시술의 옵션들만 제출
-    onSave({ selectedKeys: [...selectedKeys], productOptions: selectedOptions, etc });
+    onSave({ selectedKeys: [...selectedKeys], productOptions: selectedOptions, etc, selectedDepartment });
     handleClose();
   };
 
@@ -285,6 +330,30 @@ export function TreatmentSelectModal({
           </button>
         </div>
 
+        {/* 탭 영역 */}
+        <div className="flex border-b border-gray-200 bg-gray-50">
+          <button
+            className={`px-6 py-3 text-sm font-medium transition-colors ${
+              selectedDepartment === 'skin'
+                ? 'text-blue-600 bg-white border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+            }`}
+            onClick={() => setSelectedDepartment('skin')}
+          >
+            피부
+          </button>
+          <button
+            className={`px-6 py-3 text-sm font-medium transition-colors ${
+              selectedDepartment === 'surgery'
+                ? 'text-blue-600 bg-white border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+            }`}
+            onClick={() => setSelectedDepartment('surgery')}
+          >
+            성형
+          </button>
+        </div>
+
         {/* 컨텐츠 영역 */}
         <div className="flex-1 overflow-hidden">
           <div className="h-full flex">
@@ -328,6 +397,11 @@ export function TreatmentSelectModal({
                           >
                             {item.label}
                           </span>
+                          {item.unit && (
+                            <span className="text-xs text-blue-600 bg-blue-50 px-1 ml-1 rounded">
+                              {item.unit}
+                            </span>
+                          )}
                         </>
                       )}
                     </div>
@@ -371,17 +445,24 @@ export function TreatmentSelectModal({
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-sm font-semibold text-blue-800">
                             {treatmentItem.label}
+                            {treatmentItem.unit && (
+                              <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                                {treatmentItem.unit}
+                              </span>
+                            )}
                           </h4>
                           <div className="flex items-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 accent-red-600 cursor-pointer"
-                                checked={noOptionChecked[treatmentKey] || false}
-                                onChange={() => handleNoOptionToggle(treatmentKey)}
-                              />
-                              <span className="text-xs text-red-600 font-medium">옵션없음</span>
-                            </label>
+                            {treatmentItem.department !== 'surgery' && (
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 accent-red-600 cursor-pointer"
+                                  checked={noOptionChecked[treatmentKey] || false}
+                                  onChange={() => handleNoOptionToggle(treatmentKey)}
+                                />
+                                <span className="text-xs text-red-600 font-medium">옵션없음</span>
+                              </label>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleAddOption(treatmentKey)}
@@ -407,6 +488,8 @@ export function TreatmentSelectModal({
                                 onRemove={handleRemoveOption}
                                 onChange={handleOptionChange}
                                 isHidden={noOptionChecked[treatmentKey] || false}
+                                unit={treatmentItem.unit}
+                                department={treatmentItem.department}
                               />
                             ))}
                           </div>

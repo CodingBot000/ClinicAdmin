@@ -177,7 +177,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
     const doctorInfo: DoctorInfo = {
       id: initialData?.id || `doctor-${Date.now()}`,
       name: name.trim(),
-      bio: bio.trim(),
+      bio: bio, // trim() 제거하여 줄바꿈 보존
       imageFile: useDefaultImage ? undefined : imageFile || undefined,
       imagePreview: imagePreview,
       useDefaultImage,
@@ -339,10 +339,10 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
             />
           </div>
 
-          {/* 소개 입력 */}
+          {/* 약력 입력 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              소개
+              약력
             </label>
             <textarea
               value={bio}
@@ -350,6 +350,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
               placeholder="의사 소개를 입력하세요"
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
+              style={{ whiteSpace: "pre-wrap" }}
             />
           </div>
         </div>

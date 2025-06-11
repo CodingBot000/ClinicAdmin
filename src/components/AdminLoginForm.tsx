@@ -14,6 +14,7 @@ export default function AdminLoginForm() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,12 +26,14 @@ export default function AdminLoginForm() {
     setIsLoading(true);
     
     try {
-      console.log('로그인 시도:', email);
+      console.log('로그인 시도:', username);
       
+      const emailModify = `${username}@beautylink.com`;
       const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
+        email: emailModify, 
         password 
       });
+      console.log('로그인 시도 email:', emailModify);
       
       if (error) {
         console.error('로그인 에러:', error);
@@ -60,19 +63,21 @@ export default function AdminLoginForm() {
     <div className="flex justify-center items-center w-full min-h-screen">
       <form onSubmit={handleLogin} className="space-y-4 w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
         <InputField
-            label="Login ID email"
-            type="email"
-            name="login id"
+            label="Login ID"
+            type="text"
+            name="login_id"
             placeholder="발급받은 로그인 아이디를 입력하세요"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            // value={email}
+            // onChange={e => setEmail(e.target.value)}
             required
           />
         
         <InputField
             label="Password"   
             type="password"
-            name="login id"
+            name="password"
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
