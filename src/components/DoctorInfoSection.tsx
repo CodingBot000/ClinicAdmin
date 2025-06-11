@@ -186,7 +186,7 @@ const DoctorInfoSection: React.FC<DoctorInfoSectionProps> = ({
 
               {/* 소개 */}
               {doctor.bio && (
-                <p className="text-xs text-gray-600 text-center mb-3 line-clamp-3">
+                <p className="text-xs text-gray-600 text-center mb-3 line-clamp-3 whitespace-pre-wrap">
                   {doctor.bio}
                 </p>
               )}

@@ -160,42 +160,33 @@ const categories = [
       ],
     },
   ];
-  
-
-function makeInsert(code, department, level1, level2, name) {
-  // level2가 null이면 NULL, 아니면 'level2'
-  const level2Str = level2 ? `'${level2}'` : "NULL";
-  return `INSERT INTO treatment (code, department, level1, level2, name) VALUES (${code}, '${department}', '${level1}', ${level2Str}, '${name}');`;
-}
-
-const queries = [];
-
-categories.forEach(cat1 => {
-  const department = "skin";
-  const level1 = cat1.label;
-
-  if (cat1.children) {
-    cat1.children.forEach(cat2 => {
-      if (cat2.children) {
-        // 3뎁스
-        cat2.children.forEach(cat3 => {
-          queries.push(
-            makeInsert(cat3.key, department, level1, cat2.label, cat3.label)
-          );
-        });
-      } else {
-        // 2뎁스
-        queries.push(
-          makeInsert(cat2.key, department, level1, null, cat2.label)
-        );
-      }
-    });
-  } else {
-    // 1뎁스만 (실제로는 거의 없겠지만)
-    queries.push(
-      makeInsert(cat1.key, department, level1, null, cat1.label)
-    );
+  function makeInsert(code, department, level1, name, unit) {
+    // unit이 있으면 'unit', 없으면 NULL
+    const unitStr = unit ? `'${unit}'` : "NULL";
+    // level1, name은 작은따옴표 이스케이프 필요 (있으면 추가)
+    return `INSERT INTO treatment (code, department, level1, name, unit) VALUES (${code}, '${department}', '${level1}', '${name}', ${unitStr});`;
   }
-});
-
-console.log(queries.join('\n'));
+  
+  const queries = [];
+  
+  categories.forEach(cat1 => {
+    const department = "skin";
+    const level1 = cat1.label;
+  
+    if (cat1.children) {
+      cat1.children.forEach(cat2 => {
+        queries.push(
+          makeInsert(
+            cat2.key,
+            department,
+            level1,
+            cat2.label,
+            cat2.unit // 있으면 값, 없으면 undefined/빈값
+          )
+        );
+      });
+    }
+  });
+  
+  console.log(queries.join('\n'));
+  

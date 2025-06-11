@@ -235,7 +235,7 @@ export function PreviewModal({
                           </div>
                         </div>
                         {doctor.bio && (
-                          <p className="text-gray-600 text-xs">{doctor.bio}</p>
+                          <p className="text-gray-600 text-xs whitespace-pre-wrap">{doctor.bio}</p>
                         )}
                       </div>
                     ))}

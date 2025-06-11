@@ -31,6 +31,7 @@ const flattenCategoriesWithParentDepth = (categories: CategoryNode[], depth = 1,
     key: number;
     name: string;
     label: string;
+    unit?: string;
     depth: number;
     hasChildren: boolean;
     parentKeys: number[];
@@ -43,6 +44,7 @@ const flattenCategoriesWithParentDepth = (categories: CategoryNode[], depth = 1,
       key: node.key,
       name: node.name,
       label: node.label,
+      unit: node.unit,
       depth,
       hasChildren,
       parentKeys,
@@ -102,6 +104,21 @@ export function TreatmentSelectModal({
   // const flatList = flattenCategoriesWithParentDepth(TREATMENT_CATEGORIES);
   const flatList = flattenCategoriesWithParentDepth(categories);
 
+  // 초기 선택된 시술들에 대해 unit 값에 따라 "옵션없음" 기본값 설정
+  useEffect(() => {
+    if (open && (initialSelectedKeys ?? []).length > 0) {
+      const currentFlatList = flattenCategoriesWithParentDepth(categories);
+      const initialNoOptionState: Record<number, boolean> = {};
+      (initialSelectedKeys ?? []).forEach(key => {
+        const treatmentItem = currentFlatList.find(item => item.key === key);
+        if (treatmentItem) {
+          initialNoOptionState[key] = !treatmentItem.unit; // unit이 없으면 true, 있으면 false
+        }
+      });
+      setNoOptionChecked(initialNoOptionState);
+    }
+  }, [open, initialSelectedKeys, categories]);
+
   // depth마다 마지막 depth가 체크박스 위치인지 파악
   const lastDepth = Math.max(...flatList.map((x) => x.depth));
   // 2뎁스 체크박스면 1뎁스만, 3뎁스 체크박스면 1,2뎁스 모두 강조
@@ -118,7 +135,18 @@ export function TreatmentSelectModal({
         return prev.filter((k) => k !== key);
       } else {
         // 체크: 선택 목록에 추가
-        return [...prev, key];
+        const newSelectedKeys = [...prev, key];
+        
+        // 새로 선택된 시술에 대해 unit 값에 따라 "옵션없음" 기본값 설정
+        const treatmentItem = flatList.find(item => item.key === key);
+        if (treatmentItem && !noOptionChecked.hasOwnProperty(key)) {
+          setNoOptionChecked(prevState => ({
+            ...prevState,
+            [key]: !treatmentItem.unit // unit이 없으면 true, 있으면 false
+          }));
+        }
+        
+        return newSelectedKeys;
       }
     });
   };
@@ -328,6 +356,11 @@ export function TreatmentSelectModal({
                           >
                             {item.label}
                           </span>
+                          {item.unit && (
+                            <span className="text-xs text-blue-600 bg-blue-50 px-1 ml-1 rounded">
+                              {item.unit}
+                            </span>
+                          )}
                         </>
                       )}
                     </div>
@@ -371,6 +404,11 @@ export function TreatmentSelectModal({
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-sm font-semibold text-blue-800">
                             {treatmentItem.label}
+                            {treatmentItem.unit && (
+                              <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                                {treatmentItem.unit}
+                              </span>
+                            )}
                           </h4>
                           <div className="flex items-center gap-3">
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -407,6 +445,7 @@ export function TreatmentSelectModal({
                                 onRemove={handleRemoveOption}
                                 onChange={handleOptionChange}
                                 isHidden={noOptionChecked[treatmentKey] || false}
+                                unit={treatmentItem.unit}
                               />
                             ))}
                           </div>

@@ -134,6 +134,21 @@ export function TreatmentSelectBox({
     return findLabel(categories) || key.toString();
   };
 
+  // 카테고리에서 unit 찾기
+  const getUnitByKey = (key: number): string | null => {
+    const findUnit = (nodes: CategoryNode[]): string | null => {
+      for (const node of nodes) {
+        if (node.key === key) return node.unit || null;
+        if (node.children) {
+          const found = findUnit(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findUnit(categories);
+  };
+
   // 해당 시술에 연결된 상품옵션 개수 계산
   const getOptionCountForTreatment = (treatmentKey: number): number => {
     return productOptions.filter(option => option.treatmentKey === treatmentKey).length;
@@ -183,6 +198,11 @@ export function TreatmentSelectBox({
                   <X className="w-4 h-4" />
                 </button>
                 <span className="mr-1">{getLabelByKey(key)}</span>
+                {getUnitByKey(key) && (
+                  <span className="text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                    {getUnitByKey(key)}
+                  </span>
+                )}
                 {optionCount > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 bg-blue-200 text-blue-900 text-xs rounded-full">
                     {optionCount}
@@ -209,6 +229,11 @@ export function TreatmentSelectBox({
                   {selectedKeys.map((key, index) => (
                     <div key={key} className="text-gray-600">
                       {index + 1}. {getLabelByKey(key)}
+                      {getUnitByKey(key) && (
+                        <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                          {getUnitByKey(key)}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -220,7 +245,12 @@ export function TreatmentSelectBox({
             {/* 상품옵션 내용 목록 */}
             {productOptions.map((option, index) => (
               <div key={option.id} className="text-gray-600">
-                {index + 1}. [{getLabelByKey(option.treatmentKey)}]{" "}
+                {index + 1}. [{getLabelByKey(option.treatmentKey)}
+                {getUnitByKey(option.treatmentKey) && (
+                  <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                    {getUnitByKey(option.treatmentKey)}
+                  </span>
+                )}]{" "}
                 {option.value1 && Number(option.value1) >= 1
                   ? (
                       <>
