@@ -42,6 +42,7 @@ export async function GET() {
       name: row.name,
       label: row.name,
       unit: row.unit, // unit 추가
+      department: row.department, // department 추가
     });
   }
 

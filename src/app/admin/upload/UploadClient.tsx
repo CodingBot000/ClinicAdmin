@@ -538,10 +538,10 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
     const existingImageCount = existingData?.hospital.imageurls?.length || 0;
     const totalImageCount = clinicImages.length + existingImageCount;
     
-    if (totalImageCount === 0) {
+    if (totalImageCount < 2) {
       console.log('validateFormData 5 - 이미지 없음');
       setFormState({ 
-        message: "병원 이미지를 최소 1개 이상 업로드해주세요.", 
+        message: "병원 이미지를 최소 3개 이상 업로드해주세요.", 
         status: "error" 
       });
       setShowFinalResult(true); 
@@ -1146,7 +1146,7 @@ const UploadClient = ({ currentUserUid, isEditMode = false }: UploadClientProps)
   · 알림: 주어진 사진을 중앙을 기준으로 16:9 혹은 3:1 비율로 넘치는 부분이 자동으로 잘라집니다.
       사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
       * File 한개당 50MB 이하로 업로드 해주세요.
-      * 최대(권장) 7개까지 업로드 가능합니다. 추가 업로드 원하시면 문의 부탁드립니다.`}
+      * 최소(3개이상) - 최대(권장) 7개까지 업로드 가능합니다. 추가 업로드 원하시면 문의 부탁드립니다.`}
         onFilesChange={setClinicImages}
         name="clinic_images"
         type="Banner"

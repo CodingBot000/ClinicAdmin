@@ -3,5 +3,6 @@ export type CategoryNode = {
   name: string;
   label: string;
   unit?: string;
+  department?: string;
   children?: CategoryNode[];
 };
