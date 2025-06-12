@@ -311,7 +311,7 @@ export function TreatmentSelectModal({
       <div 
         className={`
           absolute bottom-0 left-0 right-0 
-          bg-white rounded-t-2xl shadow-2xl
+          bg-card rounded-t-2xl shadow-2xl border-t border-l border-r border-border
           transition-transform duration-300 ease-out
           flex flex-col
           ${isAnimating ? 'translate-y-0' : 'translate-y-full'}
@@ -320,33 +320,33 @@ export function TreatmentSelectModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-xl font-bold">시술 선택</h2>
+        <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30 flex-shrink-0 rounded-t-2xl">
+          <h2 className="text-xl font-semibold text-foreground">시술 선택</h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-muted rounded-lg transition-colors focus-ring"
           >
-            <X size={24} className="text-gray-600" />
+            <X size={20} className="text-muted-foreground hover:text-foreground" />
           </button>
         </div>
 
         {/* 탭 영역 */}
-        <div className="flex border-b border-gray-200 bg-gray-50">
+        <div className="flex border-b border-border bg-muted/20">
           <button
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
+            className={`px-6 py-3 text-sm font-medium transition-all focus-ring ${
               selectedDepartment === 'skin'
-                ? 'text-blue-600 bg-white border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                ? 'text-primary bg-card border-b-2 border-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             }`}
             onClick={() => setSelectedDepartment('skin')}
           >
             피부
           </button>
           <button
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
+            className={`px-6 py-3 text-sm font-medium transition-all focus-ring ${
               selectedDepartment === 'surgery'
-                ? 'text-blue-600 bg-white border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                ? 'text-primary bg-card border-b-2 border-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             }`}
             onClick={() => setSelectedDepartment('surgery')}
           >
@@ -358,7 +358,7 @@ export function TreatmentSelectModal({
         <div className="flex-1 overflow-hidden">
           <div className="h-full flex">
             {/* 왼쪽 패널 - 시술 선택 */}
-            <div className="w-100 overflow-y-auto p-6 border-r border-gray-200">
+            <div className="w-100 overflow-y-auto p-6 border-r border-border bg-muted/10">
               <div className="space-y-2">
                 {flatList.map((item, idx) => {
                   // 체크박스 있는 depth가 2 → 1뎁스만 강조, 3 → 1,2뎁스 모두 강조
@@ -376,29 +376,29 @@ export function TreatmentSelectModal({
                   return (
                     <div
                       key={`${item.key}-${idx}`}
-                      className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-muted/50 transition-all border border-transparent hover:border-border/50"
                       style={{ marginLeft: `${(item.depth - 1) * 24}px` }}
                     >
                       {item.hasChildren ? (
-                        <span className={`${fontClass} ${fontWeight} text-gray-800`}>
+                        <span className={`${fontClass} ${fontWeight} text-foreground`}>
                           {item.label}
                         </span>
                       ) : (
                         <>
                           <input
                             type="checkbox"
-                            className="w-5 h-5 accent-blue-600 cursor-pointer"
+                            className="w-4 h-4 accent-primary cursor-pointer focus-ring rounded"
                             checked={selectedKeys.includes(item.key)}
                             onChange={() => handleToggle(item.key)}
                           />
                           <span 
-                            className={`${fontClass} ${fontWeight} text-gray-700 cursor-pointer`}
+                            className={`${fontClass} ${fontWeight} text-foreground cursor-pointer select-none flex-1`}
                             onClick={() => handleToggle(item.key)}
                           >
                             {item.label}
                           </span>
                           {item.unit && (
-                            <span className="text-xs text-blue-600 bg-blue-50 px-1 ml-1 rounded">
+                            <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 ml-2 rounded-md font-medium">
                               {item.unit}
                             </span>
                           )}
@@ -409,28 +409,28 @@ export function TreatmentSelectModal({
                 })}
                 
                 {/* 기타 섹션 추가 */}
-                <div className="mt-6 pt-4 border-t border-gray-300">
-                  <div className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                    <span className="text-lg font-bold text-gray-800">기타</span>
+                <div className="mt-6 pt-4 border-t border-border">
+                  <div className="flex items-center gap-3 py-3 px-4 rounded-lg bg-accent/20 border border-accent/30">
+                    <span className="text-lg font-semibold text-accent-foreground">기타</span>
                   </div>
-                  <div className="ml-6">
-                    <span className="text-sm text-gray-600">별도 기재가 필요한 시술이 있다면 우측 텍스트 영역에 입력해주세요.</span>
+                  <div className="ml-6 mt-2">
+                    <span className="text-sm text-muted-foreground">별도 기재가 필요한 시술이 있다면 우측 텍스트 영역에 입력해주세요.</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* 오른쪽 패널  : 상품옵션 */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-gray-50 pb-2">
+            <div className="flex-1 overflow-y-auto p-6 bg-muted/20">
+              <h3 className="text-lg font-semibold text-foreground mb-4 sticky top-0 bg-muted/20 pb-2">
                 상품옵션 관리
               </h3>
               
               {selectedKeys.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">
-                  <p className="text-sm">시술을 선택하고</p>
-                  <p className="text-sm">"상품옵션 추가" 버튼을 눌러</p>
-                  <p className="text-sm">옵션을 추가해보세요</p>
+                <div className="text-center text-muted-foreground mt-12 p-8 bg-card rounded-lg border border-dashed border-border">
+                  <div className="text-4xl mb-4">📋</div>
+                  <p className="text-base font-medium mb-2">시술을 선택해주세요</p>
+                  <p className="text-sm">왼쪽에서 시술을 선택하고 상품옵션을 추가해보세요</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -441,12 +441,12 @@ export function TreatmentSelectModal({
                     if (!treatmentItem) return null;
                     
                     return (
-                      <div key={`options-${treatmentKey}`} className="bg-white p-4 rounded-lg border border-gray-200">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-semibold text-blue-800">
+                      <div key={`options-${treatmentKey}`} className="bg-card p-5 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-sm font-semibold text-primary">
                             {treatmentItem.label}
                             {treatmentItem.unit && (
-                              <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                              <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-1 rounded-md font-medium">
                                 {treatmentItem.unit}
                               </span>
                             )}
@@ -456,17 +456,17 @@ export function TreatmentSelectModal({
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  className="w-4 h-4 accent-red-600 cursor-pointer"
+                                  className="w-4 h-4 accent-destructive cursor-pointer focus-ring rounded"
                                   checked={noOptionChecked[treatmentKey] || false}
                                   onChange={() => handleNoOptionToggle(treatmentKey)}
                                 />
-                                <span className="text-xs text-red-600 font-medium">옵션없음</span>
+                                <span className="text-xs text-destructive font-medium">옵션없음</span>
                               </label>
                             )}
                             <button
                               type="button"
                               onClick={() => handleAddOption(treatmentKey)}
-                              className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                              className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors focus-ring font-medium"
                             >
                               상품옵션 추가
                             </button>
@@ -474,9 +474,11 @@ export function TreatmentSelectModal({
                         </div>
                         
                         {options.length === 0 ? (
-                          <p className="text-xs text-gray-500 italic">
-                            아직 상품옵션이 없습니다
-                          </p>
+                          <div className="text-center p-4 bg-muted/30 rounded-lg border border-dashed border-border">
+                            <p className="text-xs text-muted-foreground">
+                              아직 상품옵션이 없습니다
+                            </p>
+                          </div>
                         ) : (
                           <div className="space-y-2">
                             {options.map((option) => (
@@ -501,15 +503,15 @@ export function TreatmentSelectModal({
               )}
               
               {/* 기타 입력 섹션 */}
-              <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3">기타 시술 정보</h4>
+              <div className="mt-6 bg-card p-5 rounded-lg border border-border shadow-sm">
+                <h4 className="text-sm font-semibold text-foreground mb-3">기타 시술 정보</h4>
                 <textarea
                   value={etc}
                   onChange={(e) => setEtc(e.target.value)}
                   placeholder="카테고리에 없는 시술이나 추가 정보가 있다면 여기에 입력해주세요..."
-                  className="w-full h-24 p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full h-24 p-3 border border-input rounded-md resize-none focus-ring text-sm bg-input"
                 />
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   이 정보는 별도로 저장되어 관리됩니다.
                 </p>
               </div>
@@ -518,19 +520,23 @@ export function TreatmentSelectModal({
         </div>
 
         {/* 하단 버튼 영역 */}
-        <div className="border-t border-gray-200 p-6 bg-white flex-shrink-0">
-          <p> 주의 : 옵션입력후 상품을 임시로 체크박스를 해제한 경우 완료를 누르면 입력한 상품이 사라집니다. 완료는 입력/수정이 모두 완료된 후 눌러주세요 </p> 
-          <div className="flex gap-4 justify-end">
+        <div className="border-t border-border p-6 bg-card flex-shrink-0">
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-700">
+              ⚠️ <strong>주의:</strong> 옵션입력 후 상품을 임시로 체크박스를 해제한 경우 완료를 누르면 입력한 상품이 사라집니다. 완료는 입력/수정이 모두 완료된 후 눌러주세요.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-end">
             <Button 
               variant="outline" 
               onClick={handleClose}
-              className="px-8 py-3 text-base"
+              className="px-6 py-2.5 text-sm focus-ring"
             >
               취소
             </Button>
             <Button 
               onClick={handleSave}
-              className="px-8 py-3 text-base bg-blue-600 hover:bg-blue-700"
+              className="px-6 py-2.5 text-sm bg-primary hover:bg-primary/90 focus-ring font-medium"
             >
               완료 ({selectedKeys.length}개 선택)
             </Button>

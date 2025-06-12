@@ -24,18 +24,18 @@ export interface HospitalData {
 
 export interface HospitalDetailData {
   tel: string;
-  kakaotalk: string;
-  homepage: string;
-  instagram: string;
-  facebook: string;
-  blog: string;
-  youtube: string;
-  ticktok: string;
-  snapchat: string;
+  // kakaotalk: string;
+  // homepage: string;
+  // instagram: string;
+  // facebook: string;
+  // blog: string;
+  // youtube: string;
+  // ticktok: string;
+  // snapchat: string;
   map: string;
-  desc_address: string;
-  desc_openninghour: string;
-  desc_facilities: string;
+  // desc_address: string;
+  // desc_openninghour: string;
+  // desc_facilities: string;
   etc: string;
   has_private_recovery_room: boolean;
   has_parking: boolean;

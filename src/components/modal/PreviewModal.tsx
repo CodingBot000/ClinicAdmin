@@ -19,7 +19,10 @@ interface FormDataSummary {
   location: string;
   treatments: {
     count: number;
-    items: string[];
+    items: Array<{
+      name: string;
+      department: string | null;
+    }>;
   };
   treatmentOptions: {
     count: number;
@@ -27,6 +30,7 @@ interface FormDataSummary {
       treatmentKey: number;
       optionName: string;
       price: number;
+      department: string | null;
     }>;
   };
   treatmentEtc: string;
@@ -45,6 +49,7 @@ interface FormDataSummary {
   images: {
     clinicImages: number;
     doctorImages: number;
+    clinicImageUrls: string[];
   };
   doctors?: {
     count: number;
@@ -53,6 +58,7 @@ interface FormDataSummary {
       bio: string;
       isChief: string;
       hasImage: string;
+      imageUrl?: string;
     }>;
   };
 }
@@ -132,9 +138,20 @@ export function PreviewModal({
               <div className="space-y-3">
                 <div className="text-sm">
                   <strong>선택된 시술 ({formData.treatments.count}개):</strong>
-                  <div className="mt-1 space-y-1">
+                  <div className="mt-1 space-y-2">
                     {formData.treatments.items.map((treatment, idx) => (
-                      <div key={idx} className="pl-4 text-gray-700">• {treatment}</div>
+                      <div key={idx} className="pl-4 text-gray-700 flex items-center gap-2">
+                        <span>• {treatment.name}</span>
+                        {treatment.department && (
+                          <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
+                            treatment.department === 'surgery' 
+                              ? 'text-purple-700 bg-purple-100' 
+                              : 'text-emerald-700 bg-emerald-100'
+                          }`}>
+                            {treatment.department === 'surgery' ? '성형' : '피부'}
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -142,10 +159,19 @@ export function PreviewModal({
                 {formData.treatmentOptions.count > 0 && (
                   <div className="text-sm">
                     <strong>상품옵션 ({formData.treatmentOptions.count}개):</strong>
-                    <div className="mt-1 space-y-1">
+                    <div className="mt-1 space-y-2">
                       {formData.treatmentOptions.items.map((option, idx) => (
-                        <div key={idx} className="pl-4 text-gray-700">
-                          • {option.optionName}: {option.price.toLocaleString()}원
+                        <div key={idx} className="pl-4 text-gray-700 flex items-center gap-2">
+                          <span>• {option.optionName}: {option.price.toLocaleString()}원</span>
+                          {option.department && (
+                            <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
+                              option.department === 'surgery' 
+                                ? 'text-purple-700 bg-purple-100' 
+                                : 'text-emerald-700 bg-emerald-100'
+                            }`}>
+                              {option.department === 'surgery' ? '성형' : '피부'}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -193,7 +219,7 @@ export function PreviewModal({
               <h3 className="text-lg font-semibold text-orange-800 mb-3">🏢 부가 시설</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <strong>시설:</strong> {formData.extraOptions.facilities.join(', ')}
+                  <strong>시설:</strong> {formData.extraOptions.facilities.length > 0 ? formData.extraOptions.facilities.join(', ') : '선택한 시설 없음'}
                 </div>
                 <div>
                   <strong>의사 수:</strong> {formData.extraOptions.specialistCount}명
@@ -210,36 +236,81 @@ export function PreviewModal({
               </div>
             </div>
 
+            {/* 병원 이미지 프리뷰 */}
+            {formData.images.clinicImageUrls && formData.images.clinicImageUrls.length > 0 && (
+              <div className="bg-pink-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-pink-800 mb-3">🖼️ 등록된 병원 이미지</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {formData.images.clinicImageUrls.map((imageUrl, idx) => (
+                    <div key={idx} className="relative">
+                      <img
+                        src={imageUrl}
+                        alt={`병원 이미지 ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200 shadow-sm"
+                      />
+                      <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                        {idx + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 의사 정보 */}
             {formData.doctors && formData.doctors.count > 0 && (
               <div className="bg-teal-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-teal-800 mb-3">👨‍⚕️ 의사 정보</h3>
-                <div className="text-sm">
-                  <strong>등록된 의사 ({formData.doctors.count}명):</strong>
-                  <div className="mt-2 space-y-3">
-                    {formData.doctors.items.map((doctor, idx) => (
-                      <div key={idx} className="bg-white p-3 rounded border">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-gray-900">{doctor.name}</span>
-                          <div className="flex gap-2">
+                <h3 className="text-lg font-semibold text-teal-800 mb-3">👨‍⚕️ 등록된 의사 정보</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {formData.doctors.items.map((doctor, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        {/* 의사 이미지 */}
+                        <div className="flex-shrink-0">
+                          {doctor.imageUrl ? (
+                            <img
+                              src={doctor.imageUrl.startsWith('/default/doctor_default_') 
+                                ? doctor.imageUrl // 기본 이미지 경로는 그대로 사용
+                                : doctor.imageUrl // 업로드된 이미지 URL은 그대로 사용
+                              }
+                              alt={`${doctor.name} 의사`}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                              <span className="text-gray-500 text-xs">기본</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* 의사 정보 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-gray-900 text-base">{doctor.name}</h4>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                               doctor.isChief === '대표원장' 
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-blue-100 text-blue-800'
                             }`}>
-                              {doctor.isChief}
-                            </span>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                              {doctor.hasImage}
+                              {doctor.isChief === '대표원장' ? '대표원장' : '의사'}
                             </span>
                           </div>
+                          
+                          {doctor.bio && doctor.bio.trim() !== '' && (
+                            <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                              {doctor.bio}
+                            </div>
+                          )}
+                          
+                          {(!doctor.bio || doctor.bio.trim() === '') && (
+                            <div className="text-sm text-gray-400 italic">
+                              소개 정보 없음
+                            </div>
+                          )}
                         </div>
-                        {doctor.bio && (
-                          <p className="text-gray-600 text-xs whitespace-pre-wrap">{doctor.bio}</p>
-                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

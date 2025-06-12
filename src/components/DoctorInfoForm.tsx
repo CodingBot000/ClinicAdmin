@@ -1,8 +1,19 @@
 'use client';
 
-import React, { ChangeEvent, MouseEvent, useState, useEffect, useCallback } from "react";
-import Image from "next/image";
-import { XCircleIcon, Upload, Image as ImageIcon, X } from "lucide-react";
+import React, {
+  ChangeEvent,
+  MouseEvent,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+import Image from 'next/image';
+import {
+  XCircleIcon,
+  Upload,
+  Image as ImageIcon,
+  X,
+} from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 
 export interface DoctorInfo {
@@ -24,8 +35,16 @@ interface DoctorInfoFormProps {
 }
 
 const DEFAULT_IMAGES = [
-  { label: "디폴트 남자", src: "/default/doctor_default_man.png", key: "man" },
-  { label: "디폴트 여자", src: "/default/doctor_default_woman.png", key: "woman" },
+  {
+    label: '디폴트 남자',
+    src: '/default/doctor_default_man.png',
+    key: 'man',
+  },
+  {
+    label: '디폴트 여자',
+    src: '/default/doctor_default_woman.png',
+    key: 'woman',
+  },
 ];
 
 const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
@@ -34,12 +53,18 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   onClose,
   onSave,
 }) => {
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
-  const [useDefaultImage, setUseDefaultImage] = useState(false);
-  const [defaultImageType, setDefaultImageType] = useState<'man' | 'woman'>('man');
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(
+    null,
+  );
+  const [imagePreview, setImagePreview] =
+    useState<string>('');
+  const [useDefaultImage, setUseDefaultImage] =
+    useState(false);
+  const [defaultImageType, setDefaultImageType] = useState<
+    'man' | 'woman'
+  >('man');
   const [isAnimating, setIsAnimating] = useState(false);
 
   // 초기 데이터 설정
@@ -50,15 +75,17 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
         setName(initialData.name);
         setBio(initialData.bio);
         setImageFile(initialData.imageFile || null);
-        setImagePreview(initialData.imagePreview || "");
+        setImagePreview(initialData.imagePreview || '');
         setUseDefaultImage(initialData.useDefaultImage);
-        setDefaultImageType(initialData.defaultImageType || 'man');
+        setDefaultImageType(
+          initialData.defaultImageType || 'man',
+        );
       } else {
         // 새로 생성시 초기화
-        setName("");
-        setBio("");
+        setName('');
+        setBio('');
         setImageFile(null);
-        setImagePreview("");
+        setImagePreview('');
         setUseDefaultImage(false);
         setDefaultImageType('man');
       }
@@ -68,28 +95,31 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
       // 스크롤 복원
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [open, initialData]);
 
   // 파일 처리 함수
-  const processFiles = useCallback((acceptedFiles: File[]) => {
-    if (useDefaultImage) return;
+  const processFiles = useCallback(
+    (acceptedFiles: File[]) => {
+      if (useDefaultImage) return;
 
-    const file = acceptedFiles[0]; // 1장만 허용
-    if (!file) return;
+      const file = acceptedFiles[0]; // 1장만 허용
+      if (!file) return;
 
-    setImageFile(file);
+      setImageFile(file);
 
-    const fileReader = new FileReader();
-    fileReader.onload = () => {
-      const result = fileReader.result as string;
-      setImagePreview(result);
-    };
-    fileReader.readAsDataURL(file);
-  }, [useDefaultImage]);
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        const result = fileReader.result as string;
+        setImagePreview(result);
+      };
+      fileReader.readAsDataURL(file);
+    },
+    [useDefaultImage],
+  );
 
   // dropzone 설정
   const {
@@ -101,56 +131,63 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   } = useDropzone({
     onDrop: processFiles,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
     },
     disabled: useDefaultImage,
     maxFiles: 1,
   });
 
   // 이미지 삭제
-  const handleDeleteImage = (e: MouseEvent<HTMLButtonElement>) => {
+  const handleDeleteImage = (
+    e: MouseEvent<HTMLButtonElement>,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setImageFile(null);
-    setImagePreview("");
+    setImagePreview('');
   };
 
   // 기본 이미지 선택
-  const handleDefaultImageChange = (type: 'man' | 'woman') => (
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
-    const checked = e.target.checked;
-    setUseDefaultImage(checked);
-    setDefaultImageType(type);
-    
-    if (checked) {
-      // 기본 이미지 선택시 업로드된 이미지 제거
-      setImageFile(null);
-      setImagePreview(DEFAULT_IMAGES.find(img => img.key === type)!.src);
-    } else {
-      // 기본 이미지 해제시 미리보기도 제거
-      setImagePreview("");
-    }
-  };
+  const handleDefaultImageChange =
+    (type: 'man' | 'woman') =>
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const checked = e.target.checked;
+      setUseDefaultImage(checked);
+      setDefaultImageType(type);
+
+      if (checked) {
+        // 기본 이미지 선택시 업로드된 이미지 제거
+        setImageFile(null);
+        setImagePreview(
+          DEFAULT_IMAGES.find((img) => img.key === type)!
+            .src,
+        );
+      } else {
+        // 기본 이미지 해제시 미리보기도 제거
+        setImagePreview('');
+      }
+    };
 
   // dropzone 스타일
   const getDropzoneStyle = () => {
-    let baseStyle = "border-2 border-dashed transition-colors duration-200 ease-in-out ";
-    
+    let baseStyle =
+      'border-2 border-dashed transition-colors duration-200 ease-in-out ';
+
     if (isDragAccept) {
-      baseStyle += "border-green-400 bg-green-50 ";
+      baseStyle += 'border-green-400 bg-green-50 ';
     } else if (isDragReject) {
-      baseStyle += "border-red-400 bg-red-50 ";
+      baseStyle += 'border-red-400 bg-red-50 ';
     } else if (isDragActive) {
-      baseStyle += "border-blue-400 bg-blue-50 ";
+      baseStyle += 'border-blue-400 bg-blue-50 ';
     } else {
-      baseStyle += "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 ";
+      baseStyle +=
+        'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 ';
     }
 
     if (useDefaultImage) {
-      baseStyle += "opacity-50 cursor-not-allowed ";
+      baseStyle += 'opacity-50 cursor-not-allowed ';
     } else {
-      baseStyle += "cursor-pointer ";
+      baseStyle += 'cursor-pointer ';
     }
 
     return baseStyle;
@@ -165,12 +202,19 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
 
   const handleSave = () => {
     if (!name.trim()) {
-      alert("이름을 입력해주세요.");
+      alert('이름을 입력해주세요.');
+      return;
+    }
+
+    if (!bio.trim()) {
+      alert('약력을 입력해주세요.');
       return;
     }
 
     if (!useDefaultImage && !imageFile) {
-      alert("이미지를 업로드하거나 기본 이미지를 선택해주세요.");
+      alert(
+        '이미지를 업로드하거나 기본 이미지를 선택해주세요.',
+      );
       return;
     }
 
@@ -178,10 +222,14 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
       id: initialData?.id || `doctor-${Date.now()}`,
       name: name.trim(),
       bio: bio, // trim() 제거하여 줄바꿈 보존
-      imageFile: useDefaultImage ? undefined : imageFile || undefined,
+      imageFile: useDefaultImage
+        ? undefined
+        : imageFile || undefined,
       imagePreview: imagePreview,
       useDefaultImage,
-      defaultImageType: useDefaultImage ? defaultImageType : undefined,
+      defaultImageType: useDefaultImage
+        ? defaultImageType
+        : undefined,
       isChief: initialData?.isChief || false, // 기존 대표원장 상태 유지
     };
 
@@ -198,15 +246,15 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999]">
+    <div className='fixed inset-0 z-[9999]'>
       {/* 배경 오버레이 */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-50"
+      <div
+        className='absolute inset-0 bg-black bg-opacity-50'
         onClick={handleBackdropClick}
       />
-      
+
       {/* 모달 */}
-      <div 
+      <div
         className={`
           absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
           bg-white rounded-2xl shadow-2xl
@@ -217,53 +265,57 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold">
-            {initialData ? "의사 정보 수정" : "의사 정보 추가"}
+        <div className='flex items-center justify-between p-6 border-b border-gray-200'>
+          <h2 className='text-xl font-bold'>
+            {initialData
+              ? '의사 정보 수정'
+              : '의사 정보 추가'}
           </h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className='p-2 hover:bg-gray-100 rounded-full transition-colors'
           >
-            <X size={24} className="text-gray-600" />
+            <X size={24} className='text-gray-600' />
           </button>
         </div>
 
         {/* 컨텐츠 */}
-        <div className="p-6 space-y-6">
+        <div className='p-6 space-y-6'>
           {/* 사진 업로드 */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">프로필 사진</h3>
-            
+            <h3 className='text-sm font-medium text-gray-700 mb-3'>
+              프로필 사진
+            </h3>
+
             {/* 현재 이미지가 있는 경우 */}
             {imagePreview ? (
-              <div className="flex justify-center mb-4">
-                <div className="relative group w-[120px] h-[120px] rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+              <div className='flex justify-center mb-4'>
+                <div className='relative group w-[120px] h-[120px] rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200'>
                   <Image
                     src={imagePreview}
-                    alt="프로필 미리보기"
+                    alt='프로필 미리보기'
                     width={120}
                     height={120}
-                    className="object-cover rounded-full"
+                    className='object-cover rounded-full'
                   />
-                  
+
                   {/* 기본 이미지가 아닐 때만 삭제 버튼 표시 */}
                   {!useDefaultImage && (
                     <button
-                      type="button"
+                      type='button'
                       onClick={handleDeleteImage}
-                      className="
+                      className='
                         absolute top-2 right-2 
                         opacity-0 group-hover:opacity-100 
                         transition-opacity duration-200
                         bg-white rounded-full p-1
                         hover:bg-red-50 hover:scale-110
                         transform transition-transform
-                      "
+                      '
                     >
-                      <XCircleIcon 
-                        size={16} 
-                        className="text-red-500 hover:text-red-600" 
+                      <XCircleIcon
+                        size={16}
+                        className='text-red-500 hover:text-red-600'
                         strokeWidth={2}
                       />
                     </button>
@@ -277,22 +329,25 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
                 className={`${getDropzoneStyle()} rounded-lg p-6 mb-4 text-center`}
               >
                 <input {...getInputProps()} />
-                <div className="flex flex-col items-center justify-center space-y-2">
+                <div className='flex flex-col items-center justify-center space-y-2'>
                   {isDragActive ? (
                     <>
-                      <Upload className="w-8 h-8 text-blue-500" />
-                      <p className="text-sm font-medium text-blue-600">
-                        {isDragAccept ? "파일을 여기에 놓으세요!" : "지원하지 않는 파일입니다"}
+                      <Upload className='w-8 h-8 text-blue-500' />
+                      <p className='text-sm font-medium text-blue-600'>
+                        {isDragAccept
+                          ? '파일을 여기에 놓으세요!'
+                          : '지원하지 않는 파일입니다'}
                       </p>
                     </>
                   ) : (
                     <>
-                      <ImageIcon className="w-8 h-8 text-gray-400" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-gray-600">
-                          이미지를 드래그하거나 클릭하여 업로드
+                      <ImageIcon className='w-8 h-8 text-gray-400' />
+                      <div className='space-y-1'>
+                        <p className='text-sm font-medium text-gray-600'>
+                          이미지를 드래그하거나 클릭하여
+                          업로드
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className='text-xs text-gray-500'>
                           JPEG, PNG, GIF, WebP (1장만)
                         </p>
                       </div>
@@ -303,23 +358,33 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
             )}
 
             {/* 기본 이미지 선택 */}
-            <div className="flex gap-4 justify-center">
+            <div className='flex gap-4 justify-center'>
               {DEFAULT_IMAGES.map((img) => (
-                <label key={img.key} className="flex items-center gap-2 cursor-pointer">
+                <label
+                  key={img.key}
+                  className='flex items-center gap-2 cursor-pointer'
+                >
                   <input
-                    type="checkbox"
-                    checked={useDefaultImage && defaultImageType === img.key}
-                    onChange={handleDefaultImageChange(img.key as 'man' | 'woman')}
-                    className="w-4 h-4"
+                    type='checkbox'
+                    checked={
+                      useDefaultImage &&
+                      defaultImageType === img.key
+                    }
+                    onChange={handleDefaultImageChange(
+                      img.key as 'man' | 'woman',
+                    )}
+                    className='w-4 h-4'
                   />
-                  <Image 
-                    src={img.src} 
-                    alt={img.label} 
-                    width={24} 
-                    height={24} 
-                    className="rounded-full border border-gray-200" 
+                  <Image
+                    src={img.src}
+                    alt={img.label}
+                    width={24}
+                    height={24}
+                    className='rounded-full border border-gray-200'
                   />
-                  <span className="text-xs text-gray-700">{img.label}</span>
+                  <span className='text-xs text-gray-700'>
+                    {img.label}
+                  </span>
                 </label>
               ))}
             </div>
@@ -327,45 +392,45 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
 
           {/* 이름 입력 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              이름 <span className="text-red-500">*</span>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
+              이름 <span className='text-red-500'>*</span>
             </label>
             <input
-              type="text"
+              type='text'
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="의사 이름을 입력하세요"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder='의사 이름을 입력하세요'
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
             />
           </div>
 
           {/* 약력 입력 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
               약력
             </label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="의사 소개를 입력하세요"
+              placeholder='의사 소개를 입력하세요'
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
-              style={{ whiteSpace: "pre-wrap" }}
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none'
+              style={{ whiteSpace: 'pre-wrap' }}
             />
           </div>
         </div>
 
         {/* 하단 버튼 */}
-        <div className="flex gap-3 p-6 border-t border-gray-200">
+        <div className='flex gap-3 p-6 border-t border-gray-200'>
           <button
             onClick={handleClose}
-            className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className='flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors'
           >
             취소
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
           >
             저장
           </button>
@@ -375,4 +440,4 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   );
 };
 
-export default DoctorInfoForm; 
+export default DoctorInfoForm;
