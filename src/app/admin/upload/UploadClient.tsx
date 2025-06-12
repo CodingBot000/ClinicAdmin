@@ -428,11 +428,21 @@ const UploadClient = ({
   };
 
   const handleModal = () => {
-    if (formState?.status === 'success') {
-      router.refresh();
-    }
     setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
     handleOpenModal();
+  };
+
+  // 성공 시 관리자 페이지로 이동하는 함수
+  const handleConfirm = () => {
+    if (formState?.status === 'success') {
+      // 히스토리를 남기지 않고 관리자 페이지로 이동
+      router.replace('/admin');
+      // 페이지 새로고침으로 최신 정보 반영
+      router.refresh();
+    } else {
+      // 성공이 아닌 경우 모달만 닫기
+      handleModal();
+    }
   };
 
   // 선택된 치료 항목들과 상품옵션을 처리하는 함수
@@ -1685,7 +1695,7 @@ const UploadClient = ({
         </div>
       </div>
 
-      <AlertModal onCancel={handleModal} open={open}>
+      <AlertModal onCancel={handleModal} onConfirm={handleConfirm} open={open}>
         {formState?.status === 'success'
           ? '등록 성공'
           : formState?.errorType === 'validation'
