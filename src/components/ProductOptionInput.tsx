@@ -53,22 +53,22 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+    <div className="flex items-center gap-3 p-4 border border-border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
       <button
         type="button"
         onClick={() => onRemove(id)}
-        className="p-1 hover:bg-gray-200 rounded transition-colors"
+        className="p-1.5 hover:bg-destructive/10 rounded-md transition-colors focus-ring"
         aria-label="옵션 삭제"
       >
-        <X size={16} className="text-gray-600" />
+        <X size={14} className="text-destructive" />
       </button>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3 flex-1">
         {department !== 'surgery' && (
           <>
-            <span className="sm:text-xs text-gray-500">시술옵션: </span>
+            <span className="text-sm text-muted-foreground font-medium min-w-fit">시술옵션:</span>
             {isHidden ? (
-              <div className="w-20 px-2 py-1 text-center text-xs text-gray-400 italic bg-gray-100 border border-gray-300 rounded">
+              <div className="w-20 px-3 py-2 text-center text-xs text-muted-foreground italic bg-muted border border-border rounded-md">
                 옵션없음
               </div>
             ) : (
@@ -76,12 +76,11 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
                 <input
                   value={value1}
                   onChange={handleValue1Change}
-                  className="sm:text-xs text-[10px] w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  // placeholder="0"
-                  // min="0"
+                  className="w-20 px-3 py-2 text-center border border-input rounded-md focus-ring text-sm bg-input"
+                  placeholder="0"
                 />
                 {unit && (
-                  <span className="text-xs text-blue-600 bg-blue-50 px-1 ml-1 rounded">
+                  <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-md font-medium">
                     {unit}
                   </span>
                 )}
@@ -89,28 +88,19 @@ const ProductOptionInput: React.FC<ProductOptionInputProps> = ({
             )}
           </>
         )}
-        <span className="sm:text-xs text-gray-500">  가격(원):</span>
+        <span className="text-sm text-muted-foreground font-medium min-w-fit">가격(원):</span>
         <input
           type="number"
           value={value2}
           onChange={handleValue2Change}
-          className="
-              w-20 px-2 py-1 
-              text-right
-              text-xs sm:text-xs
-              border border-gray-300 rounded 
-              focus:outline-none focus:border-blue-500
-              appearance-none
-              [-moz-appearance:textfield]
-          "
+          className="w-24 px-3 py-2 text-right border border-input rounded-md focus-ring text-sm bg-input appearance-none [-moz-appearance:textfield]"
           placeholder="0"
           min="0"
           inputMode="numeric"
-        // 스핀버튼 제거(크롬/사파리)용 인라인 스타일
-        style={{
-          MozAppearance: 'textfield',
-          appearance: 'none'
-        }}
+          style={{
+            MozAppearance: 'textfield',
+            appearance: 'none'
+          }}
         />
         
       </div>

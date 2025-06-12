@@ -113,5 +113,80 @@ export const REGIONS: CategoryNode[] = [
         },
       ],
     },
+    {
+      key: 2000,
+      name: "gyeonggi",
+      label: "경기",
+      children: [
+        {
+          key: 2010,
+          name: "suwon_hwaseong",
+          label: "수원/화성",
+        },
+        {
+          key: 2020,
+          name: "seongnam_yongin",
+          label: "성남/용인",
+        },
+        {
+          key: 2030,
+          name: "anmyeong_uiwang",
+          label: "안양/의왕",
+        },
+        {
+          key: 2040,
+          name: "bucheon_gwangmyeong_sihyeong",
+          label: "부천/광명/시흥",
+        },
+        {
+          key: 2050,
+          name: "hanam_namyangju_uijeongbu",
+          label: "하남/남양주/의정부",
+        },
+        {
+          key: 2060,
+          name: "goyang_paju_gimpo",
+          label: "고양/파주/김포",
+        }
+      ],
+    },
+    {
+      key: 3000,
+      name: "incheon",
+      label: "인천",
+      children: [
+        {
+          key: 3010,
+          name: "bupyong",
+          label: "부평",
+        },
+        {
+          key: 3020,
+          name: "seoknam_seogucheong_gyeongingyodae",
+          label: "석남/서구청/경인교대",
+        },
+        {
+          key: 3030,
+          name: "yeonsu_songdo",
+          label: "연수/송도",
+        },
+        {
+          key: 3040,
+          name: "sinpo_dongincheon_yeongjongdo",
+          label: "신포/동인천/영종도",
+        },
+        {
+          key: 3050,
+          name: "soreapogu_hogupo",
+          label: "소래포구/호구포",
+        },
+        {
+          key: 3060,
+          name: "guwaldong",
+          label: "구월동",
+        }
+      ],
+
+    },
   ];
   

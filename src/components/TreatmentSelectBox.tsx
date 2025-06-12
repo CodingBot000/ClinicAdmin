@@ -179,8 +179,8 @@ export function TreatmentSelectBox({
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-2">
-        <Button size="sm" type="button" onClick={handleOpen}>
+      <div className="flex items-center gap-4 mb-4">
+        <Button size="sm" type="button" onClick={handleOpen} className="bg-primary hover:bg-primary/90 focus-ring font-medium">
           가능시술 선택하기
         </Button>
         
@@ -190,53 +190,55 @@ export function TreatmentSelectBox({
             id="price-expose-checkbox"
             checked={priceExpose}
             onChange={(e) => setPriceExpose(e.target.checked)}
-            className="w-4 h-4 accent-blue-600 cursor-pointer"
+            className="w-4 h-4 accent-primary cursor-pointer focus-ring rounded"
           />
           <label 
             htmlFor="price-expose-checkbox" 
-            className="text-sm text-gray-700 cursor-pointer select-none"
+            className="text-sm text-foreground cursor-pointer select-none font-medium"
           >
             고객에게 가격노출하기
           </label>
         </div>
       </div>
       {/* 선택 결과 칩 형태 */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 mb-4">
         {selectedKeys.length === 0 ? (
-          <span className="text-gray-400">선택된 시술이 없습니다.</span>
+          <div className="flex items-center gap-2 p-4 rounded-lg border border-dashed border-border bg-muted/20">
+            <span className="text-muted-foreground">선택된 시술이 없습니다.</span>
+          </div>
         ) : (
           selectedKeys.map((key) => {
             const optionCount = getOptionCountForTreatment(key);
             return (
               <div
                 key={key}
-                className="flex items-center px-3 py-1 rounded-2xl bg-blue-100 text-blue-800 text-sm shadow-sm"
+                className="flex items-center px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-sm shadow-sm hover:shadow-md transition-shadow"
               >
                 <button
                   type="button"
-                  className="mr-1 focus:outline-none"
+                  className="mr-2 hover:bg-destructive/10 p-0.5 rounded focus-ring"
                   onClick={() => handleRemove(key)}
                   aria-label="선택 삭제"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3 text-destructive" />
                 </button>
-                <span className="mr-1">{getLabelByKey(key)}</span>
+                <span className="mr-2 font-medium">{getLabelByKey(key)}</span>
                 {getUnitByKey(key) && (
-                  <span className="text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                  <span className="text-xs text-primary bg-primary/20 px-2 py-0.5 rounded-md font-medium mr-1">
                     {getUnitByKey(key)}
                   </span>
                 )}
                 {getDepartmentByKey(key) && (
-                  <span className={`ml-1 text-xs px-1 rounded ${
+                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium mr-1 ${
                     getDepartmentByKey(key) === 'surgery' 
-                      ? 'text-purple-600 bg-purple-50' 
-                      : 'text-green-600 bg-green-50'
+                      ? 'text-purple-700 bg-purple-100' 
+                      : 'text-emerald-700 bg-emerald-100'
                   }`}>
                     {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
                   </span>
                 )}
                 {optionCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-blue-200 text-blue-900 text-xs rounded-full">
+                  <span className="ml-1 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-bold">
                     {optionCount}
                   </span>
                 )}
@@ -248,29 +250,31 @@ export function TreatmentSelectBox({
       
       {/* 디버깅 정보 표시 */}
       {(selectedKeys.length > 0 || productOptions.length > 0 || etc.trim() !== "") && (
-        <div className="mt-3 p-3 bg-green-50 rounded border text-sm">
-          <div className="font-semibold text-green-800 mb-1">📊 선택된 시술 데이터:</div>
-          <div className="text-green-700 space-y-2">
-            <div><strong>시술 개수:</strong> {selectedKeys.length}개</div>
+        <div className="mt-6 p-4 bg-card rounded-lg border border-border shadow-sm">
+          <div className="font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span className="text-lg">📊</span> 선택된 시술 데이터
+          </div>
+          <div className="text-muted-foreground space-y-3">
+            <div className="text-sm"><strong className="text-foreground">시술 개수:</strong> {selectedKeys.length}개</div>
             
             {/* 선택된 시술명 목록 */}
             {selectedKeys.length > 0 && (
               <div>
-                <strong>선택된 시술:</strong>
-                <div className="ml-4 mt-1 space-y-1">
+                <strong className="text-foreground">선택된 시술:</strong>
+                <div className="ml-4 mt-2 space-y-2">
                   {selectedKeys.map((key, index) => (
-                    <div key={key} className="text-gray-600">
+                    <div key={key} className="text-sm bg-muted/30 p-2 rounded-md">
                       {index + 1}. {getLabelByKey(key)}
                       {getUnitByKey(key) && (
-                        <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
+                        <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
                           {getUnitByKey(key)}
                         </span>
                       )}
                       {getDepartmentByKey(key) && (
-                        <span className={`ml-1 text-xs px-1 rounded ${
+                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${
                           getDepartmentByKey(key) === 'surgery' 
-                            ? 'text-purple-600 bg-purple-50' 
-                            : 'text-green-600 bg-green-50'
+                            ? 'text-purple-700 bg-purple-100' 
+                            : 'text-emerald-700 bg-emerald-100'
                         }`}>
                           {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
                         </span>
@@ -281,46 +285,50 @@ export function TreatmentSelectBox({
               </div>
             )}
             
-            <div><strong>상품옵션 개수:</strong> {productOptions.length}개</div>
+            <div className="text-sm"><strong className="text-foreground">상품옵션 개수:</strong> {productOptions.length}개</div>
             
             {/* 상품옵션 내용 목록 */}
             {productOptions.map((option, index) => (
-              <div key={option.id} className="text-gray-600">
-                {index + 1}. [{getLabelByKey(option.treatmentKey)}
-                {getUnitByKey(option.treatmentKey) && (
-                  <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 rounded">
-                    {getUnitByKey(option.treatmentKey)}
-                  </span>
-                )}
-                {getDepartmentByKey(option.treatmentKey) && (
-                  <span className={`ml-1 text-xs px-1 rounded ${
-                    getDepartmentByKey(option.treatmentKey) === 'surgery' 
-                      ? 'text-purple-600 bg-purple-50' 
-                      : 'text-green-600 bg-green-50'
-                  }`}>
-                    {getDepartmentByKey(option.treatmentKey) === 'surgery' ? '성형' : '피부'}
-                  </span>
-                )}]{" "}
-                {option.value1 && Number(option.value1) >= 1
-                  ? (
-                      <>
-                        {option.value1} : {option.value2?.toLocaleString()}원
-                      </>
-                    )
-                  : (
-                      <>
-                        옵션없음 가격: {option.value2?.toLocaleString()}원
-                      </>
-                    )
-                }
+              <div key={option.id} className="text-sm bg-muted/30 p-3 rounded-md border border-border/50">
+                <div className="font-medium text-foreground mb-1">
+                  {index + 1}. {getLabelByKey(option.treatmentKey)}
+                  {getUnitByKey(option.treatmentKey) && (
+                    <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
+                      {getUnitByKey(option.treatmentKey)}
+                    </span>
+                  )}
+                  {getDepartmentByKey(option.treatmentKey) && (
+                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${
+                      getDepartmentByKey(option.treatmentKey) === 'surgery' 
+                        ? 'text-purple-700 bg-purple-100' 
+                        : 'text-emerald-700 bg-emerald-100'
+                    }`}>
+                      {getDepartmentByKey(option.treatmentKey) === 'surgery' ? '성형' : '피부'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-muted-foreground">
+                  {option.value1 && Number(option.value1) >= 1
+                    ? (
+                        <>
+                          시술옵션: <span className="font-medium">{option.value1}</span> → 가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
+                        </>
+                      )
+                    : (
+                        <>
+                          옵션없음 → 가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
+                        </>
+                      )
+                  }
+                </div>
               </div>
             ))}
             
             {/* 기타 정보 */}
             {etc.trim() !== "" && (
               <div>
-                <strong>기타 정보:</strong>
-                <div className="ml-4 mt-1 text-gray-600">
+                <strong className="text-foreground">기타 정보:</strong>
+                <div className="ml-4 mt-2 p-3 bg-muted/30 rounded-md border border-border/50 text-sm">
                   {etc}
                 </div>
               </div>

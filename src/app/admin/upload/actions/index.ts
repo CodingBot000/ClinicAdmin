@@ -314,12 +314,12 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const nextIdUnique = (lastUnique.data && lastUnique.data.length > 0)
     ? lastUnique.data[0].id_unique + 1
     : 0;
-  const id_surgeries = (surgeries && surgeries.length > 0) ? surgeries.split(",") : [1010];
+  // const id_surgeries = (surgeries && surgeries.length > 0) ? surgeries.split(",") : [1010];
   const form_hospital = {
     id_unique: nextIdUnique,  // legacy id  나중에 삭제 
     id_uuid,
     name,
-    id_surgeries: id_surgeries,
+    // id_surgeries: id_surgeries,
     searchkey: name,
     search_key: name,
 
@@ -554,41 +554,41 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
     id_hospital: id_unique,
     id_uuid_hospital: id_uuid,
     tel: "0507-1433-0210",
-    kakaotalk: "",
-    homepage: "http://www.reoneskin.com",
-    instagram: "https://www.instagram.com/reone__clinic/",
-    facebook: "",
-    blog: "https://blog.naver.com/reone21",
-    youtube: "https://www.youtube.com/watch?v=Yaa1HZJXIJY",
-    ticktok:
-      "https://www.tiktok.com/@vslineclinicglobal/video/7255963489192168711?is_from_webapp=1&sender_device=pc&web_id=7373256937738012176",
-    snapchat: "",
+    // kakaotalk: "",
+    // homepage: "http://www.reoneskin.com",
+    // instagram: "https://www.instagram.com/reone__clinic/",
+    // facebook: "",
+    // blog: "https://blog.naver.com/reone21",
+    // youtube: "https://www.youtube.com/watch?v=Yaa1HZJXIJY",
+    // ticktok:
+    //   "https://www.tiktok.com/@vslineclinicglobal/video/7255963489192168711?is_from_webapp=1&sender_device=pc&web_id=7373256937738012176",
+    // snapchat: "",
     map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3164.348038374547!2d127.02511807637043!3d37.52329227204984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca39ea4618cdb%3A0xd0ad0677746be4c7!2z7Jyg7KeE7Iqk7J2Y7JuQ!5e0!3m2!1sko!2skr!4v1716566609639!5m2!1sko!2skr",
-    desc_address: "327, Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
-    desc_openninghour: `
-      MON
-      10:00 - 19:00
-      13:00 - 14:00 BreakTime
-      TUE
-      10:00 - 19:00
-      13:00 - 14:00 BreakTime
-      WED
-      10:00 - 19:00
-      13:00 - 14:00 BreakTime
-      THU
-      10:00 - 19:00
-      13:00 - 14:00 BreakTime
-      FRI
-      10:00 - 19:00
-      13:00 - 14:00 BreakTime
-      SAT
-      10:00 - 16:00
-      SUN
-      Regular holiday (Event Week SunDay)
-    `,
-    desc_facilities:
-      "Separate Male/Female Restrooms, Wireless Internet, Parking, Valet Parking",
-    desc_doctors_imgurls: [],
+    // desc_address: "327, Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
+    // desc_openninghour: `
+    //   MON
+    //   10:00 - 19:00
+    //   13:00 - 14:00 BreakTime
+    //   TUE
+    //   10:00 - 19:00
+    //   13:00 - 14:00 BreakTime
+    //   WED
+    //   10:00 - 19:00
+    //   13:00 - 14:00 BreakTime
+    //   THU
+    //   10:00 - 19:00
+    //   13:00 - 14:00 BreakTime
+    //   FRI
+    //   10:00 - 19:00
+    //   13:00 - 14:00 BreakTime
+    //   SAT
+    //   10:00 - 16:00
+    //   SUN
+    //   Regular holiday (Event Week SunDay)
+    // `,
+    // desc_facilities:
+    //   "Separate Male/Female Restrooms, Wireless Internet, Parking, Valet Parking",
+    // desc_doctors_imgurls: [],
     etc: "",
     has_private_recovery_room: extra_options.has_private_recovery_room,
     has_parking: extra_options.has_parking,

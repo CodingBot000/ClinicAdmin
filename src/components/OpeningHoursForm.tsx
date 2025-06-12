@@ -35,7 +35,7 @@ interface OpeningHoursFormProps {
 
 export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } : OpeningHoursFormProps) {
   const [hoursState, setHoursState] = useState<OpeningHour[]>(
-    initialHours || days.map((d) => ({
+    days.map((d) => ({
       day: d,
       from: { hour: defaultOpenings[d].from[0], minute: defaultOpenings[d].from[1] },
       to: { hour: defaultOpenings[d].to[0], minute: defaultOpenings[d].to[1] },
@@ -45,7 +45,24 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
     }))
   );
 
-  const [savedHours, setSavedHours] = useState<OpeningHour[] | null>(null);
+  // const [savedHours, setSavedHours] = useState<OpeningHour[] | null>(null); // 주석처리 - Preview 버튼으로 자동 저장
+
+  // 컴포넌트 마운트 시 초기값 설정
+  useEffect(() => {
+    // 마운트 시에 initialHours가 없거나 빈 배열이면 디폴트값 설정
+    if (!initialHours || initialHours.length === 0) {
+      console.log('OpeningHoursForm - 마운트 시 디폴트값 설정');
+      const defaultHours = days.map((d) => ({
+        day: d,
+        from: { hour: defaultOpenings[d].from[0], minute: defaultOpenings[d].from[1] },
+        to: { hour: defaultOpenings[d].to[0], minute: defaultOpenings[d].to[1] },
+        open: d !== 'SUN', // 일요일이 아닌 경우 영업으로 기본 설정
+        closed: d === 'SUN', // 일요일만 휴무로 기본 설정
+        ask: false,
+      }));
+      setHoursState(defaultHours);
+    }
+  }, []); // 마운트 시에만 실행
 
   // 초기값이 변경될 때 상태 업데이트
   useEffect(() => {
@@ -53,6 +70,17 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
     if (initialHours && initialHours.length > 0) {
       console.log('OpeningHoursForm - 초기값으로 상태 업데이트:', initialHours);
       setHoursState(initialHours);
+    } else {
+      // initialHours가 없거나 빈 배열인 경우 디폴트값으로 설정
+      console.log('OpeningHoursForm - 디폴트값으로 상태 설정');
+      setHoursState(days.map((d) => ({
+        day: d,
+        from: { hour: defaultOpenings[d].from[0], minute: defaultOpenings[d].from[1] },
+        to: { hour: defaultOpenings[d].to[0], minute: defaultOpenings[d].to[1] },
+        open: d !== 'SUN', // 일요일이 아닌 경우 영업으로 기본 설정
+        closed: d === 'SUN', // 일요일만 휴무로 기본 설정
+        ask: false,
+      })));
     }
   }, [initialHours]);
 
@@ -112,13 +140,24 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
     return '미설정';
   };
 
-  const handleSave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSavedHours([...hoursState]);
-    onSelectOpeningHours?.(hoursState);
-    console.log(" 일정저장 - 영업시간 데이터:", hoursState);
+  // 일정저장 버튼 기능 - 주석처리 (Preview 버튼 클릭 시 자동 저장으로 변경)
+  // const handleSave = (e: React.MouseEvent) => {
+  //   e.preventDefault();
+  //   e.stopPropagation();
+  //   setSavedHours([...hoursState]);
+  //   onSelectOpeningHours?.(hoursState);
+  //   console.log(" 일정저장 - 영업시간 데이터:", hoursState);
+  // };
+
+  // Preview 버튼 클릭 시 현재 상태를 자동으로 외부에 전달하는 함수
+  const getCurrentHours = () => {
+    return hoursState;
   };
+
+  // 컴포넌트가 마운트되거나 상태가 변경될 때 부모에게 현재 상태 전달
+  React.useEffect(() => {
+    onSelectOpeningHours?.(hoursState);
+  }, [hoursState, onSelectOpeningHours]);
 
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white rounded-xl shadow">
@@ -242,16 +281,27 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
           );
         })}
       </div>
+      {/* 일정저장 버튼 - 주석처리 (Preview 버튼 클릭 시 자동 저장으로 변경) */}
+      {/* 
       <span className="flex flex-row flex-nowrap items-center gap-3">
       <Button 
         type="button"
-        onClick={handleSave}
+        // onClick={handleSave}
       >
         일정저장 
       </Button>
       <p> 일정저장을 눌러서 최종결과를 반드시 확인하세요. </p>
       </span>
-      {/* 저장된 일정 상태 표시 */}
+      */}
+      
+      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-800">
+          💡 영업시간은 Preview 버튼을 클릭했을때 마지막 선택사항이 자동으로 저장됩니다.
+        </p>
+      </div>
+
+      {/* 저장된 일정 상태 표시 - 주석처리 */}
+      {/* 
       {savedHours && (
         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h3 className="text-lg font-semibold text-blue-800 mb-3">💾 저장된 일정</h3>
@@ -281,6 +331,7 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
           </div>
         </div>
       )}
+      */}
     </div>
   );
 }

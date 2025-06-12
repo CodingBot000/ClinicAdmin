@@ -1,13 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
-import UploadAuthWrapper from "./UploadAuthWrapper";
+import ClinicInfoUploadClientWrapper from "./ClinicInfoUploadClientWrapper";
 import UploadSkeleton from "./UploadSkeleton";
 
-export default function UploadPageWrapper() {
+export default function ClinicInfoUploadClientPageWrapper() {
   return (
     <Suspense fallback={<UploadSkeleton />}>
-      <UploadAuthWrapper />
+      <ClinicInfoUploadClientWrapper />
     </Suspense>
   );
 }
