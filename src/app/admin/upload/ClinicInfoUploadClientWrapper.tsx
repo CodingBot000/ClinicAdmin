@@ -6,9 +6,9 @@ import {
   useSearchParams,
 } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import UploadClient from './UploadClient';
+import ClinicInfoUploadClient from './ClinicInfoUploadClient';
 
-export default function UploadAuthWrapper() {
+export default function ClinicInfoUploadClientWrapper() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function UploadAuthWrapper() {
   }
 
   return (
-    <UploadClient
+    <ClinicInfoUploadClient
       currentUserUid={currentUserUid}
       isEditMode={isEditMode}
     />

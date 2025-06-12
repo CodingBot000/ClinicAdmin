@@ -5,14 +5,14 @@ import InputField from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
 import { uploadActions } from './actions';
-import { SurgeriesModal } from './modal';
+
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
 import { AlertModal } from '@/components/modal';
 import { useRouter } from 'next/navigation';
-import DaumPost from '@/components/DaumPost';
+
 import AddressSection from '@/components/AddressSection';
 import LocationSelect from '@/components/LocationSelect';
 import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
@@ -47,15 +47,15 @@ interface Surgery {
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
-interface UploadClientProps {
+interface ClinicInfoUploadClientProps {
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
 }
 
-const UploadClient = ({
+const ClinicInfoUploadClient = ({
   currentUserUid,
   isEditMode = false,
-}: UploadClientProps) => {
+}: ClinicInfoUploadClientProps) => {
   const pageStartTime = Date.now();
   console.log(
     'UploadClient 페이지 시작:',
@@ -417,7 +417,7 @@ const UploadClient = ({
         시술정보: Object.keys(formData.treatments).length,
       });
     } catch (error) {
-      console.error('❌ 폼 데이터 적용 중 오류:', error);
+      console.error(' 폼 데이터 적용 중 오류:', error);
       setFormState({
         message: '기존 데이터 적용 중 오류가 발생했습니다.',
         status: 'error',
@@ -435,17 +435,13 @@ const UploadClient = ({
   // 성공 시 관리자 페이지로 이동하는 함수
   const handleConfirm = () => {
     if (formState?.status === 'success') {
-      // 히스토리를 남기지 않고 관리자 페이지로 이동
       router.replace('/admin');
-      // 페이지 새로고침으로 최신 정보 반영
       router.refresh();
     } else {
-      // 성공이 아닌 경우 모달만 닫기
       handleModal();
     }
   };
 
-  // 선택된 치료 항목들과 상품옵션을 처리하는 함수
   const handleTreatmentSelectionChange = (data: {
     selectedKeys: number[];
     productOptions: any[];
@@ -549,9 +545,11 @@ const UploadClient = ({
         const treatmentName =
           treatmentMap.get(option.treatmentKey) ||
           `시술 ${option.treatmentKey}`;
-        
+
         // department 정보 찾기
-        const department = departmentMap.get(option.treatmentKey);
+        const department = departmentMap.get(
+          option.treatmentKey,
+        );
 
         // 옵션명 생성
         const optionName =
@@ -615,7 +613,10 @@ const UploadClient = ({
 
     // 기존 이미지 URL도 포함 (편집 모드인 경우)
     if (existingData?.hospital.imageurls) {
-      clinicImageUrls = [...clinicImageUrls, ...existingData.hospital.imageurls];
+      clinicImageUrls = [
+        ...clinicImageUrls,
+        ...existingData.hospital.imageurls,
+      ];
       clinicImageCount = clinicImageUrls.length;
     }
 
@@ -667,10 +668,10 @@ const UploadClient = ({
                 hasImage: doctor.useDefaultImage
                   ? '기본 이미지'
                   : '업로드 이미지',
-                imageUrl: doctor.useDefaultImage 
-                  ? (doctor.defaultImageType === 'woman' 
-                      ? '/default/doctor_default_woman.png' 
-                      : '/default/doctor_default_man.png')
+                imageUrl: doctor.useDefaultImage
+                  ? doctor.defaultImageType === 'woman'
+                    ? '/default/doctor_default_woman.png'
+                    : '/default/doctor_default_man.png'
                   : doctor.imagePreview || undefined, // 업로드된 이미지 미리보기 URL
               })),
             }
@@ -739,7 +740,7 @@ const UploadClient = ({
       return false;
     }
 
-    // 일정저장 눌렀는지 여부 체크 
+    // 일정저장 눌렀는지 여부 체크
 
     // 5. 병원 이미지 검증 (필수) - 편집 모드에서는 기존 이미지도 고려
     const existingImageCount =
@@ -766,18 +767,17 @@ const UploadClient = ({
     // 6. 의사 이미지 검증 (선택사항 - 빈값 허용)
     // doctorImages는 검증하지 않음
 
-    // 6-1. 의사 정보 검증 
+    // 6-1. 의사 정보 검증
     if (doctors.length < 1) {
       setFormState({
-        message:
-          '의사 정보를 최소 1개이상 입력해주세요.',
+        message: '의사 정보를 최소 1개이상 입력해주세요.',
         status: 'error',
         errorType: 'validation',
       });
       setShowFinalResult(true);
       return false;
     }
- //입력된 경우 입력된 내용 검증
+    //입력된 경우 입력된 내용 검증
     if (doctors.length > 0) {
       for (const doctor of doctors) {
         if (!doctor.name || doctor.name.trim() === '') {
@@ -1695,12 +1695,17 @@ const UploadClient = ({
         </div>
       </div>
 
-      <AlertModal onCancel={handleModal} onConfirm={handleConfirm} open={open}>
+      <AlertModal
+        onCancel={handleModal}
+        onConfirm={handleConfirm}
+        open={open}
+      >
         {formState?.status === 'success'
           ? '등록 성공'
           : formState?.errorType === 'validation'
-          ? formState?.message || '입력 정보를 확인해주세요.'
-          : `등록 실패\n(본 메시지를 스크린샷을 찍거나 복사해서 알려주세요):\n\n ${Array.isArray(formState?.message) ? formState.message[0] : formState?.message}`}
+            ? formState?.message ||
+              '입력 정보를 확인해주세요.'
+            : `등록 실패\n(본 메시지를 스크린샷을 찍거나 복사해서 알려주세요):\n\n ${Array.isArray(formState?.message) ? formState.message[0] : formState?.message}`}
       </AlertModal>
 
       {/* 제출 확인 모달 안에서는 제출할 내용만 출력할뿐 안에서 POST관련 처리는 없음  */}
@@ -1719,4 +1724,4 @@ const UploadClient = ({
   );
 };
 
-export default UploadClient;
+export default ClinicInfoUploadClient;
