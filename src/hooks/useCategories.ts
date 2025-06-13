@@ -2,7 +2,8 @@ import { CategoryNode } from "@/types/category";
 import { fetchUtils } from "@/utils/fetch";
 import { useQuery } from "@tanstack/react-query";
 
-const url = `${process.env.NEXT_PUBLIC_API_ROUTE}/api/treatment-categories`;
+// const url = `${process.env.NEXT_PUBLIC_API_ROUTE}/api/treatment-categories`;
+const url = '/api/treatment-categories';  // 상대 경로 사용
 
 function fetchCategories() {
   const fetchStartTime = Date.now();
