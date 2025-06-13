@@ -1,11 +1,8 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
-import {
-  useRouter,
-  useSearchParams,
-} from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 import ClinicInfoUploadClient from './ClinicInfoUploadClient';
 
 export default function ClinicInfoUploadClientWrapper() {
@@ -15,11 +12,6 @@ export default function ClinicInfoUploadClientWrapper() {
   const [currentUserUid, setCurrentUserUid] =
     useState<string>('');
   const [isEditMode, setIsEditMode] = useState(false);
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
 
   useEffect(() => {
     checkAuthAndSetup();

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AdminPageClientProps {
   hasClinicInfo: boolean;
@@ -11,10 +11,6 @@ export default function AdminPageClient({
   hasClinicInfo,
 }: AdminPageClientProps) {
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
 
   const handleNavigateToUpload = () => {
     const url = hasClinicInfo
@@ -25,7 +21,7 @@ export default function AdminPageClient({
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/admin/login';
+    router.push('/admin/login');
   };
 
   return (

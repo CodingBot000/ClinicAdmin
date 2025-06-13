@@ -1,16 +1,11 @@
-import { createBrowserClient } from '@supabase/ssr';
 import { useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 
 export function useSupabaseSession() {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   useEffect(() => {
     let mounted = true;

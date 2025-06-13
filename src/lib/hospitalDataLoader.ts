@@ -10,11 +10,7 @@ import {
   TABLE_TREATMENT
 } from '@/constants/tables';
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
+import { supabase } from "@/lib/supabaseClient";
 /**
  * 현재 사용자의 병원 UUID를 가져옵니다
  */
