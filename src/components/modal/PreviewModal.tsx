@@ -115,8 +115,8 @@ export function PreviewModal({
               <h3 className="text-lg font-semibold text-blue-800 mb-3">🏥 기본 정보</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div><strong>병원명:</strong> {formData.basicInfo.name}</div>
-                <div><strong>검색키:</strong> {formData.basicInfo.searchkey}</div>
-                <div><strong>검색키2:</strong> {formData.basicInfo.search_key}</div>
+                {/* <div><strong>검색키:</strong> {formData.basicInfo.searchkey}</div>
+                <div><strong>검색키2:</strong> {formData.basicInfo.search_key}</div> */}
               </div>
             </div>
 

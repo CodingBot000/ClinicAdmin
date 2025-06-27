@@ -14,7 +14,7 @@ const PageHeader = ({ name, children }: PropsWithChildren<PageHeaderProps>) => {
   };
 
   return (
-    <div className=" relative flex justify-center items-center bg-gray-500 min-h-[55px] py-3 px-6 text-[#464344] font-bold text-[25px] z-12">
+    <div className=" relative flex justify-center items-center bg-gray-200 min-h-[55px] py-3 px-6 text-[#464344] font-bold text-[25px] z-12">
       <Home className="absolute left-4" size={24} onClick={handleHomeClick} />
       <h1>{name}</h1>
       <div className="absolute right-4">{children}</div>

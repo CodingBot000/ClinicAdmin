@@ -777,6 +777,19 @@ const ClinicInfoUploadClient = ({
       setShowFinalResult(true);
       return false;
     }
+
+    // 대표원장 체크 검증
+    const hasChiefDoctor = doctors.some(doctor => doctor.isChief);
+    if (!hasChiefDoctor) {
+      setFormState({
+        message: '대표 원장을 한명 이상 체크해주세요.',
+        status: 'error',
+        errorType: 'validation',
+      });
+      setShowFinalResult(true);
+      return false;
+    }
+
     //입력된 경우 입력된 내용 검증
     if (doctors.length > 0) {
       for (const doctor of doctors) {

@@ -371,7 +371,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
       const imageUrl = doctor.imageUrl || ''; // 해당 의사의 이미지 URL
       
       const form_doctor = {
-        hospital_id: 0,
+        id_hospital: null,
         id_uuid_hospital: id_uuid,
         image_url: imageUrl, // 단일 URL로 저장 (의사 이미지는 1개만 허용)
         bio: doctor.bio || "",
