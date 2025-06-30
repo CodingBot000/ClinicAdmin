@@ -1,6 +1,18 @@
 export interface HospitalData {
   id_uuid: string;
   name: string;
+  sns_channels: {
+    kakaoTalk: string;
+    line: string;
+    weChat: string;
+    whatsApp: string;
+    telegram: string;
+    facebookMessenger: string;
+    instagram: string;
+    tiktok: string;
+    youtube: string;
+    other_channel: string;
+  };
   address_full_road: string;
   address_full_road_en: string;
   address_full_jibun: string;
@@ -24,18 +36,18 @@ export interface HospitalData {
 
 export interface HospitalDetailData {
   tel: string;
-  // kakaotalk: string;
-  // homepage: string;
-  // instagram: string;
-  // facebook: string;
-  // blog: string;
-  // youtube: string;
-  // ticktok: string;
-  // snapchat: string;
+  email: string;
+  kakao_talk: string;
+  line: string;
+  we_chat: string;
+  whats_app: string;
+  telegram: string;
+  facebook_messenger: string;
+  instagram: string;
+  tiktok: string;
+  youtube: string;
+  other_channel: string;
   map: string;
-  // desc_address: string;
-  // desc_openninghour: string;
-  // desc_facilities: string;
   etc: string;
   has_private_recovery_room: boolean;
   has_parking: boolean;
@@ -44,6 +56,7 @@ export interface HospitalDetailData {
   has_female_doctor: boolean;
   has_anesthesiologist: boolean;
   specialist_count: number;
+  sns_content_agreement: 1 | 0 | null;
 }
 
 export interface BusinessHourData {
