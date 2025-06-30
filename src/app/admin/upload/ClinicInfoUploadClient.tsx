@@ -25,6 +25,7 @@ import ExtraOptions, {
 } from '@/components/ExtraOptions';
 import { useCategories } from '@/hooks/useCategories';
 import { PreviewModal } from '@/components/modal/PreviewModal';
+import type { FormDataSummary } from '@/components/modal/PreviewModal';
 import { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
@@ -33,6 +34,7 @@ import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
+import BasicInfoSection from '@/components/BasicInfoSection';
 
 interface Surgery {
   created_at: string;
@@ -50,6 +52,25 @@ const clinicImageUploadLength = 7;
 interface ClinicInfoUploadClientProps {
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
+}
+
+interface BasicInfo {
+  name: string;
+  email: string;
+  tel: string;
+  snsChannels: {
+    kakaoTalk: string;
+    line: string;
+    weChat: string;
+    whatsApp: string;
+    telegram: string;
+    facebookMessenger: string;
+    instagram: string;
+    tiktok: string;
+    youtube: string;
+    other_channel: string;
+  };
+  snsContentAgreement: 1 | 0 | null;
 }
 
 const ClinicInfoUploadClient = ({
@@ -154,6 +175,25 @@ const ClinicInfoUploadClient = ({
     useState<FormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [basicInfo, setBasicInfo] = useState<BasicInfo>({
+    name: hospitalName,
+    email: '',
+    tel: '',
+    snsChannels: {
+      kakaoTalk: '',
+      line: '',
+      weChat: '',
+      whatsApp: '',
+      telegram: '',
+      facebookMessenger: '',
+      instagram: '',
+      tiktok: '',
+      youtube: '',
+      other_channel: '',
+    },
+    snsContentAgreement: null,
+  });
+
   const { data: surgeryList = [], isPending } = useQuery<
     Surgery[]
   >({
@@ -228,24 +268,30 @@ const ClinicInfoUploadClient = ({
 
   // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
   useEffect(() => {
-    if (existingData && !hospitalName) {
+    if (existingData && !basicInfo.name) {
       // 한 번만 실행되도록 조건 추가
       console.log('기존 데이터 상태 반영 시작');
-      const formData =
-        mapExistingDataToFormValues(existingData);
+      const formData = mapExistingDataToFormValues(existingData);
 
       // 병원 기본 정보 상태 업데이트
-      if (formData.hospital.name !== hospitalName) {
-        setHospitalName(formData.hospital.name);
-      }
-      if (
-        formData.hospital.directions !== hospitalDirections
-      ) {
-        setHospitalDirections(formData.hospital.directions);
-      }
-      if (formData.hospital.location !== hospitalLocation) {
-        setHospitalLocation(formData.hospital.location);
-      }
+      setBasicInfo({
+        name: formData.hospital.name || '',
+        email: existingData.hospitalDetail?.email || '',
+        tel: existingData.hospitalDetail?.tel || '',
+        snsChannels: existingData.hospital.sns_channels || {
+          kakaoTalk: '',
+          line: '',
+          weChat: '',
+          whatsApp: '',
+          telegram: '',
+          facebookMessenger: '',
+          instagram: '',
+          tiktok: '',
+          youtube: '',
+          other_channel: '',
+        },
+        snsContentAgreement: null,
+      });
 
       console.log('UploadClient 상태 업데이트 완료:', {
         hospitalName: formData.hospital.name,
@@ -254,6 +300,11 @@ const ClinicInfoUploadClient = ({
       });
     }
   }, [existingData]);
+
+  // hospitalName 상태를 basicInfo.name과 동기화
+  useEffect(() => {
+    setHospitalName(basicInfo.name);
+  }, [basicInfo.name]);
 
   const loadExistingDataForEdit = async () => {
     try {
@@ -473,7 +524,7 @@ const ClinicInfoUploadClient = ({
   };
 
   // FormData에서 데이터를 요약 정보로 변환하는 함수
-  const prepareFormDataSummary = (formData: FormData) => {
+  const prepareFormDataSummary = (formData: FormData): FormDataSummary => {
     // 시술 이름 매핑 생성 - 중첩된 구조를 재귀적으로 탐색
     const treatmentMap = new Map<number, string>();
     const departmentMap = new Map<number, string>(); // department 매핑 추가
@@ -622,9 +673,11 @@ const ClinicInfoUploadClient = ({
 
     return {
       basicInfo: {
-        name: (formData.get('name') as string) || '',
-        searchkey: searchkey,
-        search_key: search_key,
+        name: basicInfo.name || '',
+        email: basicInfo.email || '',
+        tel: basicInfo.tel || '',
+        snsChannels: basicInfo.snsChannels,
+        snsContentAgreement: basicInfo.snsContentAgreement,
       },
       address: {
         road: addressForSendForm?.address_full_road || '',
@@ -679,10 +732,21 @@ const ClinicInfoUploadClient = ({
     };
   };
 
-  // Validation 체크 함수 - 테스트를 위해 주석처리/해제 가능
+  // Validation 체크 함수
   const validateFormData = () => {
     // ====== VALIDATION 체크 시작 ======
-    // 테스트 시 이 전체 블록을 주석처리하면 validation 건너뜀
+
+    // SNS 컨텐츠 이용 동의 검증
+    if (!basicInfo.snsContentAgreement) {
+      console.log('validateFormData - SNS 컨텐츠 이용 동의 누락');
+      setFormState({
+        message: 'SNS 홍보 채널의 컨텐츠 이용 동의 여부를 선택해주세요.',
+        status: 'error',
+        errorType: 'validation',
+      });
+      setShowFinalResult(true);
+      return false;
+    }
 
     // 1. 병원명 검증 (필수)
     const clinicNameInput = document.querySelector(
@@ -777,6 +841,19 @@ const ClinicInfoUploadClient = ({
       setShowFinalResult(true);
       return false;
     }
+
+    // 대표원장 체크 검증
+    const hasChiefDoctor = doctors.some(doctor => doctor.isChief);
+    if (!hasChiefDoctor) {
+      setFormState({
+        message: '대표 원장을 한명 이상 체크해주세요.',
+        status: 'error',
+        errorType: 'validation',
+      });
+      setShowFinalResult(true);
+      return false;
+    }
+
     //입력된 경우 입력된 내용 검증
     if (doctors.length > 0) {
       for (const doctor of doctors) {
@@ -1010,15 +1087,19 @@ const ClinicInfoUploadClient = ({
           `의사 이미지: ${doctorImageUrls.length}개`,
         );
 
-        // FormData 구성 (이미지 URL만 포함, 파일 객체 제외)
+        // FormData 구성
         const formData = new FormData();
 
         // 기본 정보
         formData.append('id_uuid', id_uuid);
         formData.append('current_user_uid', currentUserUid);
-        formData.append('name', clinicName);
-        formData.append('searchkey', clinicName);
-        formData.append('search_key', clinicName);
+        formData.append('name', basicInfo.name);
+        formData.append('email', basicInfo.email);
+        formData.append('tel', basicInfo.tel);
+        formData.append('searchkey', basicInfo.name);
+        formData.append('search_key', basicInfo.name);
+        formData.append('sns_channels', JSON.stringify(basicInfo.snsChannels));
+        formData.append('sns_content_agreement', basicInfo.snsContentAgreement?.toString() || 'null');
 
         // 이미지 URL들 (파일 객체가 아닌 URL 문자열)
         formData.append(
@@ -1532,17 +1613,10 @@ const ClinicInfoUploadClient = ({
         style={{ width: '100vw', maxWidth: '1024px' }}
       >
         <div className='space-y-4 w-full'>
-          <InputField
-            label='병원명'
-            name='name'
-            required
-            value={hospitalName}
-            onChange={(e) =>
-              setHospitalName(e.target.value)
-            }
+          <BasicInfoSection
+            onInfoChange={setBasicInfo}
+            initialInfo={basicInfo}
           />
-          {/* <InputField label="searchkey" name="searchkey" required />
-        <InputField label="search_key" name="search_key" required /> */}
           <div className='w-full'>
             <AddressSection
               onSelectAddress={setAddressForSendForm}
@@ -1677,6 +1751,8 @@ const ClinicInfoUploadClient = ({
           onDoctorsChange={setDoctors}
           initialDoctors={doctors}
         />
+
+{ /* SNS 채널 컨텐츠 이용 동의 */ }
 
         <div className='flex justify-center mt-8 gap-8'>
           <Button

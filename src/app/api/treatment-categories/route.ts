@@ -1,12 +1,7 @@
 import { CategoryNode } from '@/types/category';
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { TABLE_TREATMENT } from '@/constants/tables';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from '@/lib/supabaseClient';
 
 export async function GET() {
   const apiStartTime = Date.now();

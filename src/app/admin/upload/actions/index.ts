@@ -17,6 +17,8 @@ import {
   STORAGE_HOSPITAL_IMG,
   STORAGE_DOCTOR_IMG
 } from '@/constants/tables';
+import { createClient } from '@supabase/supabase-js';
+import { HospitalDetailData } from '@/types/hospital';
 
 export const uploadActions = async (prevState: any, formData: FormData) => {
   const startTime = Date.now();
@@ -371,7 +373,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
       const imageUrl = doctor.imageUrl || ''; // 해당 의사의 이미지 URL
       
       const form_doctor = {
-        hospital_id: 0,
+        id_hospital: null,
         id_uuid_hospital: id_uuid,
         image_url: imageUrl, // 단일 URL로 저장 (의사 이미지는 1개만 허용)
         bio: doctor.bio || "",
@@ -550,58 +552,45 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   // hospital_details 테이블 입력 
   // extra options 포함
 
-  const hospitalDetailDefaultValue = (id_unique: string) => ({
-    id_hospital: id_unique,
-    id_uuid_hospital: id_uuid,
-    tel: "0507-1433-0210",
-    // kakaotalk: "",
-    // homepage: "http://www.reoneskin.com",
-    // instagram: "https://www.instagram.com/reone__clinic/",
-    // facebook: "",
-    // blog: "https://blog.naver.com/reone21",
-    // youtube: "https://www.youtube.com/watch?v=Yaa1HZJXIJY",
-    // ticktok:
-    //   "https://www.tiktok.com/@vslineclinicglobal/video/7255963489192168711?is_from_webapp=1&sender_device=pc&web_id=7373256937738012176",
-    // snapchat: "",
-    map: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3164.348038374547!2d127.02511807637043!3d37.52329227204984!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca39ea4618cdb%3A0xd0ad0677746be4c7!2z7Jyg7KeE7Iqk7J2Y7JuQ!5e0!3m2!1sko!2skr!4v1716566609639!5m2!1sko!2skr",
-    // desc_address: "327, Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
-    // desc_openninghour: `
-    //   MON
-    //   10:00 - 19:00
-    //   13:00 - 14:00 BreakTime
-    //   TUE
-    //   10:00 - 19:00
-    //   13:00 - 14:00 BreakTime
-    //   WED
-    //   10:00 - 19:00
-    //   13:00 - 14:00 BreakTime
-    //   THU
-    //   10:00 - 19:00
-    //   13:00 - 14:00 BreakTime
-    //   FRI
-    //   10:00 - 19:00
-    //   13:00 - 14:00 BreakTime
-    //   SAT
-    //   10:00 - 16:00
-    //   SUN
-    //   Regular holiday (Event Week SunDay)
-    // `,
-    // desc_facilities:
-    //   "Separate Male/Female Restrooms, Wireless Internet, Parking, Valet Parking",
-    // desc_doctors_imgurls: [],
-    etc: "",
-    has_private_recovery_room: extra_options.has_private_recovery_room,
-    has_parking: extra_options.has_parking,
-    has_cctv: extra_options.has_cctv, 
-    has_night_counseling: extra_options.has_night_counseling,
-    has_female_doctor: extra_options.has_female_doctor,
-    has_anesthesiologist: extra_options.has_anesthesiologist,
-    specialist_count: extra_options.specialistCount,
-  });
+  const sns_channels_raw = formData.get("sns_channels") as string;
+  const sns_channels = sns_channels_raw ? JSON.parse(sns_channels_raw) : {};
+
+  const sns_content_agreement = formData.get('sns_content_agreement') as string;
+  const sns_content_agreement_value = sns_content_agreement === 'null' ? null : parseInt(sns_content_agreement) as 1 | 0;
+
+  const hospitalDetailDefaultValue = (
+    formData: FormData,
+    id_uuid: string
+  ): HospitalDetailData => {
+    return {
+      tel: formData.get('tel') as string,
+      email: formData.get('email') as string,
+      kakao_talk: sns_channels.kakaoTalk,
+      line: sns_channels.line,
+      we_chat: sns_channels.weChat,
+      whats_app: sns_channels.whatsApp,
+      telegram: sns_channels.telegram,
+      facebook_messenger: sns_channels.facebookMessenger,
+      instagram: sns_channels.instagram,
+      tiktok: sns_channels.tiktok,
+      youtube: sns_channels.youtube,
+      other_channel: sns_channels.other_channel,
+      map: '',
+      etc: '',
+      has_private_recovery_room: false,
+      has_parking: false,
+      has_cctv: false,
+      has_night_counseling: false,
+      has_female_doctor: false,
+      has_anesthesiologist: false,
+      specialist_count: 0,
+      sns_content_agreement: sns_content_agreement_value,
+    };
+  };
 
   const { error } = await supabase
     .from(TABLE_HOSPITAL_DETAIL)
-    .insert([hospitalDetailDefaultValue(insertHospital.data[0].id_unique)]);
+    .insert([hospitalDetailDefaultValue(formData, id_uuid)]);
 
   if (error) {
     console.log("uploadActions hospital_details error:", error);
