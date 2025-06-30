@@ -44,6 +44,9 @@ function SNSConsentModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
         <p className="mb-4">
           본 내용에 동의하시면 SNS 채널 콘텐츠를 플랫폼 홍보 영역(웹, 앱, 광고 등)에 활용하겠습니다.
         </p>
+        <p className="mb-4">
+          동의한 내용은 언제든 철회 가능하며, 철회시 즉시 이용하던 모든 콘텐츠 공유가 중단됩니다.
+        </p>
         <button
           onClick={onClose}
           className="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition"
