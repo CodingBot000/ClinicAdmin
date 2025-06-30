@@ -35,6 +35,7 @@ import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
 import BasicInfoSection from '@/components/BasicInfoSection';
+import Divider from '@/components/Divider';
 
 interface Surgery {
   created_at: string;
@@ -1617,6 +1618,7 @@ const ClinicInfoUploadClient = ({
             onInfoChange={setBasicInfo}
             initialInfo={basicInfo}
           />
+          <Divider />
           <div className='w-full'>
             <AddressSection
               onSelectAddress={setAddressForSendForm}
@@ -1644,6 +1646,8 @@ const ClinicInfoUploadClient = ({
             onSelect={setSelectedLocation}
             selectedLocation={selectedLocation}
           />
+
+          <Divider />
           <div className='w-full'>
             {/* <SurgeriesModal itemList={surgeryList} /> */}
             {/* 가능시술 선택하기  선택 모달 */}
@@ -1710,9 +1714,11 @@ const ClinicInfoUploadClient = ({
             </div>
           )}
         </div>
+
         {/* 영업시간 등록  */}
         {/* <div className="w-full">
         <h3 className="font-semibold mb-2">영업시간 날짜 시간 등록</h3> */}
+          <Divider />
         <OpeningHoursForm
           onSelectOpeningHours={setOpeningHours}
           initialHours={initialBusinessHours}
@@ -1724,6 +1730,8 @@ const ClinicInfoUploadClient = ({
             initialOptions={optionState}
           />
         </div>
+
+        <Divider />
         {/* 병원 이미지 업로드 */}
         <ClinicImageUploadSection
           maxImages={clinicImageUploadLength}
@@ -1741,7 +1749,7 @@ const ClinicInfoUploadClient = ({
             existingData?.hospital.imageurls || []
           }
         />
-
+        <Divider />
         {/* 의사 정보 등록 */}
         <DoctorInfoSection
           title='의사 정보 등록'
