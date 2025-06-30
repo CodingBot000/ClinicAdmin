@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { AlertModal } from './modal';
 import { HelpCircle } from 'lucide-react';
 import SNSConsentButton from './modal/SNSContentModal';
+import Divider from './Divider';
 
 interface SnsChannels {
   kakaoTalk: string;
@@ -222,6 +223,7 @@ const BasicInfoSection = ({
           onChange={(e) => handleChange('tel', e.target.value)}
         />
 
+        <Divider />
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold">SNS 상담 채널</h3>
