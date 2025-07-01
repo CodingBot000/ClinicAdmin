@@ -43,4 +43,28 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
 );
 
 InputField.displayName = "InputField";
+
+interface TextAreaProps {
+  placeholder?: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}
+
+export const TextArea: React.FC<TextAreaProps> = ({
+  placeholder,
+  value,
+  onChange,
+  className,
+}) => {
+  return (
+    <textarea
+      className={`w-full p-4 border rounded-lg resize-none h-32 ${className}`}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+};
+
 export default InputField;

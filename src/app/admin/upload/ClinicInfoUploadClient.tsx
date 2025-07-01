@@ -1,7 +1,7 @@
 'use client';
 
 import PageHeader from '@/components/PageHeader';
-import InputField from '@/components/InputField';
+import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
 import { uploadActions } from './actions';
@@ -36,6 +36,7 @@ import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
 import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
+import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 
 interface Surgery {
   created_at: string;
@@ -194,6 +195,8 @@ const ClinicInfoUploadClient = ({
     },
     snsContentAgreement: null,
   });
+
+  const [feedback, setFeedback] = useState<string>('');
 
   const { data: surgeryList = [], isPending } = useQuery<
     Surgery[]
@@ -1269,6 +1272,11 @@ const ClinicInfoUploadClient = ({
           console.log('등록된 의사가 없습니다.');
         }
 
+        // 피드백 정보 추가
+        if (feedback.trim()) {
+          formData.append('feedback', feedback.trim());
+        }
+
         // 미리보기용 데이터 전체 로그 출력
         console.log(
           '===== 미리보기용 데이터 전체 목록 =====',
@@ -1759,9 +1767,28 @@ const ClinicInfoUploadClient = ({
           onDoctorsChange={setDoctors}
           initialDoctors={doctors}
         />
+        <Divider />
+  { /* 가능언어 선택  */ }
+  <AvailableLanguageSection
+  onLanguagesChange={(selectedLanguages: string[]) => {
+    console.log('선택된 언어:', selectedLanguages);
+    // 선택된 언어 코드 배열을 처리하는 로직
+  }}
+  initialLanguages={['en-US', 'ja-JP']} // 선택적: 초기 선택 언어
+/>
+{ /* 폼 작성관련해서 피드백 주실  내용이 있다면 자유롭게 의견 부탁드립니다. (선택) ) */ }
 
-{ /* SNS 채널 컨텐츠 이용 동의 */ }
-
+       <Divider />
+       <div className='w-full'>
+          <h3 className="font-semibold mb-2">피드백</h3>
+          <p className="text-sm text-gray-600 mb-4">폼 작성 관련해서 피드백 주실 내용이 있다면 자유롭게 의견 부탁드립니다. (선택)</p>
+          <TextArea
+            placeholder='자유롭게 피드백을 남겨주세요.'
+            onChange={setFeedback}
+            value={feedback}
+          />
+        </div>
+      <Divider />
         <div className='flex justify-center mt-8 gap-8'>
           <Button
             color='red'
@@ -1778,6 +1805,9 @@ const ClinicInfoUploadClient = ({
           </Button>
         </div>
       </div>
+
+
+      
 
       <AlertModal
         onCancel={handleModal}

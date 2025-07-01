@@ -11,6 +11,7 @@ const TABLE_HOSPITAL_DETAIL = "hospital_details_test";
 const TABLE_HOSPITAL_TREATMENT = "hospital_treatment_test";
 const TABLE_HOSPITAL_BUSINESS_HOUR = "hospital_business_hour_test";
 const TABLE_ADMIN = "admin";
+const TABLE_FEEDBACK = "feedback";
 const TABLE_TREATMENT = "treatment";
 const STORAGE_IMAGES = "images";
 const STORAGE_HOSPITAL_IMG = "hospitalimg";
@@ -23,6 +24,7 @@ export {
   TABLE_HOSPITAL_TREATMENT,
   TABLE_HOSPITAL_BUSINESS_HOUR,
   TABLE_ADMIN,
+  TABLE_FEEDBACK,
   TABLE_TREATMENT,
   STORAGE_IMAGES,
   STORAGE_HOSPITAL_IMG,

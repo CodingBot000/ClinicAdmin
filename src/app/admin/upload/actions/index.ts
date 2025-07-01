@@ -15,7 +15,8 @@ import {
   TABLE_TREATMENT,
   STORAGE_IMAGES,
   STORAGE_HOSPITAL_IMG,
-  STORAGE_DOCTOR_IMG
+  STORAGE_DOCTOR_IMG,
+  TABLE_FEEDBACK
 } from '@/constants/tables';
 import { createClient } from '@supabase/supabase-js';
 import { HospitalDetailData } from '@/types/hospital';
@@ -633,6 +634,24 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
     console.log("현재 사용자 UID가 제공되지 않았습니다.");
   }
 
+  // 피드백이 있는 경우 저장
+  const feedback = formData.get('feedback');
+  if (feedback) {
+    const { error: feedbackError } = await supabase
+      .from(TABLE_FEEDBACK)
+      .insert([
+        {
+          feedback_content: feedback,
+          id_uuid_hospital: id_uuid,
+        },
+      ]);
+
+    if (feedbackError) {
+      console.error('피드백 저장 실패:', feedbackError);
+      // 피드백 저장 실패는 전체 프로세스를 중단하지 않습니다
+    }
+  }
+
   revalidatePath("/", "layout");
   console.log("uploadActions No error uploadActions ");
 
@@ -643,7 +662,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
 
   return {
     ...prevState,
-    message: "success upload!",
+    message: "성공적으로 등록되었습니다.",
     status: "success",
   };
 };
