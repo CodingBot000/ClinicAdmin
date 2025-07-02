@@ -7,12 +7,12 @@ import SNSConsentButton from './modal/SNSContentModal';
 import Divider from './Divider';
 
 interface SnsChannels {
-  kakaoTalk: string;
+  kakao_talk: string;
   line: string;
-  weChat: string;
-  whatsApp: string;
+  we_chat: string;
+  whats_app: string;
   telegram: string;
-  facebookMessenger: string;
+  facebook_messenger: string;
   instagram: string;
   tiktok: string;
   youtube: string;
@@ -24,12 +24,12 @@ interface BasicInfo {
   email: string;
   tel: string;
   snsChannels: {
-    kakaoTalk: string;
+    kakao_talk: string;
     line: string;
-    weChat: string;
-    whatsApp: string;
+    we_chat: string;
+    whats_app: string;
     telegram: string;
-    facebookMessenger: string;
+    facebook_messenger: string;
     instagram: string;
     tiktok: string;
     youtube: string;
@@ -44,12 +44,12 @@ interface BasicInfoSectionProps {
 }
 
 const SNS_CHANNEL_LABELS = {
-  kakaoTalk: 'KakaoTalk',
+  kakao_talk: 'KakaoTalk',
   line: 'LINE',
-  weChat: 'WeChat',
-  whatsApp: 'WhatsApp',
+  we_chat: 'WeChat',
+  whats_app: 'WhatsApp',
   telegram: 'Telegram',
-  facebookMessenger: 'Facebook\nMessenger',
+  facebook_messenger: 'Facebook\nMessenger',
   instagram: 'Instagram',
   tiktok: 'TikTok',
   youtube: 'Youtube',
@@ -139,12 +139,12 @@ const BasicInfoSection = ({
       email: '',
       tel: '',
       snsChannels: {
-        kakaoTalk: '',
+        kakao_talk: '',
         line: '',
-        weChat: '',
-        whatsApp: '',
+        we_chat: '',
+        whats_app: '',
         telegram: '',
-        facebookMessenger: '',
+        facebook_messenger: '',
         instagram: '',
         tiktok: '',
         youtube: '',

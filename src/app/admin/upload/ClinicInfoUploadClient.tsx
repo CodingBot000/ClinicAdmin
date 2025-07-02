@@ -1774,7 +1774,7 @@ const ClinicInfoUploadClient = ({
     console.log('선택된 언어:', selectedLanguages);
     // 선택된 언어 코드 배열을 처리하는 로직
   }}
-  initialLanguages={['en-US', 'ja-JP']} // 선택적: 초기 선택 언어
+  // initialLanguages={['en-US', 'ja-JP']} // 선택적: 초기 선택 언어
 />
 { /* 폼 작성관련해서 피드백 주실  내용이 있다면 자유롭게 의견 부탁드립니다. (선택) ) */ }
 
