@@ -17,15 +17,19 @@ import {
 import { useDropzone } from 'react-dropzone';
 
 interface ClinicImageUploadSectionProps {
-  maxImages: number;
-  title: string;
-  description?: string;
   onFilesChange: (files: File[]) => void;
   name: string;
   type: 'Avatar' | 'Banner';
-  initialImages?: string[]; // 기존 이미지 URL 배열
+  maxImages: number;
+  title: string;
+  description: string;
+  initialImages?: string[];
+  onExistingDataChange?: (data: any) => void;
 }
 
+/**
+ * TODO: Avatar (의사이미지) 관련 코드 삭제해야함. 사용하지않음. 다른파일 에서 별도관리함))
+ */
 const DEFAULT_IMAGES = [
   {
     label: '디폴트 남자',
@@ -39,17 +43,16 @@ const DEFAULT_IMAGES = [
   },
 ];
 
-const ClinicImageUploadSection: React.FC<
-  ClinicImageUploadSectionProps
-> = ({
-  maxImages,
-  title,
-  description,
+const ClinicImageUploadSection = ({
   onFilesChange,
   name,
   type,
+  maxImages,
+  title,
+  description,
   initialImages = [],
-}) => {
+  onExistingDataChange,
+}: ClinicImageUploadSectionProps) => {
   const [preview, setPreview] = useState<
     Array<string | undefined>
   >([]);
@@ -221,6 +224,18 @@ const ClinicImageUploadSection: React.FC<
     setFiles([]);
     setIsExistingImage([]);
     setOverLimitWarning('');
+    onFilesChange([]);
+    
+    // existingData의 이미지 URL 클리어
+    if (onExistingDataChange) {
+      onExistingDataChange((prevData: any) => ({
+        ...prevData,
+        hospital: prevData.hospital ? {
+          ...prevData.hospital,
+          imageurls: []
+        } : null
+      }));
+    }
 
     if (type === 'Avatar') {
       setAvatarCount(1);
@@ -455,7 +470,7 @@ const ClinicImageUploadSection: React.FC<
                   />
 
                   {/* 삭제 버튼 - default 이미지가 아닐 때만 표시 */}
-                  {!(
+                  {/* {!(
                     defaultChecked.man ||
                     defaultChecked.woman
                   ) && (
@@ -480,7 +495,7 @@ const ClinicImageUploadSection: React.FC<
                         strokeWidth={2}
                       />
                     </button>
-                  )}
+                  )} */}
                 </>
               )}
             </div>

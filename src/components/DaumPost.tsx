@@ -3,45 +3,7 @@
 import React from "react";
 import { useDaumPostcodePopup } from "react-daum-postcode";
 import { HospitalAddress } from "@/types/address";
-
-// 타입 정의
-type DaumAddressData = {
-  address: string;
-  addressEnglish: string;
-  addressType: string;
-  roadAddress: string;
-  roadAddressEnglish: string;
-  jibunAddress: string;
-  jibunAddressEnglish: string;
-  sido: string;
-  sidoEnglish: string;
-  sigungu: string;
-  sigunguEnglish: string;
-  bname: string;
-  bnameEnglish: string;
-  zonecode: string;
-};
-
-function mapDaumDataToHospitalAddress(
-  data: DaumAddressData,
-  coordinates?: { latitude: number; longitude: number }
-): HospitalAddress {
-  return {
-    address_full_road: data.roadAddress,
-    address_full_road_en: data.roadAddressEnglish,
-    address_full_jibun: data.jibunAddress,
-    address_full_jibun_en: data.jibunAddressEnglish,
-    address_si: data.sido,
-    address_si_en: data.sidoEnglish,
-    address_gu: data.sigungu,
-    address_gu_en: data.sigunguEnglish,
-    address_dong: data.bname,
-    address_dong_en: data.bnameEnglish,
-    zipcode: data.zonecode,
-    latitude: coordinates?.latitude,
-    longitude: coordinates?.longitude,
-  };
-}
+import { DaumAddressData, mapDaumPostDataToHospitalAddress } from "@/utils/address/mapDaumPostDataToHospitalAddress";
 
 interface DaumPostProps {
   setShowingAddress: (address: string) => void;
@@ -132,7 +94,7 @@ const DaumPost: React.FC<DaumPostProps> = ({ setShowingAddress, setAddress, setC
     const coordinates = await getCoordinatesFromAddress(data.address);
     
     // mapDaumDataToHospitalAddress 함수를 사용하여 HospitalAddress 객체 생성
-    const hospitalAddress = mapDaumDataToHospitalAddress(daumAddressData, coordinates);
+    const hospitalAddress = mapDaumPostDataToHospitalAddress(daumAddressData, coordinates);
     
     // 수파베이스 전송 전 최종 데이터 확인
     console.log('수파베이스 전송 준비 완료 - HospitalAddress:', JSON.stringify(hospitalAddress, null, 2));

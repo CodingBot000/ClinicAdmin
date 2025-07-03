@@ -1,47 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InputField from './InputField';
 import { Button } from './ui/button';
 import { AlertModal } from './modal';
 import { HelpCircle } from 'lucide-react';
 import SNSConsentButton from './modal/SNSContentModal';
 import Divider from './Divider';
-
-interface SnsChannels {
-  kakao_talk: string;
-  line: string;
-  we_chat: string;
-  whats_app: string;
-  telegram: string;
-  facebook_messenger: string;
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  other_channel: string;
-}
-
-interface BasicInfo {
-  name: string;
-  email: string;
-  tel: string;
-  snsChannels: {
-    kakao_talk: string;
-    line: string;
-    we_chat: string;
-    whats_app: string;
-    telegram: string;
-    facebook_messenger: string;
-    instagram: string;
-    tiktok: string;
-    youtube: string;
-    other_channel: string;
-  };
-  snsContentAgreement: 1 | 0 | null;
-}
-
-interface BasicInfoSectionProps {
-  onInfoChange: (info: BasicInfo) => void;
-  initialInfo?: BasicInfo;
-}
+import { BasicInfo } from '@/app/admin/upload/ClinicInfoUploadClient';
 
 const SNS_CHANNEL_LABELS = {
   kakao_talk: 'KakaoTalk',
@@ -55,6 +19,13 @@ const SNS_CHANNEL_LABELS = {
   youtube: 'Youtube',
   other_channel: 'Other\nChannel',
 } as const;
+
+type SnsChannelKey = keyof typeof SNS_CHANNEL_LABELS;
+
+interface BasicInfoSectionProps {
+  onInfoChange: (info: BasicInfo) => void;
+  initialInfo?: BasicInfo;
+}
 
 function MessengerTable() {
   const messengerData = [
@@ -133,29 +104,85 @@ const BasicInfoSection = ({
   onInfoChange,
   initialInfo,
 }: BasicInfoSectionProps) => {
-  const [info, setInfo] = useState<BasicInfo>(
-    initialInfo || {
-      name: '',
-      email: '',
-      tel: '',
-      snsChannels: {
-        kakao_talk: '',
-        line: '',
-        we_chat: '',
-        whats_app: '',
-        telegram: '',
-        facebook_messenger: '',
-        instagram: '',
-        tiktok: '',
-        youtube: '',
-        other_channel: '',
-      },
-      snsContentAgreement: null,
+  console.log('BasicInfoSection initialInfo:', {
+    snsContentAgreement: initialInfo?.snsContentAgreement,
+    type: initialInfo?.snsContentAgreement != null ? typeof initialInfo.snsContentAgreement : 'null'
+  });
+  
+  const [info, setInfo] = useState<BasicInfo>({
+    name: initialInfo?.name || '',
+    email: initialInfo?.email || '',
+    tel: initialInfo?.tel || '',
+
+    kakao_talk: initialInfo?.kakao_talk || '',
+    line: initialInfo?.line || '',
+    we_chat: initialInfo?.we_chat || '',
+    whats_app: initialInfo?.whats_app || '',
+    telegram: initialInfo?.telegram || '',
+    facebook_messenger: initialInfo?.facebook_messenger || '',
+    instagram: initialInfo?.instagram || '',
+    tiktok: initialInfo?.tiktok || '',
+    youtube: initialInfo?.youtube || '',
+    other_channel: initialInfo?.other_channel || '',
+    snsContentAgreement: initialInfo?.snsContentAgreement ?? null,
+  });
+
+  // initialInfo가 변경될 때마다 info 상태 업데이트
+  useEffect(() => {
+    if (initialInfo) {
+      console.log('initialInfo changed, updating info state:', initialInfo.snsContentAgreement);
+      setInfo({
+        name: initialInfo.name || info.name,
+        email: initialInfo.email || info.email,
+        tel: initialInfo.tel || info.tel,
+       
+        kakao_talk: initialInfo.kakao_talk || info.kakao_talk,
+        line: initialInfo.line || info.line,
+        we_chat: initialInfo.we_chat || info.we_chat,
+        whats_app: initialInfo.whats_app || info.whats_app,
+        telegram: initialInfo.telegram || info.telegram,
+        facebook_messenger: initialInfo.facebook_messenger || info.facebook_messenger,
+        instagram: initialInfo.instagram || info.instagram,
+        tiktok: initialInfo.tiktok || info.tiktok,
+        youtube: initialInfo.youtube || info.youtube,
+        other_channel: initialInfo.other_channel || info.other_channel,
+        snsContentAgreement: initialInfo.snsContentAgreement ?? info.snsContentAgreement,
+      });
     }
-  );
+  }, [initialInfo]);
+
+  console.log('BasicInfoSection info state:', {
+    snsContentAgreement: info.snsContentAgreement,
+    type: info.snsContentAgreement != null ? typeof info.snsContentAgreement : 'null'
+  });
 
   const [showSnsModal, setShowSnsModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [emailError, setEmailError] = useState<string>('');
+  const [tel, setTel] = useState(info.tel || '');
+
+  // 이메일 유효성 검사 함수
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    return emailRegex.test(email);
+  };
+
+  // 이메일 blur 핸들러
+  const handleEmailBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    if (email && !validateEmail(email)) {
+      setEmailError('올바른 이메일 형식이 아닙니다.');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  // 전화번호 입력 핸들러
+  const handleTelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9\-]/g, ''); // 숫자와 하이픈만 허용
+    setTel(value);
+    handleChange('tel', value);
+  };
 
   const handleChange = (
     field: keyof BasicInfo,
@@ -167,15 +194,12 @@ const BasicInfoSection = ({
   };
 
   const handleSnsChange = (
-    channel: keyof SnsChannels,
+    channel: SnsChannelKey,
     value: string
   ) => {
     const newInfo = {
       ...info,
-      snsChannels: {
-        ...info.snsChannels,
-        [channel]: value,
-      },
+      [channel]: value,
     };
     setInfo(newInfo);
     onInfoChange(newInfo);
@@ -191,9 +215,20 @@ const BasicInfoSection = ({
   };
 
   // 활성화된 SNS 채널 목록 (값이 있는 채널만)
-  const activeChannels = Object.entries(info.snsChannels)
+  const activeChannels = Object.entries({
+    kakao_talk: info.kakao_talk,
+    line: info.line,
+    we_chat: info.we_chat,
+    whats_app: info.whats_app,
+    telegram: info.telegram,
+    facebook_messenger: info.facebook_messenger,
+    instagram: info.instagram,
+    tiktok: info.tiktok,
+    youtube: info.youtube,
+    other_channel: info.other_channel,
+  } as Record<SnsChannelKey, string>)
     .filter(([_, value]) => value)
-    .map(([key]) => SNS_CHANNEL_LABELS[key as keyof SnsChannels]);
+    .map(([key]) => SNS_CHANNEL_LABELS[key as SnsChannelKey]);
 
   return (
     <div className="space-y-6">
@@ -213,14 +248,19 @@ const BasicInfoSection = ({
           required
           value={info.email}
           onChange={(e) => handleChange('email', e.target.value)}
+          onBlur={handleEmailBlur}
+          isError={!!emailError}
+          errorMessage={emailError}
         />
         <InputField
-          label="전화번호"
+          label="대표 전화번호"
           name="tel"
           type="tel"
+          inputMode="tel"
           required
-          value={info.tel}
-          onChange={(e) => handleChange('tel', e.target.value)}
+          value={tel}
+          onChange={handleTelChange}
+          placeholder="예: 02-1234-5678 또는 010-1234-5678"
         />
 
         <Divider />
@@ -290,10 +330,10 @@ const BasicInfoSection = ({
             <InputField
               key={key}
               label={label}
-              name={`sns_${key}`}
-              value={info.snsChannels[key as keyof SnsChannels]}
+              name={key}
+              value={info[key as SnsChannelKey]}
               onChange={(e) =>
-                handleSnsChange(key as keyof SnsChannels, e.target.value)
+                handleSnsChange(key as SnsChannelKey, e.target.value)
               }
               placeholder={`${label} 주소 입력`}
             />

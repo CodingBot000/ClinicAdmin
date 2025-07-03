@@ -1,6 +1,6 @@
 import { HospitalAddress } from "@/types/address";
 
-type DaumAddressData = {
+export type DaumAddressData = {
     address: string;
     addressEnglish: string;
     addressType: string;
@@ -17,12 +17,12 @@ type DaumAddressData = {
     zonecode: string;
   };
   
-  function mapDaumDataToHospitalAddress(
+  export const mapDaumPostDataToHospitalAddress = (
     data: DaumAddressData,
     coordinates?: { latitude: number; longitude: number },
     // address_detail?: string,
     // address_detail_en?: string,
-  ): HospitalAddress {
+  ): HospitalAddress => {
     return {
       address_full_road: data.roadAddress,
       address_full_road_en: data.roadAddressEnglish,
