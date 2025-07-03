@@ -1,5 +1,6 @@
 'use client';
 
+import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import React, { useState, useEffect } from 'react';
 
 interface ExtraOption {
@@ -8,12 +9,12 @@ interface ExtraOption {
 }
 
 const extraOptions: ExtraOption[] = [
-  { key: 'has_private_recovery_room', label: '전담회복실' },
-  { key: 'has_parking', label: '주차가능' },
-  { key: 'has_cctv', label: 'CCTV설치' },
-  { key: 'has_night_counseling', label: '야간상담' },
-  { key: 'has_female_doctor', label: '여의사진료' },
-  { key: 'has_anesthesiologist', label: '마취전문의' },
+  { key: HAS_PRIVATE_RECOVERY_ROOM, label: '전담회복실' },
+  { key: HAS_PARKING, label: '주차가능' },
+  { key: HAS_CCTV, label: 'CCTV설치' },
+  { key: HAS_NIGHT_COUNSELING, label: '야간상담' },
+  { key: HAS_FEMALE_DOCTOR, label: '여의사진료' },
+  { key: HAS_ANESTHESIOLOGIST, label: '마취전문의' },
 ];
 
 export interface ExtraOptionState {

@@ -25,6 +25,8 @@ export interface DoctorInfo {
   useDefaultImage: boolean;
   defaultImageType?: 'man' | 'woman';
   isChief: boolean;
+  isExistingImage?: boolean;
+  originalImageUrl?: string;
 }
 
 interface DoctorInfoFormProps {
@@ -231,6 +233,8 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
         ? defaultImageType
         : undefined,
       isChief: initialData?.isChief || false, // 기존 대표원장 상태 유지
+      isExistingImage: initialData?.isExistingImage,
+      originalImageUrl: initialData?.originalImageUrl,
     };
 
     onSave(doctorInfo);

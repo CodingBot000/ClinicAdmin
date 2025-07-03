@@ -181,16 +181,72 @@ export default function AddressSection({
     updateAddressDetail(addressDetail, addressDetailEn, directionsToClinic, value);
   };
 
+  // 로컬 상태 추가
+  const [localAddressDetail, setLocalAddressDetail] = useState(initialAddressDetail || '');
+  const [localAddressDetailEn, setLocalAddressDetailEn] = useState(initialAddressDetailEn || '');
+  const [localDirectionsToClinic, setLocalDirectionsToClinic] = useState(initialDirections || '');
+  const [localDirectionsToClinicEn, setLocalDirectionsToClinicEn] = useState(initialDirectionsEn || '');
+
+  // initialAddress가 변경될 때 로컬 상태 업데이트
+  useEffect(() => {
+    setLocalAddressDetail(initialAddressDetail || '');
+    setLocalAddressDetailEn(initialAddressDetailEn || '');
+    setLocalDirectionsToClinic(initialDirections || '');
+    setLocalDirectionsToClinicEn(initialDirectionsEn || '');
+  }, [initialAddressDetail, initialAddressDetailEn, initialDirections, initialDirectionsEn]);
+
+  // 로컬 상태 변경 핸들러
+  const handleLocalAddressDetailChange = (value: string) => {
+    setLocalAddressDetail(value);
+  };
+
+  const handleLocalAddressDetailEnChange = (value: string) => {
+    setLocalAddressDetailEn(value);
+  };
+
+  const handleLocalDirectionsToClinicChange = (value: string) => {
+    setLocalDirectionsToClinic(value);
+  };
+
+  const handleLocalDirectionsToClinicEnChange = (value: string) => {
+    setLocalDirectionsToClinicEn(value);
+  };
+
+  // blur 이벤트 핸들러
+  const handleAddressDetailBlur = () => {
+    handleAddressDetailChange(localAddressDetail);
+  };
+
+  const handleAddressDetailEnBlur = () => {
+    handleAddressDetailEnChange(localAddressDetailEn);
+  };
+
+  const handleDirectionsToClinicBlur = () => {
+    handleDirectionsToClinicChange(localDirectionsToClinic);
+  };
+
+  const handleDirectionsToClinicEnBlur = () => {
+    handleDirectionsToClinicEnChange(localDirectionsToClinicEn);
+  };
+
   return (
     <div className="flex flex-col gap-3 w-full">
       <div className="flex gap-2 w-full">
-        <input
-          type="text"
-          value={showingAddress}
-          readOnly
-          className="flex-1 min-w-0 px-3 py-2 border rounded bg-gray-100 text-gray-800 outline-none"
-          placeholder="주소를 검색하세요"
-        />
+        <div className="flex-1 min-w-0">
+          <input
+            type="text"
+            value={showingAddress}
+            readOnly
+            className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-800 outline-none mb-2"
+            placeholder="주소를 검색하세요"
+          />
+          {addressForSendForm && (
+            <div className="text-sm text-gray-600 space-y-1 px-3">
+              <div><span className="font-medium">도로명:</span> {addressForSendForm.address_full_road}</div>
+              <div><span className="font-medium">지번:</span> {addressForSendForm.address_full_jibun}</div>
+            </div>
+          )}
+        </div>
         <DaumPost 
           setShowingAddress={handleSelectShowingAddress}
           setAddress={handleSelectAddress} 
@@ -210,16 +266,17 @@ export default function AddressSection({
           label="상세주소"
           name="address_detail"
           placeholder="필요시 최대한 상세한 추가 주소를 입력하세요 (선택)"
-          value={addressDetail}
-          onChange={(e) => handleAddressDetailChange(e.target.value)}
+          value={localAddressDetail}
+          onChange={(e) => handleLocalAddressDetailChange(e.target.value)}
+          onBlur={handleAddressDetailBlur}
         />
         <InputField
           label="상세주소 영문"
           name="address_detail_en"
           placeholder="위에 입력한 상세주소를 영문으로 입력해주세요 (선택)"
-          value={addressDetailEn}
-          onChange={(e) => handleAddressDetailEnChange(e.target.value)}
-          // disabled={!addressDetail}
+          value={localAddressDetailEn}
+          onChange={(e) => handleLocalAddressDetailEnChange(e.target.value)}
+          onBlur={handleAddressDetailEnBlur}
         />
       </div>
       
@@ -228,16 +285,17 @@ export default function AddressSection({
           label="찾아오는 방법 상세안내"
           name="directions_to_clinic"
           placeholder="찾아오는 방법을 더 쉽게 설명해주세요 예시) xx지하철역 3번출구로 나와서 직진후 yy건물에서 우회전"
-          value={directionsToClinic}
-          onChange={(e) => handleDirectionsToClinicChange(e.target.value)}
+          value={localDirectionsToClinic}
+          onChange={(e) => handleLocalDirectionsToClinicChange(e.target.value)}
+          onBlur={handleDirectionsToClinicBlur}
         />
         <InputField
           label="찾아오는 방법 상세안내 영문"
           name="directions_to_clinic_en"
           placeholder="위에 입력한 찾아오는 방법을 영문으로 입력해주세요 (선택)"
-          value={directionsToClinicEn}
-          onChange={(e) => handleDirectionsToClinicEnChange(e.target.value)}
-          // disabled={!directionsToClinic}
+          value={localDirectionsToClinicEn}
+          onChange={(e) => handleLocalDirectionsToClinicEnChange(e.target.value)}
+          onBlur={handleDirectionsToClinicEnBlur}
         />
       </div>
       

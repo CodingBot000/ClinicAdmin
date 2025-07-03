@@ -57,18 +57,18 @@ export default function AdminAuthWrapper() {
             throw insertError;
           }
         } else if (admin.id_uuid_hospital) {
-          // hospital 테이블에서 확인
+          // hospital 테이블에서 확인 - 여러개 나올수있음
           const { data: hospital, error: hospitalError } = await supabase
             .from(TABLE_HOSPITAL)
-            .select('id_uuid')
-            .eq('id_uuid', admin.id_uuid_hospital)
-            .maybeSingle();
+            .select('id_uuid_admin')
+            .eq('id_uuid_admin', admin.id)
+            // .maybeSingle();
 
           if (hospitalError) {
             throw hospitalError;
           }
 
-          clinicInfo = !!hospital;
+          clinicInfo = hospital.length > 0;
         }
 
         if (mounted) {
@@ -118,7 +118,7 @@ export default function AdminAuthWrapper() {
         
         <div className="text-center mb-6">
           <p className="text-gray-600 mb-2">안녕하세요!</p>
-          <p className="text-sm text-gray-500">{userEmail}</p>
+          <p className="text-sm text-gray-500">{userEmail.split('@')[0]} 님</p>
         </div>
 
         <AdminPageClient hasClinicInfo={hasClinicInfo} />

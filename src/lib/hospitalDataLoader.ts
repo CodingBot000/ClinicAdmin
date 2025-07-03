@@ -7,7 +7,8 @@ import {
   TABLE_HOSPITAL_TREATMENT,
   TABLE_HOSPITAL_BUSINESS_HOUR,
   TABLE_ADMIN,
-  TABLE_TREATMENT
+  TABLE_TREATMENT,
+  TABLE_FEEDBACKS
 } from '@/constants/tables';
 
 import { supabase } from "@/lib/supabaseClient";
@@ -196,6 +197,24 @@ async function loadTreatments(hospitalUuid: string) {
   return result;
 }
 
+async function loadFeedback(hospitalUuid: string) {
+  console.log(' 피드백 정보 로딩:', hospitalUuid);
+  
+  const { data, error } = await supabase
+    .from(TABLE_FEEDBACKS)
+    .select('feedback_content')
+    .eq('id_uuid_hospital', hospitalUuid)
+    .maybeSingle();
+
+  if (error) {
+    console.error('피드백 정보 로딩 실패:', error);
+    return null;
+  }
+
+  console.log(' 피드백 정보 로딩 완료');
+  return data?.feedback_content || '';
+}
+
 /**
  * 모든 병원 관련 데이터를 통합해서 가져옵니다
  */
@@ -212,12 +231,13 @@ export async function loadExistingHospitalData(userUid: string): Promise<Existin
 
     // 2. 병렬로 모든 데이터 로딩
     console.log(' 모든 데이터 병렬 로딩 시작...');
-    const [hospital, hospitalDetail, businessHours, doctors, treatments] = await Promise.all([
+    const [hospital, hospitalDetail, businessHours, doctors, treatments, feedback] = await Promise.all([
       loadHospitalData(hospitalUuid),
       loadHospitalDetailData(hospitalUuid),
       loadBusinessHours(hospitalUuid),
       loadDoctors(hospitalUuid),
-      loadTreatments(hospitalUuid)
+      loadTreatments(hospitalUuid),
+      loadFeedback(hospitalUuid)
     ]);
 
     const result: ExistingHospitalData = {
@@ -225,7 +245,8 @@ export async function loadExistingHospitalData(userUid: string): Promise<Existin
       hospitalDetail,
       businessHours,
       doctors,
-      treatments
+      treatments,
+      feedback
     };
 
     console.log('모든 병원 데이터 로딩 완료!');

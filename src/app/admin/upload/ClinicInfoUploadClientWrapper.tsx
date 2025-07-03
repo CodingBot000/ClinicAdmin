@@ -68,4 +68,18 @@ export default function ClinicInfoUploadClientWrapper() {
       isEditMode={isEditMode}
     />
   );
+
+  // return (
+  //   (isEditMode) ? (
+  //   <ClinicInfoEditClient
+  //     currentUserUid={currentUserUid}
+    
+  //   />
+  //   ) : (
+  //     <ClinicInfoUploadClient
+  //       currentUserUid={currentUserUid}
+  //       isEditMode={isEditMode}
+  //     />
+  //   )
+  // );
 }

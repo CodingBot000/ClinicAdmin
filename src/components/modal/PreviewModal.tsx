@@ -3,25 +3,8 @@
 import React from "react";
 import { X, Check, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BasicInfo } from "@/app/admin/upload/ClinicInfoUploadClient";
 
-interface BasicInfo {
-  name: string;
-  email: string;
-  tel: string;
-  snsChannels: {
-    kakaoTalk: string;
-    line: string;
-    weChat: string;
-    whatsApp: string;
-    telegram: string;
-    facebookMessenger: string;
-    instagram: string;
-    tiktok: string;
-    youtube: string;
-    other_channel: string;
-  };
-  snsContentAgreement: 1 | 0 | null;
-}
 
 export interface FormDataSummary {
   basicInfo: BasicInfo;
@@ -29,6 +12,9 @@ export interface FormDataSummary {
     road: string;
     jibun: string;
     detail: string;
+    detail_en: string;
+    directions_to_clinic: string;
+    directions_to_clinic_en: string;
     coordinates: string;
   };
   location: string;
@@ -76,6 +62,8 @@ export interface FormDataSummary {
       imageUrl?: string;
     }>;
   };
+  availableLanguages: string[];
+  feedback: string;
 }
 
 interface PreviewModalProps {
@@ -121,16 +109,16 @@ export function PreviewModal({
                   <strong>SNS 채널:</strong>
                   <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
                     {Object.entries({
-                      'KakaoTalk': formData.basicInfo.snsChannels.kakaoTalk,
-                      'LINE': formData.basicInfo.snsChannels.line,
-                      'WeChat': formData.basicInfo.snsChannels.weChat,
-                      'WhatsApp': formData.basicInfo.snsChannels.whatsApp,
-                      'Telegram': formData.basicInfo.snsChannels.telegram,
-                      'Facebook Messenger': formData.basicInfo.snsChannels.facebookMessenger,
-                      'Instagram': formData.basicInfo.snsChannels.instagram,
-                      'TikTok': formData.basicInfo.snsChannels.tiktok,
-                      'Youtube': formData.basicInfo.snsChannels.youtube,
-                      'Other': formData.basicInfo.snsChannels.other_channel,
+                      'KakaoTalk': formData.basicInfo.kakao_talk,
+                      'LINE': formData.basicInfo.line,
+                      'WeChat': formData.basicInfo.we_chat,
+                      'WhatsApp': formData.basicInfo.whats_app,
+                      'Telegram': formData.basicInfo.telegram,
+                      'Facebook Messenger': formData.basicInfo.facebook_messenger,
+                      'Instagram': formData.basicInfo.instagram,
+                      'TikTok': formData.basicInfo.tiktok,
+                      'Youtube': formData.basicInfo.youtube,
+                      'Other': formData.basicInfo.other_channel,
                     }).filter(([_, value]) => value).map(([key, value]) => (
                       <div key={key} className="flex items-center gap-2 p-2 bg-white rounded border">
                         <span className="font-medium">{key}:</span>
@@ -149,7 +137,16 @@ export function PreviewModal({
                 <div><strong>도로명 주소:</strong> {formData.address.road}</div>
                 <div><strong>지번 주소:</strong> {formData.address.jibun}</div>
                 {formData.address.detail && (
-                  <div><strong>상세 주소:</strong> {formData.address.detail}</div>
+                  <>
+                    <div><strong>상세 주소:</strong> {formData.address.detail}</div>
+                    <div><strong>상세 주소 (영문):</strong> {formData.address.detail_en}</div>
+                  </>
+                )}
+                {formData.address.directions_to_clinic && (
+                  <>
+                    <div><strong>찾아오는 방법:</strong> {formData.address.directions_to_clinic}</div>
+                    <div><strong>찾아오는 방법 (영문):</strong> {formData.address.directions_to_clinic_en}</div>
+                  </>
                 )}
                 <div><strong>좌표:</strong> {formData.address.coordinates}</div>
                 <div><strong>지역:</strong> {formData.location}</div>
@@ -235,6 +232,30 @@ export function PreviewModal({
                 </div>
               </div>
             </div>
+
+            {/* 가능 언어 */}
+            {formData.availableLanguages.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">🌐 가능 언어</h3>
+                <div className="flex flex-wrap gap-2">
+                  {formData.availableLanguages.map((language, index) => (
+                    <span key={index} className="bg-white px-3 py-1 rounded-full border text-sm">
+                      {language}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 피드백 */}
+            {formData.feedback && (
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-purple-800 mb-3">💬 피드백</h3>
+                <div className="bg-white p-3 rounded border whitespace-pre-wrap text-sm">
+                  {formData.feedback}
+                </div>
+              </div>
+            )}
 
             {/* 이미지 정보 */}
             <div className="bg-indigo-50 p-4 rounded-lg">

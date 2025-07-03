@@ -71,10 +71,16 @@ const DoctorInfoSection: React.FC<
       JSON.stringify(initialDoctors) !==
         JSON.stringify(doctors)
     ) {
-      setDoctors(initialDoctors);
+      // 기존 이미지 정보 보존
+      const doctorsWithImageInfo = initialDoctors.map(doctor => ({
+        ...doctor,
+        isExistingImage: true,
+        originalImageUrl: doctor.imagePreview,
+      }));
+      setDoctors(doctorsWithImageInfo);
       console.log(
         'DoctorInfoSection 초기값 설정 완료:',
-        initialDoctors.length,
+        doctorsWithImageInfo.length,
         '명',
       );
     }
@@ -255,7 +261,8 @@ const DoctorInfoSection: React.FC<
         <div className='border-2 border-dashed border-gray-300 rounded-lg p-8 text-center'>
           <div className='flex flex-col items-center space-y-3'>
             <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center'>
-              <Plus className='w-8 h-8 text-gray-400' />
+              <Plus className='w-8 h-8 text-gray-400' 
+                 onClick={handleAddNew}/>
             </div>
             <div>
               <p className='text-gray-600 font-medium'>
@@ -266,13 +273,13 @@ const DoctorInfoSection: React.FC<
                 등록해보세요
               </p>
             </div>
-            <button
+            {/* <button
               type='button'
               onClick={handleAddNew}
               className='mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
             >
               의사 추가하기
-            </button>
+            </button> */}
           </div>
         </div>
       )}

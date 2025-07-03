@@ -1,0 +1,53 @@
+import { languages } from '@/constants/languages';
+import { useState } from 'react';
+
+interface AvailableLanguageSectionProps {
+  onLanguagesChange: (selectedLanguages: string[]) => void;
+  initialLanguages?: string[];
+}
+
+const AvailableLanguageSection: React.FC<AvailableLanguageSectionProps> = ({
+  onLanguagesChange,
+  initialLanguages = [],
+}) => {
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(initialLanguages);
+
+  const handleLanguageToggle = (languageCode: string) => {
+    const updatedLanguages = selectedLanguages.includes(languageCode)
+      ? selectedLanguages.filter(code => code !== languageCode)
+      : [...selectedLanguages, languageCode];
+    
+    setSelectedLanguages(updatedLanguages);
+    onLanguagesChange(updatedLanguages);
+  };
+
+  return (
+    <div className="w-full">
+      <h3 className="font-semibold mb-2">가능 언어</h3>
+      <p className="text-sm text-gray-600 mb-2">
+        병원에서 대응 가능한 언어를 선택해주세요. (중복 선택 가능)
+      </p>
+      <div className="grid grid-cols-3 gap-4">
+        {languages.map((language) => (
+          <div key={language.code} className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id={language.code}
+              checked={selectedLanguages.includes(language.code)}
+              onChange={() => handleLanguageToggle(language.code)}
+              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label
+              htmlFor={language.code}
+              className="text-sm font-medium text-gray-700 cursor-pointer"
+            >
+              {language.label}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default AvailableLanguageSection;

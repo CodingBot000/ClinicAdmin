@@ -1,18 +1,6 @@
 export interface HospitalData {
   id_uuid: string;
   name: string;
-  sns_channels: {
-    kakaoTalk: string;
-    line: string;
-    weChat: string;
-    whatsApp: string;
-    telegram: string;
-    facebookMessenger: string;
-    instagram: string;
-    tiktok: string;
-    youtube: string;
-    other_channel: string;
-  };
   address_full_road: string;
   address_full_road_en: string;
   address_full_jibun: string;
@@ -35,6 +23,8 @@ export interface HospitalData {
 }
 
 export interface HospitalDetailData {
+  id_hospital: number;
+  id_uuid_hospital: string;
   tel: string;
   email: string;
   kakao_talk: string;
@@ -57,6 +47,7 @@ export interface HospitalDetailData {
   has_anesthesiologist: boolean;
   specialist_count: number;
   sns_content_agreement: 1 | 0 | null;
+  available_languages: string[];
 }
 
 export interface BusinessHourData {
@@ -84,8 +75,9 @@ export interface TreatmentData {
 
 export interface ExistingHospitalData {
   hospital: HospitalData;
-  hospitalDetail: HospitalDetailData;
-  businessHours: BusinessHourData[];
-  doctors: DoctorData[];
-  treatments: TreatmentData[];
+  hospitalDetail: HospitalDetailData | null;
+  businessHours: any[];
+  doctors: any[];
+  treatments: any[];
+  feedback: string;
 } 

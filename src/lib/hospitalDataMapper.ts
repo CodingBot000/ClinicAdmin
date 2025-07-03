@@ -198,18 +198,17 @@ export function mapExistingDataToFormValues(data: ExistingHospitalData) {
       directions: data.hospital.directions_to_clinic || '',
       location: data.hospital.location || '',
       images: data.hospital.imageurls || [],
-      sns_channels: {
-        kakaoTalk: data.hospitalDetail?.kakao_talk || '',
-        line: data.hospitalDetail?.line || '',
-        weChat: data.hospitalDetail?.we_chat || '',
-        whatsApp: data.hospitalDetail?.whats_app || '',
-        telegram: data.hospitalDetail?.telegram || '',
-        facebookMessenger: data.hospitalDetail?.facebook_messenger || '',
-        instagram: data.hospitalDetail?.instagram || '',
-        tiktok: data.hospitalDetail?.tiktok || '',
-        youtube: data.hospitalDetail?.youtube || '',
-        other_channel: data.hospitalDetail?.other_channel || '',
-      }
+      kakao_talk: data.hospitalDetail?.kakao_talk || '',
+      line: data.hospitalDetail?.line || '',
+      we_chat: data.hospitalDetail?.we_chat || '',
+      whats_app: data.hospitalDetail?.whats_app || '',
+      telegram: data.hospitalDetail?.telegram || '',
+      facebook_messenger: data.hospitalDetail?.facebook_messenger || '',
+      instagram: data.hospitalDetail?.instagram || '',
+      tiktok: data.hospitalDetail?.tiktok || '',
+      youtube: data.hospitalDetail?.youtube || '',
+      other_channel: data.hospitalDetail?.other_channel || '',
+    
     },
     
     // 주소 정보
@@ -220,7 +219,9 @@ export function mapExistingDataToFormValues(data: ExistingHospitalData) {
       tel: data.hospitalDetail?.tel || '',
       email: data.hospitalDetail?.email || '',
       map: data.hospitalDetail?.map || '',
-      etc: data.hospitalDetail?.etc || ''
+      etc: data.hospitalDetail?.etc || '',
+      sns_content_agreement: data.hospitalDetail?.sns_content_agreement || null,
+      available_languages: data.hospitalDetail?.available_languages || []
     },
     
     // 편의시설

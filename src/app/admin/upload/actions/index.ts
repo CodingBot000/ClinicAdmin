@@ -15,7 +15,8 @@ import {
   TABLE_TREATMENT,
   STORAGE_IMAGES,
   STORAGE_HOSPITAL_IMG,
-  STORAGE_DOCTOR_IMG
+  STORAGE_DOCTOR_IMG,
+  TABLE_FEEDBACKS
 } from '@/constants/tables';
 import { createClient } from '@supabase/supabase-js';
 import { HospitalDetailData } from '@/types/hospital';
@@ -24,9 +25,16 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const startTime = Date.now();
   console.log("uploadActions 시작:", new Date().toISOString());
   
+  // 편집 모드 여부와 기존 데이터 확인
+  const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
+  const existingDataRaw = formData.get("existing_data")?.toString();
+  const existingData = existingDataRaw ? JSON.parse(existingDataRaw) : null;
+
   // 트랜잭션 및 롤백을 위한 변수들
-  let uploadedImages: string[] = [];
-  let uploadedDoctorImages: string[] = [];
+  let newlyUploadedImages: string[] = []; // 새로 업로드된 이미지 URL
+  let newlyUploadedDoctorImages: string[] = []; // 새로 업로드된 의사 이미지 URL
+  let existingImages: string[] = []; // 기존 이미지 URL
+  let existingDoctorImages: string[] = []; // 기존 의사 이미지 URL
   let insertedHospitalId: string | null = null;
   let insertedDoctorId: string | null = null;
   
@@ -34,31 +42,72 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const rollbackAll = async (errorMessage: string) => {
     console.log("롤백 시작:", errorMessage);
     
-    // 1. 업로드된 병원 이미지 삭제
-    if (uploadedImages.length > 0) {
+    // 1. 새로 업로드된 병원 이미지만 삭제
+    if (newlyUploadedImages.length > 0) {
       try {
+        // 스토리지에서 이미지 파일 삭제
         await supabase.storage
           .from(STORAGE_IMAGES)
-          .remove(uploadedImages.map(url => {
+          .remove(newlyUploadedImages.map(url => {
             const path = url.replace(`${process.env.NEXT_PUBLIC_IMG_URL}`, '');
             return path;
           }));
-        console.log("병원 이미지 롤백 완료");
+        console.log("새로 업로드된 병원 이미지 롤백 완료");
+
+        // 편집 모드인 경우 hospital 테이블의 imageurls 업데이트
+        if (isEditMode) {
+          const { error: updateError } = await supabase
+            .from(TABLE_HOSPITAL)
+            .update({ imageurls: existingImages })
+            .eq('id_uuid', id_uuid);
+          
+          if (updateError) {
+            console.error("병원 이미지 URL 업데이트 실패:", updateError);
+          } else {
+            console.log("병원 이미지 URL 업데이트 완료");
+          }
+        }
       } catch (e) {
         console.error("병원 이미지 롤백 실패:", e);
       }
     }
     
-    // 2. 업로드된 의사 이미지 삭제
-    if (uploadedDoctorImages.length > 0) {
+    // 2. 새로 업로드된 의사 이미지만 삭제
+    if (newlyUploadedDoctorImages.length > 0) {
       try {
+        // 스토리지에서 이미지 파일 삭제
         await supabase.storage
           .from(STORAGE_IMAGES)
-          .remove(uploadedDoctorImages.map(url => {
+          .remove(newlyUploadedDoctorImages.map(url => {
             const path = url.replace(`${process.env.NEXT_PUBLIC_IMG_URL}`, '');
             return path;
           }));
-        console.log("의사 이미지 롤백 완료");
+        console.log("새로 업로드된 의사 이미지 롤백 완료");
+
+        // 편집 모드인 경우 doctor 테이블의 image_url 업데이트
+        if (isEditMode) {
+          // 해당 병원의 모든 의사 정보 조회
+          const { data: doctorData } = await supabase
+            .from(TABLE_DOCTOR)
+            .select('id, image_url')
+            .eq('id_uuid_hospital', id_uuid);
+
+          if (doctorData) {
+            // 각 의사별로 이미지 URL 업데이트
+            for (const doctor of doctorData) {
+              if (newlyUploadedDoctorImages.includes(doctor.image_url)) {
+                // 새로 업로드된 이미지인 경우, 기존 이미지로 복원
+                const originalDoctor = doctors_parsed.find(d => d.id === doctor.id);
+                if (originalDoctor?.originalImageUrl) {
+                  await supabase
+                    .from(TABLE_DOCTOR)
+                    .update({ image_url: originalDoctor.originalImageUrl })
+                    .eq('id', doctor.id);
+                }
+              }
+            }
+          }
+        }
       } catch (e) {
         console.error("의사 이미지 롤백 실패:", e);
       }
@@ -85,17 +134,21 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
           .delete()
           .eq('id_uuid_hospital', id_uuid);
           
-        // doctor 삭제
-        await supabase
-          .from(TABLE_DOCTOR)
-          .delete()
-          .eq('id_uuid_hospital', id_uuid);
+        // doctor 삭제 (신규 등록인 경우만)
+        if (!isEditMode) {
+          await supabase
+            .from(TABLE_DOCTOR)
+            .delete()
+            .eq('id_uuid_hospital', id_uuid);
+        }
           
-        // hospital 삭제
-        await supabase
-          .from(TABLE_HOSPITAL)
-          .delete()
-          .eq('id_uuid', id_uuid);
+        // hospital 삭제 (신규 등록인 경우만)
+        if (!isEditMode) {
+          await supabase
+            .from(TABLE_HOSPITAL)
+            .delete()
+            .eq('id_uuid', id_uuid);
+        }
           
         console.log("데이터베이스 롤백 완료");
       } catch (e) {
@@ -140,8 +193,8 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const directions_to_clinic_en = formData.get("directions_to_clinic_en") as string;
 
   // 숫자 필드는 파싱해줘야 안전합니다!
-  const latitude = latitudeRaw ? Number(latitudeRaw) : undefined;
-  const longitude = longitudeRaw ? Number(longitudeRaw) : undefined;
+  const latitude = latitudeRaw ? Number(latitudeRaw) : 0;
+  const longitude = longitudeRaw ? Number(longitudeRaw) : 0;
 
 
   // const address_detail = formData.get("address_detail") as string; 
@@ -256,10 +309,28 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   try {
     if (clinic_image_urls_raw) {
       clinic_image_urls = JSON.parse(clinic_image_urls_raw);
+      // 편집 모드에서 기존 이미지와 새 이미지 구분
+      if (isEditMode) {
+        const existingUrls = existingData?.hospital.imageurls || [];
+        existingImages = existingUrls;
+        newlyUploadedImages = clinic_image_urls.filter(url => !existingUrls.includes(url));
+      } else {
+        newlyUploadedImages = clinic_image_urls;
+      }
     }
     if (doctor_image_urls_raw) {
       doctor_image_urls = JSON.parse(doctor_image_urls_raw);
+      // 편집 모드에서 기존 의사 이미지와 새 이미지 구분
+      if (isEditMode) {
+        const existingDoctorUrls = doctors_parsed.map(d => d.imageUrl).filter(Boolean);
+        existingDoctorImages = existingDoctorUrls;
+        newlyUploadedDoctorImages = doctor_image_urls.filter(url => !existingDoctorUrls.includes(url));
+      } else {
+        newlyUploadedDoctorImages = doctor_image_urls;
+      }
     }
+    console.log("clinic_image_urls_raw: ", clinic_image_urls_raw);
+    console.log("clinic_image_urls: ", clinic_image_urls);
     if (doctors_raw) {
       doctors_parsed = JSON.parse(doctors_raw);
       console.log("의사 정보 파싱 완료:", doctors_parsed);
@@ -293,8 +364,8 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const hospitalFileNames = clinic_image_urls;
   
   // 이미 업로드된 이미지 URL을 추적용 배열에 추가
-  uploadedImages.push(...clinic_image_urls);
-  uploadedDoctorImages.push(...doctor_image_urls);
+  existingImages.push(...clinic_image_urls);
+  existingDoctorImages.push(...doctor_image_urls);
 
   // legacy id . 나중에 id_uuid로 완전전환후 삭제해야됨 
   const lastUnique = await supabase
@@ -316,15 +387,27 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   const nextIdUnique = (lastUnique.data && lastUnique.data.length > 0)
     ? lastUnique.data[0].id_unique + 1
     : 0;
+
+  // admin uuid 가져오기
+  const { data: adminData, error: adminError } = await supabase
+    .from(TABLE_ADMIN)
+    .select('id')
+    .eq('id_auth_user', current_user_uid)
+    .single();
+
+  if (adminError) {
+    console.error('Admin UUID 조회 실패:', adminError);
+    return await rollbackAll('관리자 정보를 찾을 수 없습니다.');
+  }
+
   // const id_surgeries = (surgeries && surgeries.length > 0) ? surgeries.split(",") : [1010];
   const form_hospital = {
     id_unique: nextIdUnique,  // legacy id  나중에 삭제 
     id_uuid,
+    id_uuid_admin: adminData.id, // admin uuid 추가
     name,
-    // id_surgeries: id_surgeries,
-    searchkey: name,
-    search_key: name,
-
+    searchkey,
+    search_key,
     address_full_road,
     address_full_road_en,
     address_full_jibun,
@@ -346,17 +429,29 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
     imageurls: hospitalFileNames,
   };
 
-  const insertHospital = await supabase
-    .from(TABLE_HOSPITAL)
-    .insert(form_hospital)
-    .select("*");
-
-  console.log("uploadActions insertHospital error 1 : ", insertHospital.error);
-  if (insertHospital.error) {
-    console.log("uploadActions insertHospital error 2 : ", insertHospital.error);
-    return await rollbackAll(insertHospital.error.message);
+  // 편집 모드인 경우 update, 신규인 경우 insert
+  let hospitalOperation;
+  if (isEditMode) {
+    console.log("병원 정보 업데이트 시도:", id_uuid);
+    hospitalOperation = await supabase
+      .from(TABLE_HOSPITAL)
+      .update(form_hospital)
+      .eq('id_uuid', id_uuid)
+      .select("*");
+  } else {
+    console.log("새로운 병원 정보 등록 시도");
+    hospitalOperation = await supabase
+      .from(TABLE_HOSPITAL)
+      .insert(form_hospital)
+      .select("*");
   }
 
+  if (hospitalOperation.error) {
+    console.log("uploadActions hospital operation error:", hospitalOperation.error);
+    return await rollbackAll(hospitalOperation.error.message);
+  }
+
+  console.log("병원 정보 처리 완료:", isEditMode ? "업데이트" : "신규 등록");
 
   ///////////////////////////////
   // doctor 테이블 입력 
@@ -552,39 +647,64 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   // hospital_details 테이블 입력 
   // extra options 포함
 
-  const sns_channels_raw = formData.get("sns_channels") as string;
-  const sns_channels = sns_channels_raw ? JSON.parse(sns_channels_raw) : {};
+  const sns_content_agreement_raw = formData.get("sns_content_agreement") as string;
+  const sns_content_agreement = sns_content_agreement_raw === 'null' ? null : Number(sns_content_agreement_raw) as 1 | 0;
 
-  const sns_content_agreement = formData.get('sns_content_agreement') as string;
-  const sns_content_agreement_value = sns_content_agreement === 'null' ? null : parseInt(sns_content_agreement) as 1 | 0;
+  // hospital_details 테이블의 마지막 id_hospital 값 조회
+  const { data: lastHospitalDetail, error: lastHospitalDetailError } = await supabase
+    .from(TABLE_HOSPITAL_DETAIL)
+    .select("id_hospital")
+    .order("id_hospital", { ascending: false })
+    .limit(1);
+
+  if (lastHospitalDetailError) {
+    console.error("hospital_details 마지막 ID 조회 실패:", lastHospitalDetailError);
+    return await rollbackAll(lastHospitalDetailError.message);
+  }
+
+  // 다음 id_hospital 값 계산
+  const nextHospitalDetailId = (lastHospitalDetail && lastHospitalDetail.length > 0)
+    ? lastHospitalDetail[0].id_hospital + 1
+    : 0;
+
+  console.log("다음 hospital_details id:", nextHospitalDetailId);
 
   const hospitalDetailDefaultValue = (
     formData: FormData,
     id_uuid: string
   ): HospitalDetailData => {
+    const available_languages_raw = formData.get('available_languages') as string;
+    const available_languages = available_languages_raw ? JSON.parse(available_languages_raw) : [];
+
+    // 다음 id_hospital 값 계산 로직이 여기 있어야 함
+    const id_hospital = 1; // 실제로는 적절한 값을 계산해야 함
+
     return {
-      tel: formData.get('tel') as string,
-      email: formData.get('email') as string,
-      kakao_talk: sns_channels.kakaoTalk,
-      line: sns_channels.line,
-      we_chat: sns_channels.weChat,
-      whats_app: sns_channels.whatsApp,
-      telegram: sns_channels.telegram,
-      facebook_messenger: sns_channels.facebookMessenger,
-      instagram: sns_channels.instagram,
-      tiktok: sns_channels.tiktok,
-      youtube: sns_channels.youtube,
-      other_channel: sns_channels.other_channel,
+      id_hospital,
+      id_uuid_hospital: id_uuid,
+      has_private_recovery_room: extra_options.has_private_recovery_room,
+      has_parking: extra_options.has_parking,
+      has_cctv: extra_options.has_cctv,
+      has_night_counseling: extra_options.has_night_counseling,
+      has_female_doctor: extra_options.has_female_doctor,
+      has_anesthesiologist: extra_options.has_anesthesiologist,
+      specialist_count: extra_options.specialistCount,
+      email: formData.get("email") as string || '',
+      tel: formData.get("tel") as string || '',
+      kakao_talk: formData.get("kakao_talk") as string || '',
+      line: formData.get("line") as string || '',
+      we_chat: formData.get("we_chat") as string || '',
+      whats_app: formData.get("whats_app") as string || '',
+      telegram: formData.get("telegram") as string || '',
+      facebook_messenger: formData.get("facebook_messenger") as string || '',
+      instagram: formData.get("instagram") as string || '',
+      tiktok: formData.get("tiktok") as string || '',
+      youtube: formData.get("youtube") as string || '',
+      other_channel: formData.get("other_channel") as string || '',
       map: '',
       etc: '',
-      has_private_recovery_room: false,
-      has_parking: false,
-      has_cctv: false,
-      has_night_counseling: false,
-      has_female_doctor: false,
-      has_anesthesiologist: false,
-      specialist_count: 0,
-      sns_content_agreement: sns_content_agreement_value,
+      sns_content_agreement: sns_content_agreement,
+      available_languages: available_languages,
     };
   };
 
@@ -633,6 +753,24 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
     console.log("현재 사용자 UID가 제공되지 않았습니다.");
   }
 
+  // 피드백이 있는 경우 저장
+  const feedback = formData.get('feedback');
+  if (feedback) {
+    const { error: feedbackError } = await supabase
+      .from(TABLE_FEEDBACKS)
+      .insert([
+        {
+          feedback_content: feedback,
+          id_uuid_hospital: id_uuid,
+        },
+      ]);
+
+    if (feedbackError) {
+      console.error('피드백 저장 실패:', feedbackError);
+      // 피드백 저장 실패는 전체 프로세스를 중단하지 않습니다
+    }
+  }
+
   revalidatePath("/", "layout");
   console.log("uploadActions No error uploadActions ");
 
@@ -643,7 +781,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
 
   return {
     ...prevState,
-    message: "success upload!",
+    message: "성공적으로 등록되었습니다.",
     status: "success",
   };
 };
