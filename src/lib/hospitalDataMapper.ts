@@ -93,7 +93,9 @@ export function mapDoctorsToForm(doctors: any[]): DoctorInfo[] {
     bio: doctor.bio || '',
     imagePreview: getImageUrlFromData(doctor.image_url), // 이미지 URL 안전 처리
     useDefaultImage: false,
-    isChief: doctor.chief === 1
+    isChief: doctor.chief === 1,
+    isExistingImage: true,
+    originalImageUrl: doctor.image_url
   }));
 }
 

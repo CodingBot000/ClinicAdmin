@@ -67,7 +67,7 @@ const ClinicInfoEditClient = ({
       if (data) {
         setExistingData(data);
         if (data.hospitalDetail) {
-          setBasicInfo({
+        setBasicInfo({
             name: data.hospital.name || '',
             email: data.hospitalDetail.email || '',
             tel: data.hospitalDetail.tel || '',
@@ -84,8 +84,8 @@ const ClinicInfoEditClient = ({
             snsContentAgreement: data.hospitalDetail.sns_content_agreement === null ? null : (data.hospitalDetail.sns_content_agreement as 1 | 0),
           });
         }
-      }
-    } catch (error) {
+          }
+        } catch (error) {
       console.error('데이터 로딩 실패:', error);
     } finally {
       setIsLoadingExistingData(false);
@@ -160,7 +160,7 @@ const ClinicInfoEditClient = ({
                 {basicInfo.snsContentAgreement === 1 ? '동의' : 
                  basicInfo.snsContentAgreement === 0 ? '미동의' : '미설정'}
               </span>
-            </div>
+          </div>
           </div>
 
           <Divider />
@@ -200,7 +200,7 @@ const ClinicInfoEditClient = ({
             ) : (
               <p>등록된 시술 정보가 없습니다.</p>
             )}
-          </div>
+            </div>
 
           <Divider />
 
@@ -223,8 +223,8 @@ const ClinicInfoEditClient = ({
               </div>
             ) : (
               <p>등록된 진료 시간이 없습니다.</p>
-            )}
-          </div>
+          )}
+        </div>
 
           <Divider />
 
@@ -265,9 +265,9 @@ const ClinicInfoEditClient = ({
                 </div>
               </div>
             )}
-          </div>
+        </div>
 
-          <Divider />
+        <Divider />
 
           {/* 병원 이미지 */}
           <div className="bg-white p-4 rounded-lg shadow">
@@ -289,7 +289,7 @@ const ClinicInfoEditClient = ({
             )}
           </div>
 
-          <Divider />
+       <Divider />
 
           {/* 의사 정보 */}
           <div className="bg-white p-4 rounded-lg shadow">
@@ -304,13 +304,13 @@ const ClinicInfoEditClient = ({
                           src={doctor.imageurl || '/default/doctor_default_man.png'}
                           alt={doctor.name}
                           className="w-full h-full object-cover rounded"
-                        />
-                      </div>
+          />
+        </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{doctor.name}</h4>
                         <p className="text-sm text-gray-600 mt-1">{doctor.chief ? '대표원장' : '의사'}</p>
                         {doctor.bio && <p className="mt-2 text-sm">{doctor.bio}</p>}
-                      </div>
+        </div>
                     </div>
                   </div>
                 ))}
@@ -318,7 +318,7 @@ const ClinicInfoEditClient = ({
             ) : (
               <p>등록된 의사 정보가 없습니다.</p>
             )}
-          </div>
+      </div>
 
           <Divider />
 

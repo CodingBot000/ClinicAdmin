@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface DoctorInfo {
   id: string;
@@ -221,7 +222,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
     }
 
     const doctorInfo: DoctorInfo = {
-      id: initialData?.id || `doctor-${Date.now()}`,
+      id: initialData?.id || uuidv4(),
       name: name.trim(),
       bio: bio, // trim() 제거하여 줄바꿈 보존
       imageFile: useDefaultImage

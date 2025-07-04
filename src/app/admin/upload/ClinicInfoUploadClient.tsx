@@ -37,6 +37,7 @@ import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
+import { validateFormData } from '@/utils/validateFormData';
 
 interface Surgery {
   created_at: string;
@@ -762,31 +763,26 @@ const ClinicInfoUploadClient = ({
   };
 
   // Validation 체크 함수
-  const validateFormData = () => {
-    // ====== VALIDATION 체크 시작 ======
-
-    // SNS 컨텐츠 이용 동의 검증
-    if (basicInfo.snsContentAgreement === null) {
-      console.log('validateFormData - SNS 컨텐츠 이용 동의 누락');
-      setFormState({
-        message: 'SNS 홍보 채널의 컨텐츠 이용 동의 여부를 선택해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      return false;
-    }
-
-    // 1. 병원명 검증 (필수)
+  const validateFormDataAndUpdateUI = () => {
     const clinicNameInput = document.querySelector(
       'input[name="name"]',
     ) as HTMLInputElement;
     const clinicName = clinicNameInput?.value || '';
 
-    if (!clinicName || clinicName.trim() === '') {
-      console.log('validateFormData 1');
+    const validationResult = validateFormData({
+      basicInfo,
+      clinicName,
+      addressForSendForm,
+      selectedLocation,
+      selectedTreatments,
+      clinicImages,
+      existingImageUrls: existingData?.hospital.imageurls,
+      doctors,
+    });
+
+    if (!validationResult.isValid && validationResult.message) {
       setFormState({
-        message: '병원명을 입력해주세요.',
+        message: validationResult.message,
         status: 'error',
         errorType: 'validation',
       });
@@ -794,135 +790,7 @@ const ClinicInfoUploadClient = ({
       return false;
     }
 
-    // 2. 주소 검증 (필수)
-    if (
-      !addressForSendForm ||
-      !addressForSendForm.address_full_road
-    ) {
-      console.log('validateFormData 2');
-      setFormState({
-        message: '주소를 선택해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      return false;
-    }
-
-    // 3. 지역 검증 (필수)
-    if (!selectedLocation) {
-      console.log('validateFormData 3');
-      setFormState({
-        message: '지역을 선택해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      return false;
-    }
-
-    // 4. 시술 선택 검증 (필수)
-    if (selectedTreatments.length === 0) {
-      console.log('validateFormData 4');
-      setFormState({
-        message: '가능시술을 최소 1개 이상 선택해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      return false;
-    }
-
-    // 일정저장 눌렀는지 여부 체크
-
-    // 5. 병원 이미지 검증 (필수) - 편집 모드에서는 기존 이미지도 고려
-    const existingImageCount =
-      existingData?.hospital.imageurls?.length || 0;
-    const totalImageCount = clinicImages.length + existingImageCount;
-    console.log('clinicImages totalImageCount:', totalImageCount);
-    console.log('clinicImages clinicImages.length:', clinicImages.length);
-    console.log('clinicImages existingImageCount:', existingImageCount);
-    console.log('clinicImages existingData?.hospital.imageurls?.length:', existingData?.hospital.imageurls?.length);
-    if (totalImageCount < 3) {
-      console.log('validateFormData 5 - 이미지 없음');
-      setFormState({
-        message: '병원 이미지를 최소 3개 이상 업로드해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      console.log('validateFormData 5');
-      return false;
-    }
-
-    console.log(
-      `validateFormData 5 통과 - 새 이미지: ${clinicImages.length}개, 기존 이미지: ${existingImageCount}개, 총: ${totalImageCount}개`,
-    );
-
-    // 6. 의사 이미지 검증 (선택사항 - 빈값 허용)
-    // doctorImages는 검증하지 않음
-
-    // 6-1. 의사 정보 검증
-    if (doctors.length < 1) {
-      setFormState({
-        message: '의사 정보를 최소 1개이상 입력해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      return false;
-    }
-
-    // 대표원장 체크 검증
-    const hasChiefDoctor = doctors.some(doctor => doctor.isChief);
-    if (!hasChiefDoctor) {
-      setFormState({
-        message: '대표 원장을 한명 이상 체크해주세요.',
-        status: 'error',
-        errorType: 'validation',
-      });
-      setShowFinalResult(true);
-      return false;
-    }
-
-    //입력된 경우 입력된 내용 검증
-    if (doctors.length > 0) {
-      for (const doctor of doctors) {
-        if (!doctor.name || doctor.name.trim() === '') {
-          setFormState({
-            message: '의사 이름을 입력해주세요.',
-            status: 'error',
-            errorType: 'validation',
-          });
-          setShowFinalResult(true);
-          console.log('validateFormData 6');
-          return false;
-        }
-
-        // 이미지가 없고 기본 이미지도 선택하지 않은 경우
-        if (
-          !doctor.useDefaultImage &&
-          !doctor.imageFile &&
-          !doctor.imagePreview
-        ) {
-          setFormState({
-            message: `${doctor.name} 의사의 이미지를 업로드하거나 기본 이미지를 선택해주세요.`,
-            status: 'error',
-            errorType: 'validation',
-          });
-          setShowFinalResult(true);
-          console.log('validateFormData 7');
-          return false;
-        }
-      }
-    }
-
-    // 7. 부가시설 옵션 검증 (선택사항 - 빈값 허용)
-    // optionState는 검증하지 않음
-
-    // ====== VALIDATION 체크 끝 ======
-    console.log('validateFormData final return true');
-    return true; // 모든 검증 통과
+    return true;
   };
 
   // 미리보기 모달 표시를 위한 데이터 준비
@@ -963,7 +831,7 @@ const ClinicInfoUploadClient = ({
       };
       console.log('handlePreview 2');
       // Validation 체크
-      if (!validateFormData()) {
+      if (!validateFormDataAndUpdateUI()) {
         return; // validation 실패 시 중단
       }
       console.log('handlePreview 3');
@@ -1229,13 +1097,21 @@ const ClinicInfoUploadClient = ({
             'latitude',
             addressForSendForm.latitude !== undefined
               ? String(addressForSendForm.latitude)
-              : '0'  // 빈 문자열 대신 '0' 사용
+              : coordinates 
+                ? String(coordinates.latitude)
+                : existingData?.hospital?.latitude 
+                  ? String(existingData.hospital.latitude)
+                  : '0'
           );
           formData.append(
             'longitude',
             addressForSendForm.longitude !== undefined
               ? String(addressForSendForm.longitude)
-              : '0'  // 빈 문자열 대신 '0' 사용
+              : coordinates
+                ? String(coordinates.longitude)
+                : existingData?.hospital?.longitude
+                  ? String(existingData.hospital.longitude)
+                  : '0'
           );
           formData.append(
             'address_detail',

@@ -204,6 +204,8 @@ async function loadFeedback(hospitalUuid: string) {
     .from(TABLE_FEEDBACKS)
     .select('feedback_content')
     .eq('id_uuid_hospital', hospitalUuid)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) {
