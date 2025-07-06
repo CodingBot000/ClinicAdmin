@@ -214,7 +214,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
       return;
     }
 
-    if (!useDefaultImage && !imageFile) {
+    if (!useDefaultImage && !imageFile && !imagePreview) {
       alert(
         '이미지를 업로드하거나 기본 이미지를 선택해주세요.',
       );

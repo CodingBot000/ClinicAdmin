@@ -15,7 +15,7 @@ import ClinicImageUploadSection from '@/components/ClinicImageUploadSection';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-import { Modal } from '@/components/modal/Modal';
+// import { Modal } from '@/components/modal/Modal';
 import { useTimer } from '@/hooks/useTimer';
 import { useFormAction } from '@/hooks/useFormAction';
 import InputField, { TextArea } from '@/components/InputField';
