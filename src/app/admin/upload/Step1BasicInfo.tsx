@@ -40,6 +40,7 @@ import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
 import { uploadActionsStep1 } from './actions/uploadStep1';
+import { findRegionByKey, REGIONS } from '@/app/contents/location';
 
 interface Surgery {
   created_at: string;
@@ -54,9 +55,12 @@ interface Surgery {
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
-interface ClinicInfoUploadClientProps {
+interface Step1BasicInfoProps {
+  id_uuid_hospital: string;
+  setIdUUIDHospital: (id_uuid_hospital: string) => void;
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
+  onNext: () => void;
 }
 
 export interface BasicInfo {
@@ -76,10 +80,13 @@ export interface BasicInfo {
   sns_content_agreement: 1 | 0 | null;
 }
 
-const ClinicInfoUploadClient = ({
+const Step1BasicInfo = ({
+  id_uuid_hospital,
+  setIdUUIDHospital,
+  onNext,
   currentUserUid,
   isEditMode = false,
-}: ClinicInfoUploadClientProps) => {
+}: Step1BasicInfoProps) => {
   const pageStartTime = Date.now();
   // console.log(
   //   'UploadClient 페이지 시작:',
@@ -234,31 +241,31 @@ const ClinicInfoUploadClient = ({
   }, [formState, showFinalResult]);
 
   // 페이지 로딩 완료 시간 측정
-  useEffect(() => {
-    if (!categoriesLoading && !isPending && categories) {
-      const pageEndTime = Date.now();
-      const totalLoadTime = pageEndTime - pageStartTime;
-      // console.log(
-      //   'UploadClient 페이지 로딩 완료:',
-      //   new Date().toISOString(),
-      // );
-      // console.log(
-      //   `총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`,
-      // );
-      // console.log('로딩 완료 상태:', {
-      //   categoriesCount: categories?.length || 0,
-      //   surgeryListCount: surgeryList?.length || 0,
-      //   categoriesLoading,
-      //   isPending,
-      // });
-    }
-  }, [
-    categoriesLoading,
-    isPending,
-    categories,
-    surgeryList,
-    pageStartTime,
-  ]);
+//   useEffect(() => {
+//     if (!categoriesLoading && !isPending && categories) {
+//       const pageEndTime = Date.now();
+//       const totalLoadTime = pageEndTime - pageStartTime;
+//       // console.log(
+//       //   'UploadClient 페이지 로딩 완료:',
+//       //   new Date().toISOString(),
+//       // );
+//       // console.log(
+//       //   `총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`,
+//       // );
+//       // console.log('로딩 완료 상태:', {
+//       //   categoriesCount: categories?.length || 0,
+//       //   surgeryListCount: surgeryList?.length || 0,
+//       //   categoriesLoading,
+//       //   isPending,
+//       // });
+//     }
+//   }, [
+//     categoriesLoading,
+//     isPending,
+//     categories,
+//     surgeryList,
+//     pageStartTime,
+//   ]);
 
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
@@ -271,48 +278,52 @@ const ClinicInfoUploadClient = ({
   }, [isEditMode, currentUserUid]);
 
   // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
-  useEffect(() => {
-    if (existingData && !basicInfo.name) {
-      // 한 번만 실행되도록 조건 추가
-      console.log('기존 데이터 상태 반영 시작');
-      console.log('sns_content_agreement 값:', existingData.hospitalDetail?.sns_content_agreement);
-      const formData = mapExistingDataToFormValues(existingData);
+//   useEffect(() => {
+//     if (existingData && !basicInfo.name) {
+//       // 한 번만 실행되도록 조건 추가
+//       console.log('기존 데이터 상태 반영 시작');
+//       console.log('sns_content_agreement 값:', existingData.hospitalDetail?.sns_content_agreement);
+//       const formData = mapExistingDataToFormValues(existingData);
 
-      // SNS 채널 정보와 기본 정보 설정
-      if (existingData.hospitalDetail) {
-        setBasicInfo({
-          name: formData.hospital.name || '',
-          email: existingData.hospitalDetail.email || '',
-          tel: existingData.hospitalDetail.tel || '',
-          kakao_talk: existingData.hospitalDetail.kakao_talk || '',
-          line: existingData.hospitalDetail.line || '',
-          we_chat: existingData.hospitalDetail.we_chat || '',
-          whats_app: existingData.hospitalDetail.whats_app || '',
-          telegram: existingData.hospitalDetail.telegram || '',
-          facebook_messenger: existingData.hospitalDetail.facebook_messenger || '',
-          instagram: existingData.hospitalDetail.instagram || '',
-          tiktok: existingData.hospitalDetail.tiktok || '',
-          youtube: existingData.hospitalDetail.youtube || '',
-          other_channel: existingData.hospitalDetail.other_channel || '',
-          sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
-        });
-        console.log('기본 정보 및 SNS 채널 정보 설정 완료');
-      }
+//       // 부모에게 전달하여 모든 자식이 공유하기 위한 저장 
+//       setIdUUIDHospital(existingData.hospital.id_uuid);
+//       console.log('qq  existingData.hospital.id_uuid 값:', existingData.hospital.id_uuid);
+//       console.log('qq  id_uuid_hospital 값:', id_uuid_hospital);
+//       // SNS 채널 정보와 기본 정보 설정
+//       if (existingData.hospitalDetail) {
+//         setBasicInfo({
+//           name: formData.hospital.name || '',
+//           email: existingData.hospitalDetail.email || '',
+//           tel: existingData.hospitalDetail.tel || '',
+//           kakao_talk: existingData.hospitalDetail.kakao_talk || '',
+//           line: existingData.hospitalDetail.line || '',
+//           we_chat: existingData.hospitalDetail.we_chat || '',
+//           whats_app: existingData.hospitalDetail.whats_app || '',
+//           telegram: existingData.hospitalDetail.telegram || '',
+//           facebook_messenger: existingData.hospitalDetail.facebook_messenger || '',
+//           instagram: existingData.hospitalDetail.instagram || '',
+//           tiktok: existingData.hospitalDetail.tiktok || '',
+//           youtube: existingData.hospitalDetail.youtube || '',
+//           other_channel: existingData.hospitalDetail.other_channel || '',
+//           sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
+//         });
+//         console.log('기본 정보 및 SNS 채널 정보 설정 완료');
+//       }
 
-      console.log('UploadClient 상태 업데이트 완료:', {
-        hospitalName: formData.hospital.name,
-        hasAddress: !!formData.address.roadAddress,
-        doctorsCount: formData.doctors.length,
-        sns_content_agreement: existingData.hospitalDetail?.sns_content_agreement
-      });
+//       console.log('UploadClient 상태 업데이트 완료:', {
+//         hospitalName: formData.hospital.name,
+//         hasAddress: !!formData.address.roadAddress,
+//         doctorsCount: formData.doctors.length,
+//         sns_content_agreement: existingData.hospitalDetail?.sns_content_agreement
+//       });
 
-      // 피드백 정보 설정
-      if (existingData.feedback) {
-        setFeedback(existingData.feedback);
-        console.log('피드백 정보 설정 완료:', existingData.feedback);
-      }
-    }
-  }, [existingData]);
+//       // 피드백 정보 설정
+//     //   if (existingData.feedback) {
+//     //     setFeedback(existingData.feedback);
+//     //     console.log('피드백 정보 설정 완료:', existingData.feedback);
+//     //   }
+//     }
+//   }, [existingData]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   useEffect(() => {
@@ -325,7 +336,7 @@ const ClinicInfoUploadClient = ({
       console.log(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
-        await loadExistingHospitalData(currentUserUid, '', 100);
+        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 1);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -463,27 +474,45 @@ const ClinicInfoUploadClient = ({
       // 6. 위치 정보 설정
       if (existingData.hospital?.location) {
         try {
-          const locationData = JSON.parse(
-            existingData.hospital?.location,
-          );
-          if (
-            locationData.key &&
-            locationData.label &&
-            locationData.name
-          ) {
-            setSelectedLocation(locationData);
-            console.log(
-              '위치 정보 설정 완료:',
-              locationData,
-            );
+            const locKey = existingData.hospital?.location;
+            console.log('위치 정보 조회 시작 key :', locKey);
+            // if (locKey) {
+              // key는 string -> number 변환
+              const locationKey = parseInt(locKey, 10);
+              const region = findRegionByKey(REGIONS, locationKey);
+        
+              if (region) {
+                setSelectedLocation(region);
+                console.log('위치 정보 설정 완료:', region);
+              } else {
+                console.warn('위치 정보 해당 key에 맞는 REGION을 찾지 못했습니다.', locationKey);
+              }
+            // }
+          } catch (error) {
+            console.error('위치 정보 파싱 실패:', existingData.hospital.location, error);
           }
-        } catch (error) {
-          console.error(
-            '위치 정보 파싱 실패:',
-            existingData.hospital.location,
-            error,
-          );
-        }
+        // try {
+        //   const locationData = JSON.parse(
+        //     existingData.hospital.location,
+        //   );
+        //   if (
+        //     locationData.key &&
+        //     locationData.label &&
+        //     locationData.name
+        //   ) {
+        //     setSelectedLocation(locationData);
+        //     console.log(
+        //       '위치 정보 설정 완료:',
+        //       locationData,
+        //     );
+        //   }
+        // } catch (error) {
+        //   console.error(
+        //     '위치 정보 파싱 실패:',
+        //     existingData.hospital.location,
+        //     error,
+        //   );
+        // }
       }
 
       // 6. 시술 정보 설정
@@ -855,7 +884,7 @@ const ClinicInfoUploadClient = ({
   };
 
 
-  const id_uuid_generate = uuidv4();
+
   const handlePreview = async () => {
     // const validationResult = validateFormDataAndUpdateUI(true);
 
@@ -879,7 +908,7 @@ const ClinicInfoUploadClient = ({
       const newImageUrls = clinicImages.map(img => URL.createObjectURL(img));
       const allClinicImageUrls = [...existingUrls, ...newImageUrls];
       const formData = prepareFormData({
-        id_uuid: id_uuid_generate,
+        id_uuid: id_uuid_hospital,
         clinicName,
         email: basicInfo.email,
         tel: basicInfo.tel,
@@ -1179,6 +1208,14 @@ const ClinicInfoUploadClient = ({
   )
     return <LoadingSpinner backdrop />;
 
+    const handleNext = async () => {
+        console.log('handleNext');
+        const result = await handleSave();
+        console.log('handleNext result', result);
+        if (result?.status === 'success') {
+            onNext();
+        }
+    }
  
   const handleSave = async () => {
     console.log('handleSave');
@@ -1186,54 +1223,95 @@ const ClinicInfoUploadClient = ({
       'input[name="name"]',
     ) as HTMLInputElement;
     const clinicName = clinicNameInput?.value || '';
-    console.log('qqqqqqqqq id_uuid_generate', id_uuid_generate);
-    console.log('qqqqqqqqq clinicName', clinicName);
-    console.log('qqqqqqqqq basicInfo.email', basicInfo.email);
-    console.log('qqqqqqqqq basicInfo.tel', basicInfo.tel);
-    console.log('qqqqqqqqq addressForSendForm', addressForSendForm);
-    console.log('qqqqqqqqq selectedLocation', selectedLocation?.name);
-    console.log('qqqqqqqqq selectedTreatments', selectedTreatments);
-    console.log('qqqqqqqqq treatmentOptions', treatmentOptions);
-    console.log('qqqqqqqqq priceExpose', priceExpose);
-    const formData = prepareFormData({
-      id_uuid: id_uuid_generate,
-      clinicName: clinicName,
-      email: basicInfo.email,
-      tel: basicInfo.tel,
-      addressForSendForm,
-      selectedLocation: selectedLocation?.name || '',
-      selectedTreatments,
-      treatmentOptions,
-      priceExpose,
-      treatmentEtc,
-      openingHours,
-      optionState,
-      clinicImageUrls: [],
-      doctorImageUrls: [],
-      doctors,
-      feedback,
-      selectedLanguages,
-      snsData: {
-        kakao_talk: basicInfo.kakao_talk,
-        line: basicInfo.line,
-        we_chat: basicInfo.we_chat,
-        whats_app: basicInfo.whats_app,
-        telegram: basicInfo.telegram,
-        facebook_messenger: basicInfo.facebook_messenger,
-        instagram: basicInfo.instagram,
-        tiktok: basicInfo.tiktok,
-        youtube: basicInfo.youtube,
-        other_channel: basicInfo.other_channel,
-      }
-    });
+    // console.log('qqqqqqqqq id_uuid_generate', id_uuid_hospital);
+    // console.log('qqqqqqqqq clinicName', clinicName);
+    // console.log('qqqqqqqqq basicInfo.email', basicInfo.email);
+    // console.log('qqqqqqqqq basicInfo.tel', basicInfo.tel);
+    // console.log('qqqqqqqqq addressForSendForm', addressForSendForm);
+    // console.log('qqqqqqqqq selectedLocation', selectedLocation?.name);
+    // console.log('qqqqqqqqq selectedTreatments', selectedTreatments);
+    // console.log('qqqqqqqqq treatmentOptions', treatmentOptions);
+    // console.log('qqqqqqqqq priceExpose', priceExpose);
+    // const formData = prepareFormData({
+    //   id_uuid: id_uuid_generate,
+    //   clinicName: clinicName,
+    //   email: basicInfo.email,
+    //   tel: basicInfo.tel,
+    //   addressForSendForm,
+    //   selectedLocation: selectedLocation?.name || '',
+    //   selectedTreatments,
+    //   treatmentOptions,
+    //   priceExpose,
+    //   treatmentEtc,
+    //   openingHours,
+    //   optionState,
+    //   clinicImageUrls: [],
+    //   doctorImageUrls: [],
+    //   doctors,
+    //   feedback,
+    //   selectedLanguages,
+    //   snsData: {
+    //     kakao_talk: basicInfo.kakao_talk,
+    //     line: basicInfo.line,
+    //     we_chat: basicInfo.we_chat,
+    //     whats_app: basicInfo.whats_app,
+    //     telegram: basicInfo.telegram,
+    //     facebook_messenger: basicInfo.facebook_messenger,
+    //     instagram: basicInfo.instagram,
+    //     tiktok: basicInfo.tiktok,
+    //     youtube: basicInfo.youtube,
+    //     other_channel: basicInfo.other_channel,
+    //   }
+    // });
 
+    const formData = new FormData();
     formData.append('current_user_uid', currentUserUid);
-    setPreparedFormData(formData);
+     // 기본 정보
+  formData.append('id_uuid', id_uuid_hospital);
+  formData.append('name', clinicName);
+  formData.append('email', basicInfo.email);
+  formData.append('tel', basicInfo.tel);
+
+  formData.append(
+  'sns_content_agreement',
+  basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
+);
+
+  const  snsData = {
+    kakao_talk: basicInfo.kakao_talk,
+    line: basicInfo.line,
+    we_chat: basicInfo.we_chat,
+    whats_app: basicInfo.whats_app,
+    telegram: basicInfo.telegram,
+    facebook_messenger: basicInfo.facebook_messenger,
+    instagram: basicInfo.instagram,
+    tiktok: basicInfo.tiktok,
+    youtube: basicInfo.youtube,
+    other_channel: basicInfo.other_channel,
+  }
+  // SNS 정보
+  Object.entries(snsData).forEach(([key, value]) => {
+    if (value) {
+      formData.append(key, value);
+    }
+  });
+
+  // 주소 정보
+  if (addressForSendForm) {
+    formData.append('address', JSON.stringify(addressForSendForm));
+  }
+
+  // 위치 정보
+  if (selectedLocation) {
+    formData.append('location', selectedLocation.key.toString() || '');
+  }
+
+    // setPreparedFormData(formData);
 
     console.log('qqqqqqqqq preparedFormData', preparedFormData);
     console.log('qqqqqqqqq formData', formData);
     try {
-      if (!preparedFormData) {
+      if (!formData) {
         setFormState({
           message: '데이터가 준비되지 않았습니다.',
           status: 'error',
@@ -1245,17 +1323,27 @@ const ClinicInfoUploadClient = ({
 
       const result = await uploadActionsStep1(
         null,
-        preparedFormData,
+        formData,
       );
 
-      console.log('uploadActions 응답:', result);
-      setFormState(result);
-      setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
-
-      setShowConfirmModal(false);
-      setPreparedFormData(null);
+    //   console.log('uploadActionsStep1 응답:', result);
+    //   setFormState(result);
+    //   setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
+    if (result?.status === 'error') {
+        setFormState({
+            message: `uploadActionsStep1 처리 오류: ${result?.message}`,
+            status: 'error',
+            errorType: 'server',
+          });
+        setShowFinalResult(true);
+      }
+    //   setShowConfirmModal(false);
+    //   setPreparedFormData(null);
+      return {
+        status: 'success',
+    }
   } catch (error) {
-    console.error('uploadActions 호출 에러:', error);
+    console.error('uploadActionsStep1 호출 에러:', error);
 
     let errorMessage = '업로드 중 오류가 발생했습니다.';
 
@@ -1271,14 +1359,20 @@ const ClinicInfoUploadClient = ({
     setShowFinalResult(true); // 에러도 최종 결과로 표시
     setShowConfirmModal(false);
     setPreparedFormData(null);
+    return {
+        status: 'error',
+    }
   } finally {
     setIsSubmitting(false);
   }
+        return {
+            status: 'success',
+        }
   };
 
   return (
     <main>
-      <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} />
+      {/* <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} /> */}
       <div
         className='my-8 mx-auto px-6'
         style={{ width: '100vw', maxWidth: '1024px' }}
@@ -1319,15 +1413,15 @@ const ClinicInfoUploadClient = ({
 
           <Divider />
           <div className='w-full mt-4'>
-          <ExtraOptions
+          {/* <ExtraOptions
             onSelectOptionState={handleExtraOptionsChange}
             initialOptions={optionState}
-          />
+          /> */}
         </div>
         <Divider />
 
           {/* 디버깅 정보 표시 */}
-          {(selectedTreatments.length > 0 ||
+          {/* {(selectedTreatments.length > 0 ||
             coordinates ||
             selectedLocation ||
             treatmentEtc.trim() !== '') && (
@@ -1348,166 +1442,14 @@ const ClinicInfoUploadClient = ({
                   {coordinates.longitude}
                 </p>
               )}
-              {selectedTreatments.length > 0 && (
-                <p className='text-sm'>
-                  <strong>선택된 치료 개수:</strong>{' '}
-                  {selectedTreatments.length}개
-                </p>
-              )}
-              {treatmentEtc.trim() !== '' && (
-                <p className='text-sm'>
-                  <strong>기타 시술 정보:</strong>{' '}
-                  {treatmentEtc}
-                </p>
-              )}
-              {}
+
             </div>
-          )}
+          )} */}
         </div>
-
-        {/* 영업시간 등록  */}
-        {/* <div className="w-full">
-        <h3 className="font-semibold mb-2">영업시간 날짜 시간 등록</h3> */}
-          <Divider />
-        <OpeningHoursForm
-          onSelectOpeningHours={setOpeningHours}
-          initialHours={initialBusinessHours}
-        />
-        {/* </div> */}
- 
-
-        <Divider />
-
-
-        <div className='w-full'>
-            {/* <SurgeriesModal itemList={surgeryList} /> */}
-            {/* 가능시술 선택하기  선택 모달 */}
-            {categories && (
-              <TreatmentSelectBox
-                onSelectionChange={
-                  handleTreatmentSelectionChange
-                }
-                initialSelectedKeys={
-                  initialTreatmentData?.selectedKeys ||
-                  selectedTreatments
-                }
-                initialProductOptions={
-                  initialTreatmentData?.productOptions ||
-                  treatmentOptions
-                }
-                initialPriceExpose={
-                  initialTreatmentData?.priceExpose ??
-                  priceExpose
-                }
-                initialEtc={
-                  initialTreatmentData?.etc || treatmentEtc
-                }
-                categories={categories}
-              />
-            )}
-          </div>
-
-          <Divider />
-
-          
-        {/* 병원 이미지 업로드 */}
-        <ClinicImageUploadSection
-          maxImages={clinicImageUploadLength}
-          title='병원 이미지 등록'
-          description={`- 병원 메인 이미지는 가로로 긴 직사각형(권장 비율: 16:9 또는 3:1)으로 업로드해 주세요.
-  · 예시: 1600x900px(16:9) 또는 1800x600px(3:1)
-  · 알림: 주어진 사진을 중앙을 기준으로 16:9 혹은 3:1 비율로 넘치는 부분이 자동으로 잘라집니다.
-      사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
-      * File 한개당 50MB 이하로 업로드 해주세요.
-      * 최소(3개이상) - 최대(권장) 7개까지 업로드 가능합니다. 추가 업로드 원하시면 문의 부탁드립니다.
-      * (대표이미지) 추가 된 순서대로 보여지며 첫번째 이미지가 대표 이미지가 됩니다.`}
-          onFilesChange={setClinicImages}
-          name='clinic_images'
-          type='Banner'
-          initialImages={existingData?.hospital?.imageurls || []}
-          onExistingDataChange={setExistingData}
-        />
-        <Divider />
-        {/* 의사 정보 등록 */}
-        <DoctorInfoSection
-          title='의사 정보 등록'
-          description={`- 의사 프로필 정보를 입력하고 이미지를 등록하세요.
-- 이미지는 정사각형(1:1) 비율로 자동 조정됩니다.
-- 기본 이미지를 사용하거나 직접 업로드할 수 있습니다.`}
-          onDoctorsChange={setDoctors}
-          initialDoctors={doctors}
-        />
-        <Divider />
-        { /* 가능언어 선택  */ }
-        <AvailableLanguageSection
-          onLanguagesChange={(selectedLanguages: string[]) => {
-            console.log('선택된 언어:', selectedLanguages);
-            setSelectedLanguages(selectedLanguages);
-          }}
-          initialLanguages={existingData?.hospitalDetail?.available_languages || []}
-        />
-        { /* 폼 작성관련해서 피드백 주실  내용이 있다면 자유롭게 의견 부탁드립니다. (선택) ) */ }
-
-       <Divider />
-       <div className='w-full'>
-          <h3 className="font-semibold mb-2">피드백</h3>
-          <p className="text-sm text-gray-600 mb-4">폼 작성 관련해서 피드백 주실 내용이 있다면 자유롭게 의견 부탁드립니다. (선택)</p>
-          <TextArea
-            placeholder='자유롭게 피드백을 남겨주세요.'
-            onChange={setFeedback}
-            value={feedback}
-          />
-        </div>
-      <Divider />
-        {/* <div className='flex justify-center mt-8 gap-8'>
-          <Button
-            color='red'
-            onClick={() => router.push('/admin')}
-          >
-            cancel
-          </Button>
-          <Button
-            color='blue'
-            disabled={isSubmitting}
-            onClick={handlePreview}
-          >
-            {isSubmitting ? '...submit' : 'preview'}
-          </Button>
-        </div> */}
+        <Button onClick={handleNext}>Save And Next</Button>
       </div>
-
-
-      
-
-      <AlertModal
-        onCancel={handleModal}
-        onConfirm={handleConfirm}
-        open={open}
-      >
-        {formState?.status === 'success'
-          ? '등록 성공'
-          : formState?.errorType === 'validation'
-            ? formState?.message ||
-              '입력 정보를 확인해주세요.'
-            : `등록 실패\n(본 메시지를 스크린샷을 찍거나 복사해서 알려주세요):\n\n ${Array.isArray(formState?.message) ? formState.message[0] : formState?.message}`}
-      </AlertModal>
-
-      {/* 제출 확인 모달 안에서는 제출할 내용만 출력할뿐 안에서 POST관련 처리는 없음  */}
-      {/* {showConfirmModal && preparedFormData && ( */}
-      {showConfirmModal &&  (
-        <PreviewModal
-          open={showConfirmModal}
-          formData={prepareFormDataSummary(
-            preparedFormData || null,
-          )}
-          onConfirm={handleFinalSubmit}
-          onCancel={handleModalCancel}
-          isSubmitting={isSubmitting}
-          errorMessages={previewValidationMessages}
-        />
-      )}
     </main>
   );
 };
 
-export default ClinicInfoUploadClient;
+export default Step1BasicInfo;

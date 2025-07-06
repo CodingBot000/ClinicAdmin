@@ -45,7 +45,7 @@ export interface FormDataSummary {
   };
   extraOptions: {
     facilities: string[];
-    specialistCount: number;
+    specialist_count: number;
   };
   images: {
     clinicImages: number;
@@ -72,6 +72,7 @@ interface PreviewModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  errorMessages?: string[];
 }
 
 export function PreviewModal({
@@ -80,6 +81,7 @@ export function PreviewModal({
   onConfirm,
   onCancel,
   isSubmitting = false,
+  errorMessages = [],
 }: PreviewModalProps) {
   if (!open) return null;
 
@@ -92,6 +94,13 @@ export function PreviewModal({
             <h2 className="text-xl font-semibold">최종 확인</h2>
           </div>
         </div>
+
+        {/* 에러 메시지 표시 */}
+        {errorMessages && errorMessages.length > 0 && (
+          <div style={{ color: 'red', whiteSpace: 'pre-line', margin: '16px 24px 0 24px', fontWeight: 500 }}>
+            {errorMessages.join('\n')}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
@@ -228,7 +237,7 @@ export function PreviewModal({
                   ))}
                 </div>
                 <div className="text-sm">
-                  <strong>전문의 수:</strong> {formData.extraOptions.specialistCount}명
+                  <strong>전문의 수:</strong> {formData.extraOptions.specialist_count}명
                 </div>
               </div>
             </div>

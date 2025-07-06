@@ -74,10 +74,10 @@ export interface TreatmentData {
 }
 
 export interface ExistingHospitalData {
-  hospital: HospitalData;
+  hospital: HospitalData | null;
   hospitalDetail: HospitalDetailData | null;
   businessHours: any[];
   doctors: any[];
   treatments: any[];
   feedback: string;
-} 
+}

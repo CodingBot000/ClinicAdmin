@@ -6,7 +6,7 @@ import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ProductOptionInput from "@/components/ProductOptionInput";
-import { useCategories } from "@/hooks/useCategories";
+import { useTreatmentCategories } from "@/hooks/useTreatmentCategories";
 
 interface ProductOption {
   id: string;

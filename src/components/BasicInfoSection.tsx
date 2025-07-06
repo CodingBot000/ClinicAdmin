@@ -105,8 +105,8 @@ const BasicInfoSection = ({
   initialInfo,
 }: BasicInfoSectionProps) => {
   console.log('BasicInfoSection initialInfo:', {
-    snsContentAgreement: initialInfo?.snsContentAgreement,
-    type: initialInfo?.snsContentAgreement != null ? typeof initialInfo.snsContentAgreement : 'null'
+    sns_content_agreement: initialInfo?.sns_content_agreement,
+    type: initialInfo?.sns_content_agreement != null ? typeof initialInfo.sns_content_agreement : 'null'
   });
   
   const [info, setInfo] = useState<BasicInfo>({
@@ -124,13 +124,13 @@ const BasicInfoSection = ({
     tiktok: initialInfo?.tiktok || '',
     youtube: initialInfo?.youtube || '',
     other_channel: initialInfo?.other_channel || '',
-    snsContentAgreement: initialInfo?.snsContentAgreement ?? null,
+    sns_content_agreement: initialInfo?.sns_content_agreement ?? null,
   });
 
   // initialInfo가 변경될 때마다 info 상태 업데이트
   useEffect(() => {
     if (initialInfo) {
-      console.log('initialInfo changed, updating info state:', initialInfo.snsContentAgreement);
+      console.log('initialInfo changed, updating info state:', initialInfo.sns_content_agreement);
       setInfo({
         name: initialInfo.name || info.name,
         email: initialInfo.email || info.email,
@@ -146,14 +146,14 @@ const BasicInfoSection = ({
         tiktok: initialInfo.tiktok || info.tiktok,
         youtube: initialInfo.youtube || info.youtube,
         other_channel: initialInfo.other_channel || info.other_channel,
-        snsContentAgreement: initialInfo.snsContentAgreement ?? info.snsContentAgreement,
+        sns_content_agreement: initialInfo.sns_content_agreement ?? info.sns_content_agreement,
       });
     }
   }, [initialInfo]);
 
   console.log('BasicInfoSection info state:', {
-    snsContentAgreement: info.snsContentAgreement,
-    type: info.snsContentAgreement != null ? typeof info.snsContentAgreement : 'null'
+    sns_content_agreement: info.sns_content_agreement,
+    type: info.sns_content_agreement != null ? typeof info.sns_content_agreement : 'null'
   });
 
   const [showSnsModal, setShowSnsModal] = useState(false);
@@ -208,7 +208,7 @@ const BasicInfoSection = ({
   const handleSnsAgreementChange = (value: 1 | 0) => {
     const newInfo = {
       ...info,
-      snsContentAgreement: value,
+      sns_content_agreement: value,
     };
     setInfo(newInfo);
     onInfoChange(newInfo);
@@ -373,7 +373,7 @@ const BasicInfoSection = ({
               <input
                 type="radio"
                 name="snsAgreement"
-                checked={info.snsContentAgreement === 1}
+                checked={info.sns_content_agreement === 1}
                 onChange={() => handleSnsAgreementChange(1)}
                 className="w-4 h-4 text-blue-600"
               />
@@ -383,7 +383,7 @@ const BasicInfoSection = ({
               <input
                 type="radio"
                 name="snsAgreement"
-                checked={info.snsContentAgreement === 0}
+                checked={info.sns_content_agreement === 0}
                 onChange={() => handleSnsAgreementChange(0)}
                 className="w-4 h-4 text-blue-600"
               />

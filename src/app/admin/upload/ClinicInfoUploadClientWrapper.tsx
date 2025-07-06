@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import ClinicInfoUploadClient from './ClinicInfoUploadClient';
+import ClinicInfoInsertClient from './ClinicInfoInsertClient';
 
 export default function ClinicInfoUploadClientWrapper() {
   const router = useRouter();
@@ -63,11 +64,19 @@ export default function ClinicInfoUploadClientWrapper() {
   }
 
   return (
-    <ClinicInfoUploadClient
-      currentUserUid={currentUserUid}
+    <ClinicInfoInsertClient
+      currentUserUid={currentUserUid as string}
       isEditMode={isEditMode}
     />
   );
+
+
+  // return (
+  //   <ClinicInfoUploadClient
+  //     currentUserUid={currentUserUid}
+  //     isEditMode={isEditMode}
+  //   />
+  // );
 
   // return (
   //   (isEditMode) ? (

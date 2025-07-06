@@ -16,7 +16,7 @@ import { supabase } from "@/lib/supabaseClient";
  * 현재 사용자의 병원 UUID를 가져옵니다
  */
 export async function getUserHospitalUuid(userUid: string): Promise<string | null> {
-  console.log(' 사용자 병원 UUID 조회 시작:', userUid);
+  console.log(' 사용자 병원 UUID 조회 시작 auth userUid:', userUid);
   
   const { data: admin, error } = await supabase
     .from(TABLE_ADMIN)
@@ -42,7 +42,7 @@ export async function getUserHospitalUuid(userUid: string): Promise<string | nul
  * 병원 기본 정보를 가져옵니다
  */
 async function loadHospitalData(hospitalUuid: string) {
-  console.log(' 병원 기본 정보 로딩:', hospitalUuid);
+  console.log(' 병원 기본 정보 로딩 hospitalUuid:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_HOSPITAL)
@@ -220,57 +220,140 @@ async function loadFeedback(hospitalUuid: string) {
 /**
  * 모든 병원 관련 데이터를 통합해서 가져옵니다
  */
-export async function loadExistingHospitalData(userUid: string): Promise<ExistingHospitalData | null> {
+export async function loadExistingHospitalData(
+  userUid: string,
+  id_uuid_hospital: string,
+  step: number,
+  prev: ExistingHospitalData | null = null // ✅ 이전 데이터 받기
+): Promise<ExistingHospitalData | null> {
   try {
-    console.log(' 기존 병원 데이터 로딩 시작');
-    
-    // 1. 사용자의 병원 UUID 가져오기
-    const hospitalUuid = await getUserHospitalUuid(userUid);
+    console.log('=== [loadExistingHospitalData] 시작 ===');
+
+    let hospitalUuid = id_uuid_hospital;
     if (!hospitalUuid) {
-      console.log(' 병원 UUID가 없어서 로딩 중단');
-      return null;
+      const userHospitalUuid = await getUserHospitalUuid(userUid);
+      if (!userHospitalUuid) {
+        console.log('⛔️ 병원 UUID 없음 — 로딩 중단');
+        return null;
+      }
+      hospitalUuid = userHospitalUuid;
     }
+    console.log(`✅ 병원 UUID: ${hospitalUuid} | step: ${step}`);
 
-    // 2. 병렬로 모든 데이터 로딩
-    console.log(' 모든 데이터 병렬 로딩 시작...');
-    const [hospital, hospitalDetail, businessHours, doctors, treatments, feedback] = await Promise.all([
-      loadHospitalData(hospitalUuid),
-      loadHospitalDetailData(hospitalUuid),
-      loadBusinessHours(hospitalUuid),
-      loadDoctors(hospitalUuid),
-      loadTreatments(hospitalUuid),
-      loadFeedback(hospitalUuid)
-    ]);
-
-    const result: ExistingHospitalData = {
-      hospital,
-      hospitalDetail,
-      businessHours,
-      doctors,
-      treatments,
-      feedback
+    // ✅ 이전 데이터 있으면 사용, 없으면 EMPTY로
+    const base = prev ?? {
+      hospital: null,
+      hospitalDetail: null,
+      businessHours: [],
+      doctors: [],
+      treatments: [],
+      feedback: ''
     };
 
-    console.log('모든 병원 데이터 로딩 완료!');
-    console.log('로딩된 데이터 요약:', {
-      병원정보: '1건',
-      상세정보: hospitalDetail ? '1건' : '0건',
-      영업시간: `${businessHours.length}건`,
-      의사정보: `${doctors.length}명`,
-      시술정보: `${treatments.length}건`
+    let result: ExistingHospitalData = { ...base };
+
+    switch (step) {
+      case 1: {
+        const [hospital, hospitalDetail] = await Promise.all([
+          loadHospitalData(hospitalUuid),
+          loadHospitalDetailData(hospitalUuid)
+        ]);
+        result = {
+          ...base,
+          hospital: hospital ?? base.hospital,
+          hospitalDetail: hospitalDetail ?? base.hospitalDetail
+        };
+        break;
+      }
+
+      case 2: {
+        const [hospitalDetail, businessHours] = await Promise.all([
+          loadHospitalDetailData(hospitalUuid),
+          loadBusinessHours(hospitalUuid)
+        ]);
+        result = {
+          ...base,
+          hospitalDetail: hospitalDetail ?? base.hospitalDetail,
+          businessHours: businessHours ?? base.businessHours
+        };
+        break;
+      }
+
+      case 3: {
+        const [hospital, doctors] = await Promise.all([
+          loadHospitalData(hospitalUuid),
+          loadDoctors(hospitalUuid)
+        ]);
+        result = {
+          ...base,
+          hospital: hospital ?? base.hospital,
+          doctors: doctors ?? base.doctors
+        };
+        break;
+      }
+
+      case 4: {
+        const [treatments] = await Promise.all([
+          loadTreatments(hospitalUuid)
+        ]);
+        result = {
+          ...base,
+          treatments: treatments ?? base.treatments
+        };
+        break;
+      }
+
+      case 5: {
+        const [hospital, feedback] = await Promise.all([
+          loadHospitalData(hospitalUuid),
+          loadFeedback(hospitalUuid)
+        ]);
+        result = {
+          ...base,
+          hospital: hospital ?? base.hospital,
+          feedback: feedback ?? base.feedback
+        };
+        break;
+      }
+
+      case 100: {
+        const [hospital, hospitalDetail, businessHours, doctors, treatments, feedback] = await Promise.all([
+          loadHospitalData(hospitalUuid),
+          loadHospitalDetailData(hospitalUuid),
+          loadBusinessHours(hospitalUuid),
+          loadDoctors(hospitalUuid),
+          loadTreatments(hospitalUuid),
+          loadFeedback(hospitalUuid)
+        ]);
+        result = {
+          hospital: hospital ?? base.hospital,
+          hospitalDetail: hospitalDetail ?? base.hospitalDetail,
+          businessHours: businessHours ?? base.businessHours,
+          doctors: doctors ?? base.doctors,
+          treatments: treatments ?? base.treatments,
+          feedback: feedback ?? base.feedback
+        };
+        break;
+      }
+
+      default:
+        throw new Error(`❌ 지원되지 않는 step: ${step}`);
+    }
+
+    console.log('=== [loadExistingHospitalData] 로딩 요약 ===', {
+      병원정보: result.hospital ? '✅' : '⛔️',
+      상세정보: result.hospitalDetail ? '✅' : '⛔️',
+      영업시간: result.businessHours?.length ?? 0,
+      의사정보: result.doctors?.length ?? 0,
+      시술정보: result.treatments?.length ?? 0,
+      피드백: result.feedback ? '✅' : '⛔️'
     });
-    
-    console.log('=== 실제 로딩된 데이터 ===');
-    console.log('병원 기본 정보:', hospital);
-    console.log('병원 상세 정보:', hospitalDetail);
-    console.log('영업시간 정보:', businessHours);
-    console.log('의사 정보:', doctors);
-    console.log('시술 정보:', treatments);
 
     return result;
 
   } catch (error) {
-    console.error(' 병원 데이터 로딩 중 오류:', error);
+    console.error('🚨 병원 데이터 로딩 중 오류:', error);
     throw error;
   }
-} 
+}
+

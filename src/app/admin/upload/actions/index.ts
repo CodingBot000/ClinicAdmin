@@ -21,9 +21,10 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { HospitalDetailData } from '@/types/hospital';
 
+
 export const uploadActions = async (prevState: any, formData: FormData) => {
-  const startTime = Date.now();
-  console.log("uploadActions 시작:", new Date().toISOString());
+  // const startTime = Date.now();
+  // console.log("uploadActions 시작:", new Date().toISOString());
   
   // 편집 모드 여부와 기존 데이터 확인
   const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
@@ -302,7 +303,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
     has_night_counseling: stringToBoolean(extra_options_parsed.has_night_counseling),
     has_female_doctor: stringToBoolean(extra_options_parsed.has_female_doctor),
     has_anesthesiologist: stringToBoolean(extra_options_parsed.has_anesthesiologist),
-    specialistCount: parseInt(extra_options_parsed.specialistCount) || 0,
+    specialist_count: parseInt(extra_options_parsed.specialist_count) || 0,
   };
 
   console.log("변환된 opening_hours (배열):", opening_hours_parsed);
@@ -738,7 +739,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
       has_night_counseling: extra_options.has_night_counseling,
       has_female_doctor: extra_options.has_female_doctor,
       has_anesthesiologist: extra_options.has_anesthesiologist,
-      specialist_count: extra_options.specialistCount,
+      specialist_count: extra_options.specialist_count,
       email: formData.get("email") as string || '',
       tel: formData.get("tel") as string || '',
       kakao_talk: formData.get("kakao_talk") as string || '',
@@ -850,10 +851,10 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
   revalidatePath("/", "layout");
   console.log("uploadActions No error uploadActions ");
 
-  const endTime = Date.now();
-  const totalTime = endTime - startTime;
-  console.log("uploadActions 완료:", new Date().toISOString());
-  console.log(`총 처리 시간: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}초)`);
+  // const endTime = Date.now();
+  // const totalTime = endTime - startTime;
+  // console.log("uploadActions 완료:", new Date().toISOString());
+  // console.log(`총 처리 시간: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}초)`);
 
   return {
     ...prevState,

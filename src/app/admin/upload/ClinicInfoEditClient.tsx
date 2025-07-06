@@ -27,7 +27,7 @@ interface BasicInfo {
   tiktok: string;
   youtube: string;
   other_channel: string;
-  snsContentAgreement: 1 | 0 | null;
+  sns_content_agreement: 1 | 0 | null;
 }
 
 const ClinicInfoEditClient = ({
@@ -50,7 +50,7 @@ const ClinicInfoEditClient = ({
     tiktok: '',
     youtube: '',
     other_channel: '',
-    snsContentAgreement: null,
+    sns_content_agreement: null,
   });
 
   // 기존 데이터 로딩
@@ -81,7 +81,7 @@ const ClinicInfoEditClient = ({
             tiktok: data.hospitalDetail.tiktok || '',
             youtube: data.hospitalDetail.youtube || '',
             other_channel: data.hospitalDetail.other_channel || '',
-            snsContentAgreement: data.hospitalDetail.sns_content_agreement === null ? null : (data.hospitalDetail.sns_content_agreement as 1 | 0),
+            sns_content_agreement: data.hospitalDetail.sns_content_agreement === null ? null : (data.hospitalDetail.sns_content_agreement as 1 | 0),
           });
         }
           }
@@ -157,8 +157,8 @@ const ClinicInfoEditClient = ({
             <div className="mt-4">
               <span className="font-medium">SNS 컨텐츠 이용 동의:</span>
               <span className="ml-2">
-                {basicInfo.snsContentAgreement === 1 ? '동의' : 
-                 basicInfo.snsContentAgreement === 0 ? '미동의' : '미설정'}
+                {basicInfo.sns_content_agreement === 1 ? '동의' : 
+                 basicInfo.sns_content_agreement === 0 ? '미동의' : '미설정'}
               </span>
           </div>
           </div>
