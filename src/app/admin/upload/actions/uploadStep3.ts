@@ -97,6 +97,37 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
     const finalClinicImageUrls = [...existingClinicUrls, ...newClinicImageUrls];
     console.log('- 최종 병원 이미지 URL 개수:', finalClinicImageUrls.length);
 
+    // 삭제된 병원 이미지 파일들 처리
+    if (isEditMode && existingData?.hospital?.imageurls) {
+      const deletedImageUrls = existingData.hospital.imageurls.filter(
+        (url: string) => !finalClinicImageUrls.includes(url)
+      );
+      
+      console.log('- 삭제된 병원 이미지 URL들:', deletedImageUrls);
+      
+      for (const deletedUrl of deletedImageUrls) {
+        try {
+          // Storage에서 파일 경로 추출
+          const urlParts = deletedUrl.split('/');
+          const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
+          
+          console.log(`- 병원 이미지 파일 삭제: ${filePath}`);
+          
+          const { error: storageError } = await supabase.storage
+            .from(STORAGE_IMAGES)
+            .remove([filePath]);
+
+          if (storageError) {
+            console.error('병원 이미지 파일 삭제 실패:', storageError);
+          } else {
+            console.log(`- 병원 이미지 파일 삭제 성공: ${filePath}`);
+          }
+        } catch (error) {
+          console.error('병원 이미지 파일 삭제 중 오류:', error);
+        }
+      }
+    }
+
     // 병원 테이블 업데이트 (이미지 URL 배열)
     console.log('병원 테이블 업데이트 시작:', {
       id_uuid_hospital,
@@ -167,6 +198,35 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
         } else {
           console.log(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재함, 업데이트 진행`);
           
+          // 기존 이미지 URL 확인
+          const existingImageUrl = existingDoctor.image_url;
+          const newImageUrl = doctorData.image_url;
+          
+          // 이미지가 변경되었고, 기존 이미지가 기본 이미지가 아닌 경우 삭제
+          if (existingImageUrl !== newImageUrl && 
+              existingImageUrl && 
+              !existingImageUrl.includes('/default/')) {
+            try {
+              // Storage에서 파일 경로 추출
+              const urlParts = existingImageUrl.split('/');
+              const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
+              
+              console.log(`- 의사 이전 이미지 파일 삭제: ${filePath}`);
+              
+              const { error: storageError } = await supabase.storage
+                .from(STORAGE_IMAGES)
+                .remove([filePath]);
+
+              if (storageError) {
+                console.error('의사 이전 이미지 파일 삭제 실패:', storageError);
+              } else {
+                console.log(`- 의사 이전 이미지 파일 삭제 성공: ${filePath}`);
+              }
+            } catch (error) {
+              console.error('의사 이전 이미지 파일 삭제 중 오류:', error);
+            }
+          }
+          
           // 존재하면 업데이트
           const { data: updateData, error: updateError } = await supabase
             .from(TABLE_DOCTOR)
@@ -207,6 +267,30 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
       for (const deletedId of deletedDoctorIds) {
         console.log(`- 삭제된 의사 처리: ${deletedId}`);
         
+        // 삭제할 의사의 이미지 URL 찾기
+        const deletedDoctor = existingData.doctors.find((d: any) => d.id_uuid === deletedId);
+        if (deletedDoctor?.image_url && !deletedDoctor.image_url.includes('/default/')) {
+          try {
+            // Storage에서 파일 경로 추출
+            const urlParts = deletedDoctor.image_url.split('/');
+            const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
+            
+            console.log(`- 의사 이미지 파일 삭제: ${filePath}`);
+            
+            const { error: storageError } = await supabase.storage
+              .from(STORAGE_IMAGES)
+              .remove([filePath]);
+
+            if (storageError) {
+              console.error('의사 이미지 파일 삭제 실패:', storageError);
+            } else {
+              console.log(`- 의사 이미지 파일 삭제 성공: ${filePath}`);
+            }
+          } catch (error) {
+            console.error('의사 이미지 파일 삭제 중 오류:', error);
+          }
+        }
+        
         // 의사 정보 삭제
         const { error: deleteError } = await supabase
           .from(TABLE_DOCTOR)
@@ -217,6 +301,8 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
           console.error('의사 정보 삭제 실패:', deleteError);
           return await rollbackAll(`의사 정보 삭제 실패: ${deleteError.message}`);
         }
+        
+        console.log(`- 의사 정보 삭제 성공: ${deletedId}`);
       }
     }
 
