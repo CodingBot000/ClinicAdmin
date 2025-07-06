@@ -1170,21 +1170,22 @@ const handleNext = async () => {
 }
 
   const handleSave = async () => {
-    console.log('handleSave');
-    const formData = new FormData();
-    // 시설 정보
-    formData.append('extra_options', JSON.stringify(optionState));
+    console.log('handleSave 시작');
+    try {
+        const formData = new FormData();
+        // 시설 정보
+        formData.append('extra_options', JSON.stringify(optionState));
 
-    // 영업 시간
-    formData.append('opening_hours', JSON.stringify(openingHours));
-    formData.append('current_user_uid', currentUserUid);
-    
-    formData.append('id_uuid_hospital', id_uuid_hospital);
+        // 영업 시간
+        formData.append('opening_hours', JSON.stringify(openingHours));
+        formData.append('current_user_uid', currentUserUid);
+        
+        formData.append('id_uuid_hospital', id_uuid_hospital);
     // setPreparedFormData(formData);
 
     // console.log('qqqqqqqqq preparedFormData', preparedFormData);
     // console.log('qqqqqqqqq formData', formData);
-    try {
+    
       if (!formData) {
         setFormState({
           message: '데이터가 준비되지 않았습니다.',
@@ -1219,7 +1220,7 @@ const handleNext = async () => {
     //   setShowConfirmModal(false);
     //   setPreparedFormData(null);
   } catch (error) {
-    console.error('uploadActionsStep2 호출 에러:', error);
+    console.error('handleSave Step2uploadActionsStep2 호출 에러:', error);
 
     let errorMessage = '업로드 중 오류가 발생했습니다.';
 

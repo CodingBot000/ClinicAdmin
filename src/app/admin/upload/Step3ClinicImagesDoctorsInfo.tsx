@@ -39,7 +39,6 @@ import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadActionsStep1 } from './actions/uploadStep1';
 import { uploadActionsStep3 } from './actions/uploadStep3';
 
 interface Surgery {
@@ -87,7 +86,7 @@ const Step3ClinicImagesDoctorsInfo = ({
   onPrev,
   onNext,
 }: Step3ClinicImagesDoctorsInfoProps) => {
-    console.log('qqqqqqqqq Step3ClinicImagesDoctorsInfo id_uuid_hospital', id_uuid_hospital);
+    console.log('qqqqqqqqq Step3ClinicImagesDoctorsInfo oooㄹㄹ id_uuid_hospital', id_uuid_hospital);
   const router = useRouter();
 //   const [address, setAddress] = useState('');
 //   const [addressForSendForm, setAddressForSendForm] =
@@ -1132,64 +1131,74 @@ const Step3ClinicImagesDoctorsInfo = ({
     return <LoadingSpinner backdrop />;
 
   const handleNext = async () => {
-    console.log('handleNext');
-    onNext();
+    console.log('handleNext Step3');
+    const result = await handleSave();
+    console.log('handleNext Step3 handlSave after result', result);
+    if (result?.status === 'success') {
+        console.log('handleNext Step3 handlSave success');
+        onNext();
+    } else {
+        console.log('handleNext Step3 handlSave what? :', result);
+    }
   };
  
   const handleSave = async () => {
-    console.log('handleSave');
+    console.log('handleSave Step3');
     
     //   clinicImageUrls: [],
     //   doctorImageUrls: [],
     //   doctors,
-      const formData = new FormData();
+    try {
+    const formData = new FormData();
 
-      formData.append('id_uuid_hospital', id_uuid_hospital);
+    formData.append('id_uuid_hospital', id_uuid_hospital);
 
-      const existingUrls = existingData?.hospital?.imageurls || [];
-      const newImageUrls = clinicImages.map(img => URL.createObjectURL(img));
-      const allClinicImageUrls = [...existingUrls, ...newImageUrls];
-      const doctorImageUrls = doctors.map((doctor, index) => doctor.imageFile || '');
-  // 의사 정보
-  if (doctors.length > 0) {
-    const doctorsData = doctors.map((doctor, index) => ({
-      name: doctor.name,
-      bio: doctor.bio || '',
-      imageUrl: doctorImageUrls[index] || '',
-      chief: doctor.isChief ? 1 : 0,
-      useDefaultImage: doctor.useDefaultImage,
-      defaultImageType: doctor.defaultImageType,
-    }));
+    const existingUrls = existingData?.hospital?.imageurls || [];
+    const newImageUrls = clinicImages.map(img => URL.createObjectURL(img));
+    const allClinicImageUrls = [...existingUrls, ...newImageUrls];
+    const doctorImageUrls = doctors.map((doctor, index) => doctor.imageFile || '');
+    // 의사 정보
+    if (doctors.length > 0) {
+        const doctorsData = doctors.map((doctor, index) => ({
+            name: doctor.name,
+            bio: doctor.bio || '',
+            imageUrl: doctorImageUrls[index] || '',
+            chief: doctor.isChief ? 1 : 0,
+            useDefaultImage: doctor.useDefaultImage,
+            defaultImageType: doctor.defaultImageType,
+        }));
 
-    formData.append('doctors', JSON.stringify(doctorsData));
+        formData.append('doctors', JSON.stringify(doctorsData));
   }
 
   // 이미지 URL 정보
   formData.append('clinic_image_urls', JSON.stringify(allClinicImageUrls));
   formData.append('doctor_image_urls',
-     JSON.stringify(doctors.map((doctor, index)  => doctor.imageFile  || '')));
+    JSON.stringify(doctors.map((doctor, index)  => doctor.imageFile  || '')));
 
 
     formData.append('current_user_uid', currentUserUid);
-    setPreparedFormData(formData);
+    // setPreparedFormData(formData);
 
-    console.log('qqqqqqqqq preparedFormData', preparedFormData);
+    // console.log('qqqqqqqqq preparedFormData', preparedFormData);
     console.log('qqqqqqqqq formData', formData);
     
-    try {
-      if (!preparedFormData) {
+  
+      if (!formData) {
         setFormState({
           message: '데이터가 준비되지 않았습니다.',
           status: 'error',
           errorType: 'validation',
         });
         setShowFinalResult(true);
+        console.log('handleSave Step3 return -1 ');
         return;
       }
 
+      console.log('Step3 uploadActionStep3 beff formData:', formData);
       const result = await uploadActionsStep3(
         null,
-        preparedFormData,
+        formData,
       );
 
       console.log('uploadActionsStep3 응답:', result);
@@ -1202,8 +1211,12 @@ const Step3ClinicImagesDoctorsInfo = ({
             errorType: 'server',
           });
         setShowConfirmModal(true);
+        return {
+            status: 'server',
+          }
     }
       setPreparedFormData(null);
+      console.log('handleSave Step3 return 2 ');
       return {
         status: 'success',
       }
@@ -1224,6 +1237,7 @@ const Step3ClinicImagesDoctorsInfo = ({
     setShowFinalResult(true); // 에러도 최종 결과로 표시
     setShowConfirmModal(false);
     // setPreparedFormData(null);
+    console.log('handleSave Step3 return - 3 ');
     return {
       status: 'error',
     }

@@ -23,7 +23,7 @@ import { HospitalDetailData } from '@/types/hospital';
 
 
 export const uploadActionsStep3 = async (prevState: any, formData: FormData) => {
-
+  console.log('=== uploadStep3 START    ');
 
   // 에러 발생 시 모든 작업을 롤백하는 함수
   const rollbackAll = async (errorMessage: string) => {
@@ -170,6 +170,22 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
   const existingDataRaw = formData.get("existing_data")?.toString();
   const existingData = existingDataRaw ? JSON.parse(existingDataRaw) : null;
 
+  // 디버그 로그 출력
+  console.log('=== uploadStep3 디버그 로그 ===');
+  console.log('uploadStep3 isEditMode:', isEditMode);
+  console.log('uploadStep3 id_uuid_hospital:', id_uuid_hospital);
+  console.log('uploadStep3 current_user_uid:', current_user_uid);
+  console.log('uploadStep3 clinic_image_urls_raw:', clinic_image_urls_raw);
+  console.log('uploadStep3 doctor_image_urls_raw:', doctor_image_urls_raw);
+  console.log('uploadStep3 doctors_raw:', doctors_raw);
+  console.log('uploadStep3 initial_doctors_raw:', initial_doctors_raw);
+  console.log('uploadStep3 existingDataRaw:', existingDataRaw);
+  console.log('uploadStep3 existingData:', existingData);
+  console.log('=== 디버그 로그 끝 ===');
+
+
+
+  
   // 트랜잭션 및 롤백을 위한 변수들
   let newlyUploadedImages: string[] = []; // 새로 업로드된 이미지 URL
   let newlyUploadedDoctorImages: string[] = []; // 새로 업로드된 의사 이미지 URL
@@ -217,7 +233,7 @@ try {
     doctors_parsed = JSON.parse(doctors_raw);
     console.log("최종 의사 정보 파싱 완료:", doctors_parsed);
   }
-  
+  // {"handle":{},"path":"./Screenshot 2025-06-28 at 2.29.14 AM.png","relativePath":"./Screenshot 2025-06-28 at 2.29.14 AM.png"}
   if (initial_doctors_raw) {
     initial_doctors_parsed = JSON.parse(initial_doctors_raw);
     console.log("초기 의사 정보 파싱 완료:", initial_doctors_parsed);
