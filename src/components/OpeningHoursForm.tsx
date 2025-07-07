@@ -140,15 +140,6 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
     return '미설정';
   };
 
-  // 일정저장 버튼 기능 - 주석처리 (Preview 버튼 클릭 시 자동 저장으로 변경)
-  // const handleSave = (e: React.MouseEvent) => {
-  //   e.preventDefault();
-  //   e.stopPropagation();
-  //   setSavedHours([...hoursState]);
-  //   onSelectOpeningHours?.(hoursState);
-  //   console.log(" 일정저장 - 영업시간 데이터:", hoursState);
-  // };
-
   // Preview 버튼 클릭 시 현재 상태를 자동으로 외부에 전달하는 함수
   const getCurrentHours = () => {
     return hoursState;
@@ -294,11 +285,11 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
       </span>
       */}
       
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+      {/* <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
         <p className="text-sm text-blue-800">
           💡 영업시간은 Preview 버튼을 클릭했을때 마지막 선택사항이 자동으로 저장됩니다.
         </p>
-      </div>
+      </div> */}
 
       {/* 저장된 일정 상태 표시 - 주석처리 */}
       {/* 

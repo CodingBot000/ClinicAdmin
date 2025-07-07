@@ -10,7 +10,7 @@ import Step3ClinicImagesDoctorsInfo from "./Step3ClinicImagesDoctorsInfo";
 import Step4Treatments from "./Step4Treatments";
 import Step5LanguagesFeedback from "./Step5LanguagesFeedback";
 import PageHeader from "@/components/PageHeader";
-import { getUserHospitalUuid } from "@/lib/hospitalDataLoader";
+import { getUserHospitalUuid, loadHospitalData } from "@/lib/hospitalDataLoader";
 
 export default function ClinicInfoInsertClient(
   { currentUserUid, isEditMode }: { currentUserUid: string, isEditMode: boolean }
@@ -23,6 +23,7 @@ export default function ClinicInfoInsertClient(
   const step = stepParam ? parseInt(stepParam, 10) : 1;
 
   const [id_uuid_hospital, setIdUuidHospital] = useState('');
+  const [hospitalName, setHospitalName] = useState('');
 
   const goNext = () => {
     const params = new URLSearchParams(searchParams);
@@ -33,6 +34,12 @@ export default function ClinicInfoInsertClient(
   const goBack = () => {
     const params = new URLSearchParams(searchParams);
     params.set("step", String(step - 1));
+    router.replace(`?${params.toString()}`);
+  };
+
+  const goToStep = (targetStep: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("step", String(targetStep));
     router.replace(`?${params.toString()}`);
   };
 
@@ -47,6 +54,11 @@ export default function ClinicInfoInsertClient(
         const hospitalUuid = await getUserHospitalUuid(currentUserUid);
         setIdUuidHospital(hospitalUuid ?? '');
         console.log('ClinicInfoInsertClient hospitalUuid: ', hospitalUuid);
+
+        if (!hospitalUuid) {
+         const hospitalName = await loadHospitalData(hospitalUuid!);
+         setHospitalName(hospitalName);
+        }
       };
       loadHospitalUuid();
     }
@@ -63,9 +75,11 @@ export default function ClinicInfoInsertClient(
   return (
     <main>
       <PageHeader
-        name={`병원 정보를 입력하세요 (Step ${step})`}
+        name={hospitalName ? `${hospitalName}님 환영합니다.` : `병원 정보를 입력하세요`}
+        currentStep={step}
         onPreview={handlePreview}
         onSave={handleSave}
+        onStepChange={goToStep}
       />
 
       {step === 1 && (

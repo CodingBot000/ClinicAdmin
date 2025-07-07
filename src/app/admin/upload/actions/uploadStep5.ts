@@ -32,9 +32,11 @@ export const uploadActionsStep5 = async (prevState: any, formData: FormData) => 
     
     const available_languages = JSON.parse(available_languages_raw);
 
-  console.log("uploadActionsStep5 available_languages_raw:", available_languages_raw);
-  console.log("uploadActionsStep5 feedback: ", feedback);
+    console.log("uploadActionsStep5 available_languages_raw:", available_languages_raw);
+    console.log("uploadActionsStep5 feedback: ", feedback);
+    console.log("uploadActionsStep5 id_uuid_hospital: ", id_uuid_hospital);
   
+    // 1. 가능 언어 정보 업데이트
     const { data: dataAvailableLanguages, error: availableLanguagesError } = await supabase
     .from(TABLE_HOSPITAL_DETAIL)
     .update({
@@ -42,38 +44,46 @@ export const uploadActionsStep5 = async (prevState: any, formData: FormData) => 
     })
     .eq('id_uuid_hospital', id_uuid_hospital);
   
-  if (availableLanguagesError) {
-    console.log("uploadActions5 available_languages error:", availableLanguagesError);
-    // return await rollbackAll(etcTreatmentError.message);
-    return {
-      ...prevState,
-      message: `availableLanguagesError:${availableLanguagesError.code || availableLanguagesError.message}`,
-      status: "error",
-    };
-  }
+    if (availableLanguagesError) {
+      console.log("uploadActions5 available_languages error:", availableLanguagesError);
+      return {
+        ...prevState,
+        message: `availableLanguagesError:${availableLanguagesError.code || availableLanguagesError.message}`,
+        status: "error",
+      };
+    }
   
-    if (!feedback) {
+    // 2. 피드백 정보 저장 (피드백이 있을 때만)
+    if (feedback && feedback.trim()) {
+      console.log("피드백 저장 시작:", feedback);
+      
+      // 피드백은 항상 새로운 레코드로 insert (id_uuid_hospital 중복 허용)
       const { data: dataFeedback, error: feedbackError } = await supabase
         .from(TABLE_FEEDBACKS)
-        .insert([feedback]);
+        .insert([{
+          id_uuid_hospital: id_uuid_hospital,
+          feedback_content: feedback.trim()
+        }]);
       
       if (feedbackError) {
-        console.log("uploadActions5 feedback error:", feedbackError);
-        // return await rollbackAll(etcTreatmentError.message);
+        console.log("uploadActions5 feedback insert error:", feedbackError);
         return {
           ...prevState,
-          message: `feedbackError:${feedbackError.code || feedbackError.message}`,
+          message: `feedbackInsertError:${feedbackError.code || feedbackError.message}`,
           status: "error",
         };
       }
       
+      console.log("피드백 저장 완료:", dataFeedback);
+    } else {
+      console.log("피드백이 없어서 저장하지 않음");
     }
 
-      console.log("가능 언어 및 피드백 저장 완료 ");
+    console.log("가능 언어 및 피드백 저장 완료 ");
    
-      return {
-        ...prevState,
-        message: "성공적으로 등록되었습니다.",
-        status: "success",
-      };
+    return {
+      ...prevState,
+      message: "성공적으로 등록되었습니다.",
+      status: "success",
+    };
   }

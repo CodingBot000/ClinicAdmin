@@ -41,7 +41,7 @@ export async function getUserHospitalUuid(userUid: string): Promise<string | nul
 /**
  * 병원 기본 정보를 가져옵니다
  */
-async function loadHospitalData(hospitalUuid: string) {
+export async function loadHospitalData(hospitalUuid: string) {
   console.log(' 병원 기본 정보 로딩 hospitalUuid:', hospitalUuid);
   
   const { data, error } = await supabase
@@ -80,7 +80,10 @@ async function loadHospitalDetailData(hospitalUuid: string) {
     throw new Error(`병원 상세 정보 로딩 실패: ${error.message}`);
   }
 
-  console.log(' 병원 상세 정보 로딩 완료');
+  console.log(' 병원 상세 정보 로딩 완료:', data);
+  console.log(' available_languages 필드:', data?.available_languages);
+  console.log(' available_languages 타입:', typeof data?.available_languages);
+  
   return data;
 }
 

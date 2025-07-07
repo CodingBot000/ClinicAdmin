@@ -1278,7 +1278,7 @@ const ClinicInfoUploadClient = ({
 
   return (
     <main>
-      <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} />
+      <PageHeader name='병원 정보를 입력하세요' currentStep={1} onPreview={handlePreview} onSave={handleSave} />
       <div
         className='my-8 mx-auto px-6'
         style={{ width: '100vw', maxWidth: '1024px' }}
