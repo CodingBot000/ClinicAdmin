@@ -316,7 +316,7 @@ export function TreatmentSelectModal({
           flex flex-col
           ${isAnimating ? 'translate-y-0' : 'translate-y-full'}
         `}
-        style={{ height: '80vh' }}
+        style={{ height: '95vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}

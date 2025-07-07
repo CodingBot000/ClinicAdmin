@@ -88,11 +88,6 @@ const Step4Treatments = ({
   onNext,
 }: Step4TreatmentsProps) => {
     console.log('qqqqqqqqq Step4Treatments id_uuid_hospital', id_uuid_hospital);
-//   const pageStartTime = Date.now();
-  // console.log(
-  //   'UploadClient 페이지 시작:',
-  //   new Date().toISOString(),
-  // );
 
   const {
     data: categories,
@@ -109,18 +104,7 @@ const Step4Treatments = ({
   // });
 
   const router = useRouter();
-//   const [address, setAddress] = useState('');
-//   const [addressForSendForm, setAddressForSendForm] =
-//     useState<HospitalAddress | null>(null);
-//   const [coordinates, setCoordinates] = useState<{
-//     latitude: number;
-//     longitude: number;
-//   } | null>(null);
-//   const [selectedLocation, setSelectedLocation] = useState<{
-//     key: number;
-//     label: string;
-//     name: string;
-//   } | null>(null);
+
   const [selectedTreatments, setSelectedTreatments] =
     useState<number[]>([]);
   const [treatmentOptions, setTreatmentOptions] = useState<
@@ -137,25 +121,7 @@ const Step4Treatments = ({
       priceExpose: boolean;
       etc: string;
     } | null>(null);
-//   const [clinicImages, setClinicImages] = useState<File[]>(
-//     [],
-//   );
-//   const [openingHours, setOpeningHours] = useState<
-//     OpeningHour[]
-//   >([]);
-//   const [optionState, setOptionState] =
-//     useState<ExtraOptionState>({
-//       has_private_recovery_room: false,
-//       has_parking: false,
-//       has_cctv: false,
-//       has_night_counseling: false,
-//       has_female_doctor: false,
-//       has_anesthesiologist: false,
-//       specialist_count: 1,
-//     });
-//   const [searchkey, setSearchKey] = useState<string>('');
-//   const [search_key, setSearch_Key] = useState<string>('');
-  // const supabase = createClient();
+
   const [formState, setFormState] = useState<{
     message?: string;
     status?: string;
@@ -168,16 +134,6 @@ const Step4Treatments = ({
     useState(false);
   const [existingData, setExistingData] =
     useState<ExistingHospitalData | null>(null);
-//   const [initialBusinessHours, setInitialBusinessHours] =
-//     useState<OpeningHour[]>([]);
-
-//   // 편집 모드를 위한 폼 초기값 상태들
-//   const [hospitalName, setHospitalName] =
-//     useState<string>('');
-//   const [hospitalDirections, setHospitalDirections] =
-//     useState<string>('');
-//   const [hospitalLocation, setHospitalLocation] =
-//     useState<string>('');
 
 //   // 확인 모달 상태 추가
 //   const [showConfirmModal, setShowConfirmModal] =
@@ -203,7 +159,6 @@ const Step4Treatments = ({
 //     sns_content_agreement: null,
 //   });
 
-//   const [feedback, setFeedback] = useState<string>('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
 //   const { data: surgeryList = [], isPending } = useQuery<
@@ -367,133 +322,6 @@ const Step4Treatments = ({
       const formData = mapExistingDataToFormValues(existingData);
       console.log('변환된 폼 데이터:', formData);
 
-      // 2. 병원 기본 정보 설정
-    //   setHospitalName(formData.hospital.name);
-    //   setHospitalDirections(formData.hospital.directions);
-    //   setHospitalLocation(formData.hospital.location);
-      
-    //   // SNS 채널 정보와 기본 정보 설정
-    //   if (existingData.hospitalDetail) {
-    //     setBasicInfo({
-    //       name: formData.hospital.name || '',
-    //       email: existingData.hospitalDetail.email || '',
-    //       tel: existingData.hospitalDetail.tel || '',
-    //       kakao_talk: existingData.hospitalDetail.kakao_talk || '',
-    //       line: existingData.hospitalDetail.line || '',
-    //       we_chat: existingData.hospitalDetail.we_chat || '',
-    //       whats_app: existingData.hospitalDetail.whats_app || '',
-    //       telegram: existingData.hospitalDetail.telegram || '',
-    //       facebook_messenger: existingData.hospitalDetail.facebook_messenger || '',
-    //       instagram: existingData.hospitalDetail.instagram || '',
-    //       tiktok: existingData.hospitalDetail.tiktok || '',
-    //       youtube: existingData.hospitalDetail.youtube || '',
-    //       other_channel: existingData.hospitalDetail.other_channel || '',
-    //       sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
-    //     });
-    //     console.log('기본 정보 및 SNS 채널 정보 설정 완료');
-    //   }
-
-    //   console.log(
-    //     '병원 기본 정보 설정 완료:',
-    //     formData.hospital.name,
-    //   );
-
-    //   // 3. 의사 정보 설정
-    //   setDoctors(formData.doctors);
-    //   console.log(
-    //     '의사 정보 설정 완료:',
-    //     formData.doctors.length,
-    //     '명',
-    //   );
-
-    //   // 피드백 정보 설정
-    //   if (existingData.feedback) {
-    //     setFeedback(existingData.feedback);
-    //     console.log('피드백 정보 설정 완료:', existingData.feedback);
-    //   }
-
-    //   // 3. 주소 정보 설정
-    //   if (formData.address.roadAddress) {
-    //     setAddress(formData.address.roadAddress);
-    //     setAddressForSendForm({
-    //       address_full_road: formData.address.roadAddress,
-    //       address_full_jibun: formData.address.jibunAddress,
-    //       zipcode: formData.address.zonecode,
-    //       address_si: formData.address.sido,
-    //       address_gu: formData.address.sigungu,
-    //       address_dong: formData.address.bname,
-    //       address_detail: existingData.hospital.address_detail,
-    //       address_detail_en: existingData.hospital.address_detail_en,
-    //       directions_to_clinic: existingData.hospital.directions_to_clinic,
-    //       directions_to_clinic_en: existingData.hospital.directions_to_clinic_en,
-    //     });
-
-    //     if (
-    //       formData.address.coordinates.lat &&
-    //       formData.address.coordinates.lng
-    //     ) {
-    //       setCoordinates({
-    //         latitude: formData.address.coordinates.lat,
-    //         longitude: formData.address.coordinates.lng,
-    //       });
-    //     }
-    //     console.log('주소 정보 설정 완료');
-    //   }
-
-    //   // 4. 영업시간 설정
-    //   console.log('영업시간 설정 시작');
-    //   console.log(
-    //     '변환된 영업시간 데이터:',
-    //     formData.businessHours,
-    //   );
-    //   setInitialBusinessHours(formData.businessHours);
-    //   console.log(
-    //     'initialBusinessHours 상태 업데이트 완료',
-    //   );
-
-    //   // 5. 편의시설 설정
-    //   setOptionState({
-    //     has_private_recovery_room:
-    //       formData.facilities.has_private_recovery_room,
-    //     has_parking: formData.facilities.has_parking,
-    //     has_cctv: formData.facilities.has_cctv,
-    //     has_night_counseling:
-    //       formData.facilities.has_night_counseling,
-    //     has_female_doctor:
-    //       formData.facilities.has_female_doctor,
-    //     has_anesthesiologist:
-    //       formData.facilities.has_anesthesiologist,
-    //     specialist_count:
-    //       formData.facilities.specialist_count,
-    //   });
-    //   console.log('편의시설 설정 완료');
-
-    //   // 6. 위치 정보 설정
-    //   if (existingData.hospital.location) {
-    //     try {
-    //       const locationData = JSON.parse(
-    //         existingData.hospital.location,
-    //       );
-    //       if (
-    //         locationData.key &&
-    //         locationData.label &&
-    //         locationData.name
-    //       ) {
-    //         setSelectedLocation(locationData);
-    //         console.log(
-    //           '위치 정보 설정 완료:',
-    //           locationData,
-    //         );
-    //       }
-    //     } catch (error) {
-    //       console.error(
-    //         '위치 정보 파싱 실패:',
-    //         existingData.hospital.location,
-    //         error,
-    //       );
-    //     }
-    //   }
-
       // 6. 시술 정보 설정
       console.log('시술 정보 설정 시작');
       console.log(
@@ -507,10 +335,10 @@ const Step4Treatments = ({
 
       console.log('기존 데이터 적용 완료!');
       console.log('적용된 데이터:', {
-        병원명: formData.hospital.name,
-        의사수: formData.doctors.length,
-        영업시간: Object.keys(formData.businessHours)
-          .length,
+        // 병원명: formData.hospital.name,
+        // 의사수: formData.doctors.length,
+        // 영업시간: Object.keys(formData.businessHours)
+        //   .length,
         시술정보: Object.keys(formData.treatments).length,
       });
     } catch (error) {
@@ -1323,43 +1151,68 @@ const handleNext = async () => {
   };
 
   return (
-    <main>
-      {/* <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} /> */}
-      <div
-        className='my-8 mx-auto px-6'
-        style={{ width: '100vw', maxWidth: '1024px' }}
-      >
-      
+    <main className="min-h-screen flex flex-col">
+      {/* 컨텐츠 영역 */}
+      <div className="flex-1 my-8 mx-auto px-6 pb-24" style={{ width: '100vw', maxWidth: '1024px' }}>
         <div className='w-full'>
-            {/* <SurgeriesModal itemList={surgeryList} /> */}
-            {/* 가능시술 선택하기  선택 모달 */}
-            {categories && (
-              <TreatmentSelectBox
-                onSelectionChange={
-                  handleTreatmentSelectionChange
-                }
-                initialSelectedKeys={
-                  initialTreatmentData?.selectedKeys ||
-                  selectedTreatments
-                }
-                initialProductOptions={
-                  initialTreatmentData?.productOptions ||
-                  treatmentOptions
-                }
-                initialPriceExpose={
-                  initialTreatmentData?.priceExpose ??
-                  priceExpose
-                }
-                initialEtc={
-                  initialTreatmentData?.etc || treatmentEtc
-                }
-                categories={categories}
-              />
-            )}
-          </div>
+          {/* 가능시술 선택하기  선택 모달 */}
+          {categories && (
+            <TreatmentSelectBox
+              onSelectionChange={
+                handleTreatmentSelectionChange
+              }
+              initialSelectedKeys={
+                initialTreatmentData?.selectedKeys ||
+                selectedTreatments
+              }
+              initialProductOptions={
+                initialTreatmentData?.productOptions ||
+                treatmentOptions
+              }
+              initialPriceExpose={
+                initialTreatmentData?.priceExpose ??
+                priceExpose
+              }
+              initialEtc={
+                initialTreatmentData?.etc || treatmentEtc
+              }
+              categories={categories}
+            />
+          )}
+        </div>
+
+        {/* 디버깅 정보 표시 */}
+        {(selectedTreatments.length > 0 ||
+            treatmentEtc.trim() !== '') && (
+            <div className='mt-4 p-4 bg-gray-100 rounded border'>
+              <h3 className='font-semibold mb-2'>
+                선택된 정보:
+              </h3>
+           
+              {selectedTreatments.length > 0 && (
+                <p className='text-sm'>
+                  <strong>선택된 치료 개수:</strong>{' '}
+                  {selectedTreatments.length}개
+                </p>
+              )}
+              {treatmentEtc.trim() !== '' && (
+                <p className='text-sm'>
+                  <strong>기타 시술 정보:</strong>{' '}
+                  {treatmentEtc}
+                </p>
+              )}
+              {}
+            </div>
+          )}
+        </div>
+     
+      {/* 하단 고정 버튼 영역 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+        <div className="max-w-4xl mx-auto flex justify-end gap-3">
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handleNext}>Save And Next</Button>
-          </div>
+        </div>
+      </div>
     </main>
   );
 };

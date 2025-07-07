@@ -332,8 +332,10 @@ const Step5LanguagesFeedback = ({
       setIsLoadingExistingData(true);
       console.log(' 편집 모드 - 기존 데이터 로딩 시작');
 
+      // 마지막 단계로 모든 데이터를 다 불러온다 
+      // preview 화면에서 보여주기 위해서이다 
       const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 5);
+        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -410,6 +412,12 @@ const Step5LanguagesFeedback = ({
       if (existingData.feedback) {
         setFeedback(existingData.feedback);
         console.log('피드백 정보 설정 완료:', existingData.feedback);
+      }
+
+      // 가능 언어 정보 설정
+      if (existingData.hospitalDetail?.available_languages) {
+        setSelectedLanguages(existingData.hospitalDetail.available_languages);
+        console.log('가능 언어 정보 설정 완료:', existingData.hospitalDetail.available_languages);
       }
 
     //   // 3. 주소 정보 설정
@@ -880,8 +888,8 @@ const Step5LanguagesFeedback = ({
     try {
       console.log('handlePreview 3');
      
-    //   setPreparedFormData(formData);
-      // setShowConfirmModal(true);
+      // setPreparedFormData(formData);
+      setShowConfirmModal(true);
 
     //   const validationResult = validateFormDataAndUpdateUI(true);
     //   if (!validationResult.isValid) {
@@ -1224,8 +1232,9 @@ formData.append('id_uuid_hospital', id_uuid_hospital);
   };
 
   return (
-    <main>
-      <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} />
+    <main className="min-h-screen flex flex-col">
+      <div>
+        {/* </main><PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} /> */}
       <div
         className='my-8 mx-auto px-6'
         style={{ width: '100vw', maxWidth: '1024px' }}
@@ -1237,7 +1246,8 @@ formData.append('id_uuid_hospital', id_uuid_hospital);
             console.log('선택된 언어:', selectedLanguages);
             setSelectedLanguages(selectedLanguages);
           }}
-          initialLanguages={existingData?.hospitalDetail?.available_languages || []}
+          initialLanguages={selectedLanguages}
+          // initialLanguages={existingData?.hospitalDetail?.available_languages || []}
         />
         { /* 폼 작성관련해서 피드백 주실  내용이 있다면 자유롭게 의견 부탁드립니다. (선택) ) */ }
 
@@ -1268,10 +1278,16 @@ formData.append('id_uuid_hospital', id_uuid_hospital);
           </Button>
         </div> */}
       </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+        <div className="max-w-4xl mx-auto flex justify-end gap-3">
+          <Button onClick={onPrev}>Prev</Button>
+          <Button onClick={handlePreview}>Preview</Button>
+          <Button onClick={handleSave}>Save</Button>
+          <Button onClick={onSubmit}>Submit</Button>
+        </div>
+      </div>
 
-      <Button onClick={onPrev}>Prev</Button>
-      <Button onClick={onSubmit}>onSubmit</Button>
-      
+    </div>
     </main>
   );
 };
