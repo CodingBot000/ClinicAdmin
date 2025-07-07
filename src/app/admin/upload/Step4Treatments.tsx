@@ -50,6 +50,7 @@ import {
   createCategoryLabelMap,
   createCategoryDepartmentMap
 } from '@/utils/categoryUtils';
+import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
 
 interface Surgery {
   created_at: string;
@@ -1028,8 +1029,13 @@ const Step4Treatments = ({
 
 const handleNext = async () => {
     console.log('handleNext');
-    handleSave();
-    onNext();
+    const result = await handleSave();
+    if (result?.status === 'success') {
+        console.log('handleNext Step4 handlSave success');
+        onNext();
+    } else {
+        console.log('handleNext Step4 handlSave what? :', result);
+    }
   };
 
  
@@ -1149,74 +1155,23 @@ const handleNext = async () => {
           )}
         </div>
 
-        {/* 선택된 시술 정보 미리보기 */}
-        {(selectedTreatments.length > 0 ||
-            treatmentOptions.length > 0 ||
-            treatmentEtc.trim() !== '') && (
-            <div className='mt-4 p-4 bg-gray-100 rounded border'>
-              <h3 className='font-semibold mb-3 text-lg'>
-                📋 선택된 시술 정보
-              </h3>
-              
-              {/* 선택된 시술 개수 */}
-              {selectedTreatments.length > 0 && (
-                <div className='mb-3'>
-                  <p className='text-sm font-medium text-gray-700'>
-                    🏥 선택된 시술: {selectedTreatments.length}개
-                  </p>
-                </div>
-              )}
-              
-              {/* 시술 옵션 정보 */}
-              {treatmentOptions.length > 0 && (
-                <div className='mb-3'>
-                  <p className='text-sm font-medium text-gray-700 mb-2'>
-                    💰 시술 옵션 ({treatmentOptions.length}개):
-                  </p>
-                  <div className='space-y-2'>
-                    {treatmentOptions.map((option, index) => (
-                      <div key={index} className='bg-white p-2 rounded border text-sm'>
-                        <p><strong>시술명:</strong> {getLabelByKey(option.treatmentKey, categories || [])}</p>
-                        <p><strong>옵션명:</strong> {option.value1 || '옵션 없음'}</p>
-                        <p><strong>가격:</strong> {option.value2 ? `${Number(option.value2).toLocaleString()}원` : '가격 미설정'}</p>
-                        {getDepartmentByKey(option.treatmentKey, categories || []) && (
-                          <p><strong>분야:</strong> {getDepartmentDisplayName(getDepartmentByKey(option.treatmentKey, categories || []))}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* 가격 노출 설정 */}
-              <div className='mb-3'>
-                <p className='text-sm font-medium text-gray-700'>
-                  👁️ 가격 노출: {priceExpose ? '✅ 노출' : '❌ 비노출'}
-                </p>
-              </div>
-              
-              {/* 기타 시술 정보 */}
-              {treatmentEtc.trim() !== '' && (
-                <div className='mb-3'>
-                  <p className='text-sm font-medium text-gray-700 mb-1'>
-                    📝 기타 시술 정보:
-                  </p>
-                  <div className='bg-white p-2 rounded border text-sm'>
-                    {treatmentEtc}
-                  </div>
-                </div>
-              )}
-              
-              {/* 저장 상태 표시 */}
-              <div className='mt-4 pt-3 border-t border-gray-300'>
-                <p className='text-xs text-gray-500'>
-                  *주의* 💾 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다. \n나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.\n저장버튼을 누르지않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
-                </p>
-              </div>
-            </div>
-          )}
+        {/* 선택된 시술 정보 표시 */}
+        <TreatmentSelectedOptionInfo
+          selectedKeys={selectedTreatments}
+          productOptions={treatmentOptions}
+          etc={treatmentEtc}
+          categories={categories || []}
+          showTitle={false}
+          className="mt-4"
+        />
+        
+        {/* 저장 상태 표시 */}
+        <div className='mt-4 pt-3 border-t border-gray-300'>
+          <p className='text-xs text-gray-500'>
+            *주의* 💾 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다. \n나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.\n저장버튼을 누르지않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
+          </p>
         </div>
-     
+      </div>
       {/* 하단 고정 버튼 영역 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">

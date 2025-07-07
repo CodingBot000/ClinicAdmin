@@ -64,15 +64,15 @@ export interface BasicInfo {
   email: string;
   tel: string;
   kakao_talk: string;
-  line: string;
+    line: string;
   we_chat: string;
   whats_app: string;
-  telegram: string;
+    telegram: string;
   facebook_messenger: string;
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  other_channel: string;
+    instagram: string;
+    tiktok: string;
+    youtube: string;
+    other_channel: string;
   sns_content_agreement: 1 | 0 | null;
 }
 
@@ -183,15 +183,15 @@ const ClinicInfoUploadClient = ({
     email: '',
     tel: '',
     kakao_talk: '',
-    line: '',
+      line: '',
     we_chat: '',
     whats_app: '',
-    telegram: '',
+      telegram: '',
     facebook_messenger: '',
-    instagram: '',
-    tiktok: '',
-    youtube: '',
-    other_channel: '',
+      instagram: '',
+      tiktok: '',
+      youtube: '',
+      other_channel: '',
     sns_content_agreement: null,
   });
 
@@ -280,8 +280,8 @@ const ClinicInfoUploadClient = ({
 
       // SNS 채널 정보와 기본 정보 설정
       if (existingData.hospitalDetail) {
-        setBasicInfo({
-          name: formData.hospital.name || '',
+      setBasicInfo({
+        name: formData.hospital.name || '',
           email: existingData.hospitalDetail.email || '',
           tel: existingData.hospitalDetail.tel || '',
           kakao_talk: existingData.hospitalDetail.kakao_talk || '',
@@ -608,7 +608,7 @@ const ClinicInfoUploadClient = ({
     availableLanguages: [],
     feedback: '',
   };
-  
+
   // FormData에서 데이터를 요약 정보로 변환하는 함수
   const prepareFormDataSummary = (formData: FormData | null): FormDataSummary => {
     if (!formData) {
@@ -801,21 +801,21 @@ const ClinicInfoUploadClient = ({
         clinicImageUrls: clinicImageUrls,
       },
       doctors: doctors.length > 0
-        ? {
-            count: doctors.length,
-            items: doctors.map((doctor) => ({
-              name: doctor.name,
-              bio: doctor.bio || '',
+          ? {
+              count: doctors.length,
+              items: doctors.map((doctor) => ({
+                name: doctor.name,
+                bio: doctor.bio || '',
               isChief: doctor.isChief ? '대표원장' : '의사',
               hasImage: doctor.useDefaultImage ? '기본 이미지' : '업로드 이미지',
-              imageUrl: doctor.useDefaultImage
-                ? doctor.defaultImageType === 'woman'
-                  ? '/default/doctor_default_woman.png'
-                  : '/default/doctor_default_man.png'
-                : doctor.imagePreview || undefined, // 업로드된 이미지 미리보기 URL
-            })),
-          }
-        : undefined,
+                imageUrl: doctor.useDefaultImage
+                  ? doctor.defaultImageType === 'woman'
+                    ? '/default/doctor_default_woman.png'
+                    : '/default/doctor_default_man.png'
+                  : doctor.imagePreview || undefined, // 업로드된 이미지 미리보기 URL
+              })),
+            }
+          : undefined,
       availableLanguages: selectedLanguages,
       feedback: feedback.trim(),
     };
@@ -842,12 +842,12 @@ const ClinicInfoUploadClient = ({
 
     if (!validationResult.isValid && validationResult.messages && validationResult.messages.length > 0) {
       if (!returnMessage) {
-        setFormState({
+      setFormState({
           message: validationResult.messages.join('\n'),
-          status: 'error',
-          errorType: 'validation',
-        });
-        setShowFinalResult(true);
+        status: 'error',
+        errorType: 'validation',
+      });
+      setShowFinalResult(true);
       }
       return { isValid: false, messages: validationResult.messages };
     }
@@ -909,7 +909,7 @@ const ClinicInfoUploadClient = ({
           other_channel: basicInfo.other_channel,
         }
       });
-      setPreparedFormData(formData);
+        setPreparedFormData(formData);
       // setShowConfirmModal(true);
 
       const validationResult = validateFormDataAndUpdateUI(true);
@@ -1323,7 +1323,7 @@ const ClinicInfoUploadClient = ({
             onSelectOptionState={handleExtraOptionsChange}
             initialOptions={optionState}
           />
-        </div>
+          </div>
         <Divider />
 
           {/* 디버깅 정보 표시 */}
@@ -1405,9 +1405,9 @@ const ClinicInfoUploadClient = ({
                 categories={categories}
               />
             )}
-          </div>
+        </div>
 
-          <Divider />
+        <Divider />
 
           
         {/* 병원 이미지 업로드 */}
@@ -1446,7 +1446,7 @@ const ClinicInfoUploadClient = ({
           }}
           initialLanguages={existingData?.hospitalDetail?.available_languages || []}
         />
-        { /* 폼 작성관련해서 피드백 주실  내용이 있다면 자유롭게 의견 부탁드립니다. (선택) ) */ }
+{ /* 폼 작성관련해서 피드백 주실  내용이 있다면 자유롭게 의견 부탁드립니다. (선택) ) */ }
 
        <Divider />
        <div className='w-full'>

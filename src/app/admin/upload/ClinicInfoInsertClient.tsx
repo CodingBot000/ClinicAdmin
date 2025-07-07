@@ -67,7 +67,6 @@ export default function ClinicInfoInsertClient(
         onPreview={handlePreview}
         onSave={handleSave}
       />
-      <h1>Clinic Upload Wizard</h1>
 
       {step === 1 && (
         <Step1BasicInfo
