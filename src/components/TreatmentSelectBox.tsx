@@ -6,6 +6,13 @@ import { X } from "lucide-react";
 // import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
 import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
+import { 
+  getLabelByKey, 
+  getUnitByKey, 
+  getDepartmentByKey,
+  getDepartmentDisplayName,
+  getDepartmentStyleClass
+} from "@/utils/categoryUtils";
 
 interface ProductOption {
   id: string;
@@ -127,51 +134,6 @@ export function TreatmentSelectBox({
     });
   };
 
-  // 카테고리 플랫하게 만들어서 라벨 찾기
-  const getLabelByKey = (key: number): string => {
-    const findLabel = (nodes: CategoryNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.key === key) return node.label;
-        if (node.children) {
-          const found = findLabel(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findLabel(categories) || key.toString();
-  };
-
-  // 카테고리에서 unit 찾기
-  const getUnitByKey = (key: number): string | null => {
-    const findUnit = (nodes: CategoryNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.key === key) return node.unit || null;
-        if (node.children) {
-          const found = findUnit(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findUnit(categories);
-  };
-
-  // 카테고리에서 department 찾기
-  const getDepartmentByKey = (key: number): string | null => {
-    const findDepartment = (nodes: CategoryNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.key === key) return node.department || null;
-        if (node.children) {
-          const found = findDepartment(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findDepartment(categories);
-  };
-
   // 해당 시술에 연결된 상품옵션 개수 계산
   const getOptionCountForTreatment = (treatmentKey: number): number => {
     return productOptions.filter(option => option.treatmentKey === treatmentKey).length;
@@ -222,19 +184,15 @@ export function TreatmentSelectBox({
                 >
                   <X className="w-3 h-3 text-destructive" />
                 </button>
-                <span className="mr-2 font-medium">{getLabelByKey(key)}</span>
-                {getUnitByKey(key) && (
+                <span className="mr-2 font-medium">{getLabelByKey(key, categories)}</span>
+                {getUnitByKey(key, categories) && (
                   <span className="text-xs text-primary bg-primary/20 px-2 py-0.5 rounded-md font-medium mr-1">
-                    {getUnitByKey(key)}
+                    {getUnitByKey(key, categories)}
                   </span>
                 )}
-                {getDepartmentByKey(key) && (
-                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium mr-1 ${
-                    getDepartmentByKey(key) === 'surgery' 
-                      ? 'text-purple-700 bg-purple-100' 
-                      : 'text-emerald-700 bg-emerald-100'
-                  }`}>
-                    {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
+                {getDepartmentByKey(key, categories) && (
+                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium mr-1 ${getDepartmentStyleClass(getDepartmentByKey(key, categories))}`}>
+                    {getDepartmentDisplayName(getDepartmentByKey(key, categories))}
                   </span>
                 )}
                 {optionCount > 0 && (
@@ -264,19 +222,15 @@ export function TreatmentSelectBox({
                 <div className="ml-4 mt-2 space-y-2">
                   {selectedKeys.map((key, index) => (
                     <div key={key} className="text-sm bg-muted/30 p-2 rounded-md">
-                      {index + 1}. {getLabelByKey(key)}
-                      {getUnitByKey(key) && (
+                      {index + 1}. {getLabelByKey(key, categories)}
+                      {getUnitByKey(key, categories) && (
                         <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
-                          {getUnitByKey(key)}
+                          {getUnitByKey(key, categories)}
                         </span>
                       )}
-                      {getDepartmentByKey(key) && (
-                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${
-                          getDepartmentByKey(key) === 'surgery' 
-                            ? 'text-purple-700 bg-purple-100' 
-                            : 'text-emerald-700 bg-emerald-100'
-                        }`}>
-                          {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
+                      {getDepartmentByKey(key, categories) && (
+                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${getDepartmentStyleClass(getDepartmentByKey(key, categories))}`}>
+                          {getDepartmentDisplayName(getDepartmentByKey(key, categories))}
                         </span>
                       )}
                     </div>
@@ -291,19 +245,15 @@ export function TreatmentSelectBox({
             {productOptions.map((option, index) => (
               <div key={option.id} className="text-sm bg-muted/30 p-3 rounded-md border border-border/50">
                 <div className="font-medium text-foreground mb-1">
-                  {index + 1}. {getLabelByKey(option.treatmentKey)}
-                  {getUnitByKey(option.treatmentKey) && (
+                  {index + 1}. {getLabelByKey(option.treatmentKey, categories)}
+                  {getUnitByKey(option.treatmentKey, categories) && (
                     <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
-                      {getUnitByKey(option.treatmentKey)}
+                      {getUnitByKey(option.treatmentKey, categories)}
                     </span>
                   )}
-                  {getDepartmentByKey(option.treatmentKey) && (
-                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${
-                      getDepartmentByKey(option.treatmentKey) === 'surgery' 
-                        ? 'text-purple-700 bg-purple-100' 
-                        : 'text-emerald-700 bg-emerald-100'
-                    }`}>
-                      {getDepartmentByKey(option.treatmentKey) === 'surgery' ? '성형' : '피부'}
+                  {getDepartmentByKey(option.treatmentKey, categories) && (
+                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${getDepartmentStyleClass(getDepartmentByKey(option.treatmentKey, categories))}`}>
+                      {getDepartmentDisplayName(getDepartmentByKey(option.treatmentKey, categories))}
                     </span>
                   )}
                 </div>

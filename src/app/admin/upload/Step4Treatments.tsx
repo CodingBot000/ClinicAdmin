@@ -39,8 +39,17 @@ import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadActionsStep1 } from './actions/uploadStep1';
+
 import { uploadActionsStep4 } from './actions/uploadStep4';
+import { 
+  getLabelByKey, 
+  getUnitByKey, 
+  getDepartmentByKey,
+  getDepartmentDisplayName,
+  getDepartmentStyleClass,
+  createCategoryLabelMap,
+  createCategoryDepartmentMap
+} from '@/utils/categoryUtils';
 
 interface Surgery {
   created_at: string;
@@ -159,7 +168,7 @@ const Step4Treatments = ({
 //     sns_content_agreement: null,
 //   });
 
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+//   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
 //   const { data: surgeryList = [], isPending } = useQuery<
 //     Surgery[]
@@ -351,32 +360,33 @@ const Step4Treatments = ({
     handleOpenModal();
   };
 
-//   // 성공 시 관리자 페이지로 이동하는 함수
-//   const handleConfirm = () => {
-//     if (formState?.status === 'success') {
-//       router.replace('/admin');
-//       router.refresh();
-//     } else {
-//       handleModal();
-//     }
-//   };
+
 
   const handleTreatmentSelectionChange = (data: {
     selectedKeys: number[];
     productOptions: any[];
     priceExpose: boolean;
     etc: string;
+    selectedDepartment?: 'skin' | 'surgery';
   }) => {
+    console.log('Step4Treatments - 시술 데이터 업데이트:', {
+      selectedKeys: data.selectedKeys,
+      productOptions: data.productOptions,
+      priceExpose: data.priceExpose,
+      etc: data.etc,
+      selectedDepartment: data.selectedDepartment
+    });
+    
     setSelectedTreatments(data.selectedKeys);
     setTreatmentOptions(data.productOptions);
     setPriceExpose(data.priceExpose);
     setTreatmentEtc(data.etc);
 
-    console.log('UploadClient - 시술 데이터 업데이트:', {
+    console.log('Step4Treatments - 상태 업데이트 완료:', {
       selectedTreatments: data.selectedKeys,
-      productOptions: data.productOptions,
+      treatmentOptions: data.productOptions,
       priceExpose: data.priceExpose,
-      etc: data.etc,
+      treatmentEtc: data.etc,
     });
   };
 
@@ -1025,128 +1035,86 @@ const handleNext = async () => {
  
   const handleSave = async () => {
     console.log('handleSave');
-    // const clinicNameInput = document.querySelector(
-    //   'input[name="name"]',
-    // ) as HTMLInputElement;
-    // const clinicName = clinicNameInput?.value || '';
-    // console.log('qqqqqqqqq id_uuid_generate', id_uuid_generate);
-    // console.log('qqqqqqqqq clinicName', clinicName);
-    // console.log('qqqqqqqqq basicInfo.email', basicInfo.email);
-    // console.log('qqqqqqqqq basicInfo.tel', basicInfo.tel);
-    // console.log('qqqqqqqqq addressForSendForm', addressForSendForm);
-    // console.log('qqqqqqqqq selectedLocation', selectedLocation?.name);
-    // console.log('qqqqqqqqq selectedTreatments', selectedTreatments);
-    // console.log('qqqqqqqqq treatmentOptions', treatmentOptions);
-    // console.log('qqqqqqqqq priceExpose', priceExpose);
-    // const formData = prepareFormData({
-    //   id_uuid: id_uuid_generate,
-    //   clinicName: clinicName,
-    //   email: basicInfo.email,
-    //   tel: basicInfo.tel,
-    //   addressForSendForm,
-    //   selectedLocation: selectedLocation?.name || '',
-    //   selectedTreatments,
-    //   treatmentOptions,
-    //   priceExpose,
-    //   treatmentEtc,
-    //   openingHours,
-    //   optionState,
-    //   clinicImageUrls: [],
-    //   doctorImageUrls: [],
-    //   doctors,
-    //   feedback,
-    //   selectedLanguages,
-    //   snsData: {
-    //     kakao_talk: basicInfo.kakao_talk,
-    //     line: basicInfo.line,
-    //     we_chat: basicInfo.we_chat,
-    //     whats_app: basicInfo.whats_app,
-    //     telegram: basicInfo.telegram,
-    //     facebook_messenger: basicInfo.facebook_messenger,
-    //     instagram: basicInfo.instagram,
-    //     tiktok: basicInfo.tiktok,
-    //     youtube: basicInfo.youtube,
-    //     other_channel: basicInfo.other_channel,
-    //   }
-    // });
+    
     const formData = new FormData();
     formData.append('id_uuid_hospital', id_uuid_hospital);
-  // 시술 정보
-  if (selectedTreatments.length > 0) {
-    formData.append('treatments', JSON.stringify(selectedTreatments));
-  }
-
-  // 시술 옵션
-  if (treatmentOptions.length > 0) {
-    formData.append('treatment_options', JSON.stringify(treatmentOptions));
-  }
-
-  // 가격 노출 설정
-  formData.append('price_expose', priceExpose ? '1' : '0');
-
     formData.append('current_user_uid', currentUserUid);
-    // setPreparedFormData(formData);
+    formData.append('is_edit_mode', isEditMode.toString());
+    
+    // 시술 정보 - 서버에서 selected_treatments로 받으므로 키 이름 맞춤
+    if (selectedTreatments.length > 0) {
+      formData.append('selected_treatments', selectedTreatments.join(','));
+    }
 
-    // console.log('qqqqqqqqq preparedFormData', preparedFormData);
-    // console.log('qqqqqqqqq formData', formData);
+    // 시술 옵션
+    if (treatmentOptions.length > 0) {
+      formData.append('treatment_options', JSON.stringify(treatmentOptions));
+    }
+
+    // 가격 노출 설정
+    formData.append('price_expose', priceExpose ? 'true' : 'false');
+    
+    // 기타 시술 정보 추가
+    if (treatmentEtc.trim() !== '') {
+      formData.append('etc', treatmentEtc.trim());
+    }
+
+    console.log('FormData 내용:', {
+      id_uuid_hospital,
+      selectedTreatments,
+      treatmentOptions,
+      priceExpose,
+      treatmentEtc
+    });
+
     try {
-      if (!formData) {
-        setFormState({
-          message: '데이터가 준비되지 않았습니다.',
-          status: 'error',
-          errorType: 'validation',
-        });
-        setShowFinalResult(true);
-        return;
-      }
-
       const result = await uploadActionsStep4(
         null,
         formData,
       );
 
       console.log('uploadActionsStep4 응답:', result);
-      setFormState(result);
+      
       if (result?.status === 'error') {
         setFormState({
-            message: `uploadActionsStep2 처리 오류: ${result?.message}`,
-            status: 'error',
-            errorType: 'server',
-          });
+          message: `시술 정보 저장 오류: ${result?.message}`,
+          status: 'error',
+          errorType: 'server',
+        });
         setShowFinalResult(true);
+        return {
+          status: 'error',
+        };
       }
-    //   setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
-
+      
+      setFormState({
+        message: '시술 정보가 성공적으로 저장되었습니다.',
+        status: 'success',
+      });
+      
       return {
         status: 'success',
-      }
-        //   setShowConfirmModal(false);
-        //   setPreparedFormData(null);
+      };
+      
     } catch (error) {
-        console.error('uploadActionsStep4 호출 에러:', error);
+      console.error('uploadActionsStep4 호출 에러:', error);
 
-        let errorMessage = '업로드 중 오류가 발생했습니다.';
+      let errorMessage = '업로드 중 오류가 발생했습니다.';
 
-        if (error instanceof Error && error.message) {
+      if (error instanceof Error && error.message) {
         errorMessage = `업로드 오류: ${error.message}`;
-    }
-
-    setFormState({
-      message: errorMessage,
-      status: 'error',
-      errorType: 'server',
-    });
-    setShowFinalResult(true); // 에러도 최종 결과로 표시
-    // setShowConfirmModal(false);
-    // setPreparedFormData(null);
-    return {
-        status: 'error',
       }
-  } finally {
-    // setIsSubmitting(false);
-  }
-    return {
-        status: 'success',
+
+      setFormState({
+        message: errorMessage,
+        status: 'error',
+        errorType: 'server',
+      });
+      setShowFinalResult(true);
+      
+      return {
+        status: 'error',
+      };
     }
   };
 
@@ -1181,27 +1149,70 @@ const handleNext = async () => {
           )}
         </div>
 
-        {/* 디버깅 정보 표시 */}
+        {/* 선택된 시술 정보 미리보기 */}
         {(selectedTreatments.length > 0 ||
+            treatmentOptions.length > 0 ||
             treatmentEtc.trim() !== '') && (
             <div className='mt-4 p-4 bg-gray-100 rounded border'>
-              <h3 className='font-semibold mb-2'>
-                선택된 정보:
+              <h3 className='font-semibold mb-3 text-lg'>
+                📋 선택된 시술 정보
               </h3>
-           
+              
+              {/* 선택된 시술 개수 */}
               {selectedTreatments.length > 0 && (
-                <p className='text-sm'>
-                  <strong>선택된 치료 개수:</strong>{' '}
-                  {selectedTreatments.length}개
-                </p>
+                <div className='mb-3'>
+                  <p className='text-sm font-medium text-gray-700'>
+                    🏥 선택된 시술: {selectedTreatments.length}개
+                  </p>
+                </div>
               )}
+              
+              {/* 시술 옵션 정보 */}
+              {treatmentOptions.length > 0 && (
+                <div className='mb-3'>
+                  <p className='text-sm font-medium text-gray-700 mb-2'>
+                    💰 시술 옵션 ({treatmentOptions.length}개):
+                  </p>
+                  <div className='space-y-2'>
+                    {treatmentOptions.map((option, index) => (
+                      <div key={index} className='bg-white p-2 rounded border text-sm'>
+                        <p><strong>시술명:</strong> {getLabelByKey(option.treatmentKey, categories || [])}</p>
+                        <p><strong>옵션명:</strong> {option.value1 || '옵션 없음'}</p>
+                        <p><strong>가격:</strong> {option.value2 ? `${Number(option.value2).toLocaleString()}원` : '가격 미설정'}</p>
+                        {getDepartmentByKey(option.treatmentKey, categories || []) && (
+                          <p><strong>분야:</strong> {getDepartmentDisplayName(getDepartmentByKey(option.treatmentKey, categories || []))}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 가격 노출 설정 */}
+              <div className='mb-3'>
+                <p className='text-sm font-medium text-gray-700'>
+                  👁️ 가격 노출: {priceExpose ? '✅ 노출' : '❌ 비노출'}
+                </p>
+              </div>
+              
+              {/* 기타 시술 정보 */}
               {treatmentEtc.trim() !== '' && (
-                <p className='text-sm'>
-                  <strong>기타 시술 정보:</strong>{' '}
-                  {treatmentEtc}
-                </p>
+                <div className='mb-3'>
+                  <p className='text-sm font-medium text-gray-700 mb-1'>
+                    📝 기타 시술 정보:
+                  </p>
+                  <div className='bg-white p-2 rounded border text-sm'>
+                    {treatmentEtc}
+                  </div>
+                </div>
               )}
-              {}
+              
+              {/* 저장 상태 표시 */}
+              <div className='mt-4 pt-3 border-t border-gray-300'>
+                <p className='text-xs text-gray-500'>
+                  *주의* 💾 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다. \n나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.\n저장버튼을 누르지않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
+                </p>
+              </div>
             </div>
           )}
         </div>
