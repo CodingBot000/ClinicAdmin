@@ -119,6 +119,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
         const result = fileReader.result as string;
         setImagePreview(result);
       };
+      // 새로 추가한 이미지는 base64 데이터로 생성 
       fileReader.readAsDataURL(file);
     },
     [useDefaultImage],

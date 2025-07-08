@@ -1,0 +1,2 @@
+export const NEW_IMAGE_BASE64 = 'NEW_IMAGE_BASE64';
+export const EXIST_IMAGE_URL = 'EXIST_IMAGE_URL';

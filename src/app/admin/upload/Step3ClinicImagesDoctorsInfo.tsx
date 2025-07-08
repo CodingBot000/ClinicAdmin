@@ -476,7 +476,7 @@ const Step3ClinicImagesDoctorsInfo = ({
       const existingClinicUrls = existingData?.hospital?.imageurls || [];
       console.log('기존 이미지 URLs:', existingClinicUrls);
       
-      // 새로 업로드할 이미지들
+      // 새로 업로드할 이미지들 (File 객체만 필터링)
       const newClinicImages = clinicImages.filter(img => img instanceof File);
       console.log('새로 업로드할 이미지 개수:', newClinicImages.length);
       
@@ -522,6 +522,7 @@ const Step3ClinicImagesDoctorsInfo = ({
 
       // 2. 기존 이미지와 새 이미지 비교하여 삭제할 이미지 찾기
       // ClinicImageUploadSection에서 현재 표시되고 있는 이미지들의 URL을 가져와야 함
+      // 최종 이미지 URL 배열 (기존 URL + 새로 업로드된 URL)
       const finalClinicImageUrls = [...currentDisplayedUrls, ...newClinicImageUrls];
       
       console.log('현재 표시된 이미지 URLs:', currentDisplayedUrls);
@@ -735,7 +736,7 @@ const Step3ClinicImagesDoctorsInfo = ({
           maxImages={clinicImageUploadLength}
           title='병원 이미지 등록'
           description={`- 병원 메인 이미지는 가로로 긴 직사각형(권장 비율: 16:9 또는 3:1)으로 업로드해 주세요.
-  · 예시: 1600x900px(16:9) 또는 1800x600px(3:1)
+   · 예시: 권장: 1800 x 600 px (3:1)  또는 1600 x 900 px (16:9)
   · 알림: 주어진 사진을 중앙을 기준으로 16:9 혹은 3:1 비율로 넘치는 부분이 자동으로 잘라집니다.
       사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
       * File 한개당 50MB 이하로 업로드 해주세요.

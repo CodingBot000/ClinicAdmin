@@ -15,6 +15,12 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import ImageOrderModal from './ImageOrderModal';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import SortableImageItem from './SortableImageItem';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ClinicImageUploadSectionProps {
   onFilesChange: (files: File[]) => void;
@@ -88,6 +94,9 @@ const ClinicImageUploadSection = ({
     type === 'Avatar' &&
     (defaultChecked.man || defaultChecked.woman);
 
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [images, setImages] = useState<string[]>(initialImages);
+
   useEffect(() => {
     onFilesChange(files);
   }, [files, onFilesChange]);
@@ -99,7 +108,8 @@ const ClinicImageUploadSection = ({
     }
   }, [deletedImageUrls, onDeletedImagesChange]);
 
-  // 현재 표시된 이미지 URL들 변경 시 부모 컴포넌트에 알림
+  // 현재 표시된 이미지 URL들 변경 시 부모 컴포넌트에 알림 
+  // onCurrentImagesChange에서 URL만 필터링 후 전달
   useEffect(() => {
     if (onCurrentImagesChange) {
       const currentUrls = preview.filter((url): url is string => 
@@ -163,6 +173,7 @@ const ClinicImageUploadSection = ({
                   prev.concat(false),
                 );
               };
+              // 새로 추가한 이미지는 base64 데이터로 생성 
               fileReader.readAsDataURL(file);
             });
           }
@@ -186,6 +197,7 @@ const ClinicImageUploadSection = ({
           setPreview((prev) => prev.concat(result));
           setIsExistingImage((prev) => prev.concat(false));
         };
+        // 새로 추가한 이미지는 base64 데이터로 생성 
         fileReader.readAsDataURL(file);
       });
 
@@ -251,7 +263,9 @@ const ClinicImageUploadSection = ({
   // 전체 삭제 함수
   const handleClearAll = () => {
     // 기존 이미지들이 모두 삭제되는 경우 URL 추적
-    const existingImageUrls = preview.filter((_, idx) => isExistingImage[idx]);
+    const existingImageUrls = preview
+      .filter((_, idx) => isExistingImage[idx])
+      .filter((url): url is string => typeof url === 'string');
     if (existingImageUrls.length > 0) {
       setDeletedImageUrls(prev => [...prev, ...existingImageUrls]);
       console.log('전체 삭제 - 기존 이미지들:', existingImageUrls);
@@ -354,6 +368,12 @@ const ClinicImageUploadSection = ({
   const canAddMore =
     type === 'Banner' ? preview.length < maxImages : true;
 
+  // 순서변경 완료 핸들러  순서 변경 시 base64 포함 배열 그대로 유지
+  const handleOrderModalComplete = (newOrder: string[]) => {
+    setPreview(newOrder);
+    setIsOrderModalOpen(false);
+  };
+
   return (
     <div className='w-full'>
       <div className='flex justify-between items-start my-4'>
@@ -366,6 +386,20 @@ const ClinicImageUploadSection = ({
               {description}
             </div>
           )}
+          {/* 순서변경 버튼 */}
+          <span className="text-xs">
+            <button
+              className="mt-2 px-3 py-1 border rounded text-sm text-black bg-orange-100 hover:bg-gray-200 transition-colors"
+              onClick={() => setIsOrderModalOpen(true)}
+            >
+              순서변경
+            </button>
+
+            <span className="ml-2 text-red-500 font-bold">
+              순서변경 혹은 이미지 추가 후 반드시 하단에 'save and next' 버튼을 눌러야 반영됩니다.
+            </span>
+          </span>
+
         </div>
         <div className='flex flex-col items-end gap-2'>
           {type === 'Banner' && (
@@ -383,7 +417,7 @@ const ClinicImageUploadSection = ({
             <button
               type='button'
               onClick={handleClearAll}
-              className='text-sm text-red-500 hover:text-red-700 hover:underline transition-colors'
+              className='text-sm bg-red-400 text-white border rounded px-3 py-1 hover:bg-white-500 transition-colors'
             >
               전체 삭제
             </button>
@@ -579,6 +613,14 @@ const ClinicImageUploadSection = ({
             업로드하려면 기본 이미지 선택을 해제하세요.
           </p>
         </div>
+      )}
+
+      {isOrderModalOpen && (
+        <ImageOrderModal
+          images={preview.filter((url): url is string => typeof url === 'string')}
+          onCancel={() => setIsOrderModalOpen(false)}
+          onComplete={handleOrderModalComplete}
+        />
       )}
     </div>
   );
