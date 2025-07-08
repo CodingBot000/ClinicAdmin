@@ -6,6 +6,7 @@ import { Edit2, Trash2, Plus } from 'lucide-react';
 import DoctorInfoForm, {
   DoctorInfo,
 } from './DoctorInfoForm';
+import DoctorOrderModal from './DoctorOrderModal';
 
 interface DoctorInfoSectionProps {
   title: string;
@@ -54,7 +55,8 @@ const DoctorInfoSection: React.FC<
   const [editingDoctor, setEditingDoctor] = useState<
     DoctorInfo | undefined
   >(undefined);
-
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  
   // 렌더링 시점 디버깅
   console.log('DoctorInfoSection 렌더링:', {
     받은initialDoctors: initialDoctors?.length || 0,
@@ -147,6 +149,12 @@ const DoctorInfoSection: React.FC<
     setEditingDoctor(undefined);
   };
 
+  // 순서변경 완료 핸들러
+  const handleOrderModalComplete = (newOrder: DoctorInfo[]) => {
+    setDoctors(newOrder);
+    setIsOrderModalOpen(false);
+  };
+
   return (
     <div className='w-full'>
       {/* 헤더 */}
@@ -176,6 +184,18 @@ const DoctorInfoSection: React.FC<
         </div>
       </div>
 
+      <span className="text-xs">
+            <button
+              className="mt-2 px-3 py-1 border rounded text-sm text-black bg-orange-100 hover:bg-gray-200 transition-colors"
+              onClick={() => setIsOrderModalOpen(true)}
+            >
+              순서변경
+            </button>
+
+            <span className="ml-2 text-red-500 font-bold">
+              순서변경 혹은 이미지 추가 후 반드시 하단에 'save and next' 버튼을 눌러야 반영됩니다.
+            </span>
+          </span>
       {/* 의사 카드 목록 */}
       {doctors.length > 0 ? (
         <div className='flex flex-wrap gap-4'>
@@ -291,6 +311,15 @@ const DoctorInfoSection: React.FC<
         onClose={handleCloseForm}
         onSave={handleSaveDoctor}
       />
+
+      {/* 의사 순서변경 모달 */}
+      {isOrderModalOpen && (
+        <DoctorOrderModal
+          doctors={doctors}
+          onCancel={() => setIsOrderModalOpen(false)}
+          onComplete={handleOrderModalComplete}
+        />
+      )}
     </div>
   );
 };
