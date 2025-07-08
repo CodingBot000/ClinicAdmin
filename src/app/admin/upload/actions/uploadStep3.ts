@@ -8,18 +8,10 @@ import { makeUploadImageFileName } from '@/utils/makeUploadImageFileName';
 import {
   TABLE_HOSPITAL,
   TABLE_DOCTOR,
-  TABLE_HOSPITAL_DETAIL,
-  TABLE_HOSPITAL_TREATMENT,
-  TABLE_HOSPITAL_BUSINESS_HOUR,
-  TABLE_ADMIN,
-  TABLE_TREATMENT,
+  
   STORAGE_IMAGES,
-  STORAGE_HOSPITAL_IMG,
-  STORAGE_DOCTOR_IMG,
-  TABLE_FEEDBACKS
+  
 } from '@/constants/tables';
-import { createClient } from '@supabase/supabase-js';
-import { HospitalDetailData } from '@/types/hospital';
 
 // 파일명 생성 함수
 const generateFileName = (originalName: string, prefix: string = '', suffix: string = '') => {
@@ -62,8 +54,8 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
     const current_user_uid = formData.get("current_user_uid") as string;
     
     // 기존 데이터 파싱 (편집 모드용)
-  const existingDataRaw = formData.get("existing_data")?.toString();
-  const existingData = existingDataRaw ? JSON.parse(existingDataRaw) : null;
+    const existingDataRaw = formData.get("existing_data")?.toString();
+    const existingData = existingDataRaw ? JSON.parse(existingDataRaw) : null;
 
     // 기존 병원 이미지 URL들
     const existingClinicUrlsRaw = formData.get("existing_clinic_urls") as string;
@@ -72,6 +64,14 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
     // 새로 업로드된 병원 이미지 URL들
     const newClinicImageUrlsRaw = formData.get("new_clinic_image_urls") as string;
     const newClinicImageUrls = newClinicImageUrlsRaw ? JSON.parse(newClinicImageUrlsRaw) : [];
+    
+    // 최종 병원 이미지 URL들 (클라이언트에서 전달받은 순서)
+    const finalClinicImageUrlsRaw = formData.get("final_clinic_image_urls") as string;
+    const finalClinicImageUrls = finalClinicImageUrlsRaw ? JSON.parse(finalClinicImageUrlsRaw) : [];
+    
+    // 삭제된 병원 이미지 URL들
+    const deletedClinicUrlsRaw = formData.get("deleted_clinic_urls") as string;
+    const deletedClinicUrls = deletedClinicUrlsRaw ? JSON.parse(deletedClinicUrlsRaw) : [];
     
     // 의사 정보 파싱
     const doctorsRaw = formData.get("doctors") as string;
@@ -91,44 +91,73 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
     console.log('- id_uuid_hospital:', id_uuid_hospital);
     console.log('- existingClinicUrls:', existingClinicUrls);
     console.log('- newClinicImageUrls:', newClinicImageUrls);
+    console.log('- finalClinicImageUrls:', finalClinicImageUrls);
+    console.log('- deletedClinicUrls:', deletedClinicUrls);
     console.log('- doctors count:', doctors.length);
 
-    // 최종 병원 이미지 URL 배열 (기존 + 신규)
-    const finalClinicImageUrls = [...existingClinicUrls, ...newClinicImageUrls];
-    console.log('- 최종 병원 이미지 URL 개수:', finalClinicImageUrls.length);
-
-    // 삭제된 병원 이미지 파일들 처리
-    if (isEditMode && existingData?.hospital?.imageurls) {
-      const deletedImageUrls = existingData.hospital.imageurls.filter(
-        (url: string) => !finalClinicImageUrls.includes(url)
-      );
+    // 1. 클라이언트에서 명시적으로 삭제된 이미지 파일들 처리
+    if (deletedClinicUrls.length > 0) {
+      console.log('- 클라이언트에서 삭제된 이미지 URL들:', deletedClinicUrls);
       
-      console.log('- 삭제된 병원 이미지 URL들:', deletedImageUrls);
-      
-      for (const deletedUrl of deletedImageUrls) {
+      for (const deletedUrl of deletedClinicUrls) {
         try {
           // Storage에서 파일 경로 추출
           const urlParts = deletedUrl.split('/');
-          const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
+          const fileName = urlParts[urlParts.length - 1];
+          const filePath = `images/hospitalimg/${id_uuid_hospital}/${fileName}`;
           
-          console.log(`- 병원 이미지 파일 삭제: ${filePath}`);
+          console.log(`- 삭제된 이미지 파일 제거: ${filePath}`);
           
           const { error: storageError } = await supabase.storage
             .from(STORAGE_IMAGES)
             .remove([filePath]);
 
           if (storageError) {
-            console.error('병원 이미지 파일 삭제 실패:', storageError);
-    } else {
-            console.log(`- 병원 이미지 파일 삭제 성공: ${filePath}`);
-    }
+            console.error('삭제된 이미지 파일 제거 실패:', storageError);
+          } else {
+            console.log(`- 삭제된 이미지 파일 제거 성공: ${filePath}`);
+          }
         } catch (error) {
-          console.error('병원 이미지 파일 삭제 중 오류:', error);
+          console.error('삭제된 이미지 파일 제거 중 오류:', error);
         }
       }
     }
 
-    // 병원 테이블 업데이트 (이미지 URL 배열)
+    // 2. 기존 이미지와 최종 이미지 비교하여 추가로 삭제할 이미지들 처리
+    if (isEditMode && existingClinicUrls.length > 0) {
+      const additionalDeletedImageUrls = existingClinicUrls.filter(
+        (url: string) => !finalClinicImageUrls.includes(url) && !deletedClinicUrls.includes(url)
+      );
+      
+      if (additionalDeletedImageUrls.length > 0) {
+        console.log('- 추가로 삭제할 병원 이미지 URL들:', additionalDeletedImageUrls);
+        
+        for (const deletedUrl of additionalDeletedImageUrls) {
+          try {
+            // Storage에서 파일 경로 추출
+            const urlParts = deletedUrl.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            const filePath = `images/hospitalimg/${id_uuid_hospital}/${fileName}`;
+            
+            console.log(`- 추가 병원 이미지 파일 삭제: ${filePath}`);
+            
+            const { error: storageError } = await supabase.storage
+              .from(STORAGE_IMAGES)
+              .remove([filePath]);
+
+            if (storageError) {
+              console.error('추가 병원 이미지 파일 삭제 실패:', storageError);
+            } else {
+              console.log(`- 추가 병원 이미지 파일 삭제 성공: ${filePath}`);
+            }
+          } catch (error) {
+            console.error('추가 병원 이미지 파일 삭제 중 오류:', error);
+          }
+        }
+      }
+    }
+
+    // 2. 병원 테이블 업데이트 (최종 이미지 URL 배열 - 클라이언트에서 전달받은 순서 그대로)
     console.log('병원 테이블 업데이트 시작:', {
       id_uuid_hospital,
       finalClinicImageUrls

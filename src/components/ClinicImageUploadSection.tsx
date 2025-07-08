@@ -25,6 +25,8 @@ interface ClinicImageUploadSectionProps {
   description: string;
   initialImages?: string[];
   onExistingDataChange?: (data: any) => void;
+  onDeletedImagesChange?: (deletedUrls: string[]) => void;
+  onCurrentImagesChange?: (currentUrls: string[]) => void;
 }
 
 /**
@@ -52,6 +54,8 @@ const ClinicImageUploadSection = ({
   description,
   initialImages = [],
   onExistingDataChange,
+  onDeletedImagesChange,
+  onCurrentImagesChange,
 }: ClinicImageUploadSectionProps) => {
   const [preview, setPreview] = useState<
     Array<string | undefined>
@@ -60,6 +64,9 @@ const ClinicImageUploadSection = ({
   const [isExistingImage, setIsExistingImage] = useState<
     boolean[]
   >([]);
+  // 삭제된 이미지 URL 추적
+  const [deletedImageUrls, setDeletedImageUrls] = useState<string[]>([]);
+  
   // 파일 개수 초과 경고 메시지 상태
   const [overLimitWarning, setOverLimitWarning] =
     useState<string>('');
@@ -84,6 +91,23 @@ const ClinicImageUploadSection = ({
   useEffect(() => {
     onFilesChange(files);
   }, [files, onFilesChange]);
+
+  // 삭제된 이미지 URL 변경 시 부모 컴포넌트에 알림
+  useEffect(() => {
+    if (onDeletedImagesChange) {
+      onDeletedImagesChange(deletedImageUrls);
+    }
+  }, [deletedImageUrls, onDeletedImagesChange]);
+
+  // 현재 표시된 이미지 URL들 변경 시 부모 컴포넌트에 알림
+  useEffect(() => {
+    if (onCurrentImagesChange) {
+      const currentUrls = preview.filter((url): url is string => 
+        typeof url === 'string' && url.startsWith('http')
+      );
+      onCurrentImagesChange(currentUrls);
+    }
+  }, [preview, onCurrentImagesChange]);
 
   // 초기 이미지 설정
   useEffect(() => {
@@ -197,6 +221,12 @@ const ClinicImageUploadSection = ({
     e.preventDefault();
     e.stopPropagation();
 
+    // 기존 이미지가 삭제되는 경우 URL 추적
+    if (isExistingImage[i] && preview[i]) {
+      setDeletedImageUrls(prev => [...prev, preview[i] as string]);
+      console.log('기존 이미지 삭제됨:', preview[i]);
+    }
+
     setPreview((prev) =>
       prev.filter((_, idx) => i !== idx),
     );
@@ -220,6 +250,13 @@ const ClinicImageUploadSection = ({
 
   // 전체 삭제 함수
   const handleClearAll = () => {
+    // 기존 이미지들이 모두 삭제되는 경우 URL 추적
+    const existingImageUrls = preview.filter((_, idx) => isExistingImage[idx]);
+    if (existingImageUrls.length > 0) {
+      setDeletedImageUrls(prev => [...prev, ...existingImageUrls]);
+      console.log('전체 삭제 - 기존 이미지들:', existingImageUrls);
+    }
+
     setPreview([]);
     setFiles([]);
     setIsExistingImage([]);

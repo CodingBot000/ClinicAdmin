@@ -15,23 +15,7 @@ import ClinicImageUploadSection from '@/components/ClinicImageUploadSection';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-// import { Modal } from '@/components/modal/Modal';
-import { useTimer } from '@/hooks/useTimer';
-import { useFormAction } from '@/hooks/useFormAction';
-import InputField, { TextArea } from '@/components/InputField';
-import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
-import type { CategoryNode } from '@/types/category';
-import AddressSection from '@/components/AddressSection';
-import LocationSelect from '@/components/LocationSelect';
-import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
-import OpeningHoursForm, {
-  OpeningHour,
-} from '@/components/OpeningHoursForm';
-import ExtraOptions, {
-  ExtraOptionState,
-} from '@/components/ExtraOptions';
-import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
+
 import { validateFormData } from '@/utils/validateFormData';
 import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
@@ -104,6 +88,10 @@ const Step3ClinicImagesDoctorsInfo = ({
     useState(false);
   const [existingData, setExistingData] =
     useState<ExistingHospitalData | null>(null);
+  // 삭제된 이미지 URL 추적
+  const [deletedImageUrls, setDeletedImageUrls] = useState<string[]>([]);
+  // 현재 표시되고 있는 이미지 URL들 추적
+  const [currentDisplayedUrls, setCurrentDisplayedUrls] = useState<string[]>([]);
 
   const { handleOpenModal, open } = useModal();
 
@@ -192,29 +180,29 @@ const Step3ClinicImagesDoctorsInfo = ({
     return { isValid: true, messages: [] };
   };
 
-  const handlePreview = async () => {
-    try {
-      console.log('handlePreview 3');
+  // const handlePreview = async () => {
+  //   try {
+  //     console.log('handlePreview 3');
 
-      const validationResult = validateFormDataAndUpdateUI(true);
-      if (!validationResult.isValid) {
-        setPreviewValidationMessages(validationResult.messages || []);
-        setIsSubmitting(false);
-        setShowConfirmModal(true);
-        return;
-      }
+  //     const validationResult = validateFormDataAndUpdateUI(true);
+  //     if (!validationResult.isValid) {
+  //       setPreviewValidationMessages(validationResult.messages || []);
+  //       setIsSubmitting(false);
+  //       setShowConfirmModal(true);
+  //       return;
+  //     }
     
-      setPreviewValidationMessages([]);
-    } catch (error) {
-      console.error('미리보기 데이터 준비 중 오류:', error);
-      setFormState({
-        message: '미리보기 데이터 준비 중 오류가 발생했습니다.',
-        status: 'error',
-        errorType: 'server',
-      });
-      setShowFinalResult(true);
-    }
-  };
+  //     setPreviewValidationMessages([]);
+  //   } catch (error) {
+  //     console.error('미리보기 데이터 준비 중 오류:', error);
+  //     setFormState({
+  //       message: '미리보기 데이터 준비 중 오류가 발생했습니다.',
+  //       status: 'error',
+  //       errorType: 'server',
+  //     });
+  //     setShowFinalResult(true);
+  //   }
+  // };
 
   const [showConfirmModal, setShowConfirmModal] =
     useState(false);
@@ -421,10 +409,10 @@ const Step3ClinicImagesDoctorsInfo = ({
 //     }
 //   };
 
-  const handleModalCancel = () => {
-    setShowConfirmModal(false);
-    setPreparedFormData(null);
-  };
+  // const handleModalCancel = () => {
+  //   setShowConfirmModal(false);
+  //   setPreparedFormData(null);
+  // };
 
   if (
     isLoadingExistingData
@@ -484,37 +472,93 @@ const Step3ClinicImagesDoctorsInfo = ({
     console.log('handleSave Step3');
     
     try {
-      const newClinicImageUrls: string[] = [];
+      // 기존 이미지 URL 배열
+      const existingClinicUrls = existingData?.hospital?.imageurls || [];
+      console.log('기존 이미지 URLs:', existingClinicUrls);
+      
+      // 새로 업로드할 이미지들
       const newClinicImages = clinicImages.filter(img => img instanceof File);
+      console.log('새로 업로드할 이미지 개수:', newClinicImages.length);
       
-      console.log('병원 이미지 업로드 시작:', newClinicImages.length, '개');
+      // 새로 업로드된 이미지 URL 배열
+      const newClinicImageUrls: string[] = [];
       
-      for (const file of newClinicImages) {
-        try {
-          const fileName = `hospital_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${file.name.split('.').pop()}`;
-          const filePath = `images/hospitalimg/${id_uuid_hospital}/${fileName}`;
-          
-          const { data, error } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
+      // 1. 새 이미지 업로드
+      if (newClinicImages.length > 0) {
+        console.log('병원 이미지 업로드 시작:', newClinicImages.length, '개');
+        
+        for (const file of newClinicImages) {
+          try {
+            // 고유한 파일명 생성 (타임스탬프 + UUID + 원본 확장자)
+            const timestamp = Date.now();
+            const uuid = crypto.randomUUID().split('-')[0];
+            const extension = file.name.split('.').pop() || 'jpg';
+            const sanitizedName = file.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+            const fileName = `hospital_${sanitizedName}_${uuid}_${timestamp}.${extension}`;
+            
+            const filePath = `images/hospitalimg/${id_uuid_hospital}/${fileName}`;
+            
+            const { data, error } = await supabase.storage
+              .from(STORAGE_IMAGES)
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
 
-          if (error) throw error;
+            if (error) throw error;
 
-          const { data: urlData } = supabase.storage
-            .from(STORAGE_IMAGES)
-            .getPublicUrl(filePath);
+            const { data: urlData } = supabase.storage
+              .from(STORAGE_IMAGES)
+              .getPublicUrl(filePath);
 
-          newClinicImageUrls.push(urlData.publicUrl);
-          console.log('병원 이미지 업로드 성공:', fileName);
-        } catch (error) {
-          console.error('병원 이미지 업로드 실패:', error);
-          throw error;
+            newClinicImageUrls.push(urlData.publicUrl);
+            console.log('병원 이미지 업로드 성공:', fileName);
+          } catch (error) {
+            console.error('병원 이미지 업로드 실패:', error);
+            throw error;
+          }
         }
       }
 
+      // 2. 기존 이미지와 새 이미지 비교하여 삭제할 이미지 찾기
+      // ClinicImageUploadSection에서 현재 표시되고 있는 이미지들의 URL을 가져와야 함
+      const finalClinicImageUrls = [...currentDisplayedUrls, ...newClinicImageUrls];
+      
+      console.log('현재 표시된 이미지 URLs:', currentDisplayedUrls);
+      console.log('새로 업로드된 이미지 URLs:', newClinicImageUrls);
+      console.log('최종 이미지 URLs:', finalClinicImageUrls);
+      
+      const toDelete = existingClinicUrls.filter((url: string) => !finalClinicImageUrls.includes(url));
+      
+      console.log('삭제할 이미지 URLs:', toDelete);
+      
+      // 3. 스토리지에서 삭제할 이미지들 제거
+      if (toDelete.length > 0) {
+        console.log('스토리지에서 이미지 삭제 시작:', toDelete.length, '개');
+        
+        for (const url of toDelete) {
+          try {
+            // URL에서 파일 경로 추출
+            const urlParts = url.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            const filePath = `images/hospitalimg/${id_uuid_hospital}/${fileName}`;
+            
+            const { error } = await supabase.storage
+              .from(STORAGE_IMAGES)
+              .remove([filePath]);
+              
+            if (error) {
+              console.error('스토리지 이미지 삭제 실패:', error);
+            } else {
+              console.log('스토리지 이미지 삭제 성공:', fileName);
+            }
+          } catch (error) {
+            console.error('스토리지 이미지 삭제 중 오류:', error);
+          }
+        }
+      }
+
+      // 4. 의사 이미지 업로드 (기존 로직 유지하되 파일명 개선)
       const doctorImageUrls: string[] = [];
       const doctorsWithImages = doctors.filter(doctor => 
         doctor.imageFile && doctor.imageFile instanceof File
@@ -524,7 +568,13 @@ const Step3ClinicImagesDoctorsInfo = ({
       
       for (const doctor of doctorsWithImages) {
         try {
-          const fileName = `doctor_${doctor.name.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${doctor.imageFile!.name.split('.').pop()}`;
+          // 고유한 파일명 생성
+          const timestamp = Date.now();
+          const uuid = crypto.randomUUID().split('-')[0];
+          const extension = doctor.imageFile!.name.split('.').pop() || 'jpg';
+          const sanitizedDoctorName = doctor.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+          const fileName = `doctor_${sanitizedDoctorName}_${uuid}_${timestamp}.${extension}`;
+          
           const filePath = `images/doctors/${id_uuid_hospital}/${fileName}`;
           
           const { data, error } = await supabase.storage
@@ -548,6 +598,7 @@ const Step3ClinicImagesDoctorsInfo = ({
         }
       }
 
+      // 5. FormData 준비
       const formData = new FormData();
       formData.append('id_uuid_hospital', id_uuid_hospital);
       formData.append('current_user_uid', currentUserUid);
@@ -557,11 +608,18 @@ const Step3ClinicImagesDoctorsInfo = ({
         formData.append('existing_data', JSON.stringify(existingData));
       }
 
-      const existingClinicUrls = existingData?.hospital?.imageurls || [];
+      // 기존 이미지 URL과 새 이미지 URL 모두 전달
       formData.append('existing_clinic_urls', JSON.stringify(existingClinicUrls));
-      
       formData.append('new_clinic_image_urls', JSON.stringify(newClinicImageUrls));
+      formData.append('final_clinic_image_urls', JSON.stringify(finalClinicImageUrls));
+      
+      // 삭제된 이미지 URL 전달
+      if (deletedImageUrls.length > 0) {
+        formData.append('deleted_clinic_urls', JSON.stringify(deletedImageUrls));
+        console.log('삭제된 이미지 URLs 전달:', deletedImageUrls);
+      }
 
+      // 6. 의사 데이터 처리 (기존 로직 유지)
       if (doctors.length > 0) {
         console.log('=== 의사 데이터 준비 시작 ===');
         console.log('doctors 배열:', doctors);
@@ -688,6 +746,8 @@ const Step3ClinicImagesDoctorsInfo = ({
           type='Banner'
           initialImages={existingData?.hospital?.imageurls || []}
           onExistingDataChange={setExistingData}
+          onDeletedImagesChange={setDeletedImageUrls}
+          onCurrentImagesChange={setCurrentDisplayedUrls}
         />
         <Divider />
         <DoctorInfoSection
