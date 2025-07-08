@@ -30,7 +30,7 @@ function fetchCategories() {
     });
 }
 
-export function useCategories() {
+export function useTreatmentCategories() {
   const result = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,

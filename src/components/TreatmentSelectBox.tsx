@@ -6,6 +6,15 @@ import { X } from "lucide-react";
 // import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
 import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
+import { 
+  getLabelByKey, 
+  getUnitByKey, 
+  getDepartmentByKey,
+  getDepartmentDisplayName,
+  getDepartmentStyleClass
+} from "@/utils/categoryUtils";
+import { TreatmentSelectedOptionInfo } from "./TreatmentSelectedOptionInfo";
+import { TreatmentSelectedChips } from "./TreatmentSelectedChips";
 
 interface ProductOption {
   id: string;
@@ -127,51 +136,6 @@ export function TreatmentSelectBox({
     });
   };
 
-  // 카테고리 플랫하게 만들어서 라벨 찾기
-  const getLabelByKey = (key: number): string => {
-    const findLabel = (nodes: CategoryNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.key === key) return node.label;
-        if (node.children) {
-          const found = findLabel(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findLabel(categories) || key.toString();
-  };
-
-  // 카테고리에서 unit 찾기
-  const getUnitByKey = (key: number): string | null => {
-    const findUnit = (nodes: CategoryNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.key === key) return node.unit || null;
-        if (node.children) {
-          const found = findUnit(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findUnit(categories);
-  };
-
-  // 카테고리에서 department 찾기
-  const getDepartmentByKey = (key: number): string | null => {
-    const findDepartment = (nodes: CategoryNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.key === key) return node.department || null;
-        if (node.children) {
-          const found = findDepartment(node.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    return findDepartment(categories);
-  };
-
   // 해당 시술에 연결된 상품옵션 개수 계산
   const getOptionCountForTreatment = (treatmentKey: number): number => {
     return productOptions.filter(option => option.treatmentKey === treatmentKey).length;
@@ -201,142 +165,22 @@ export function TreatmentSelectBox({
         </div>
       </div>
       {/* 선택 결과 칩 형태 */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {selectedKeys.length === 0 ? (
-          <div className="flex items-center gap-2 p-4 rounded-lg border border-dashed border-border bg-muted/20">
-            <span className="text-muted-foreground">선택된 시술이 없습니다.</span>
-          </div>
-        ) : (
-          selectedKeys.map((key) => {
-            const optionCount = getOptionCountForTreatment(key);
-            return (
-              <div
-                key={key}
-                className="flex items-center px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-sm shadow-sm hover:shadow-md transition-shadow"
-              >
-                <button
-                  type="button"
-                  className="mr-2 hover:bg-destructive/10 p-0.5 rounded focus-ring"
-                  onClick={() => handleRemove(key)}
-                  aria-label="선택 삭제"
-                >
-                  <X className="w-3 h-3 text-destructive" />
-                </button>
-                <span className="mr-2 font-medium">{getLabelByKey(key)}</span>
-                {getUnitByKey(key) && (
-                  <span className="text-xs text-primary bg-primary/20 px-2 py-0.5 rounded-md font-medium mr-1">
-                    {getUnitByKey(key)}
-                  </span>
-                )}
-                {getDepartmentByKey(key) && (
-                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium mr-1 ${
-                    getDepartmentByKey(key) === 'surgery' 
-                      ? 'text-purple-700 bg-purple-100' 
-                      : 'text-emerald-700 bg-emerald-100'
-                  }`}>
-                    {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
-                  </span>
-                )}
-                {optionCount > 0 && (
-                  <span className="ml-1 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-bold">
-                    {optionCount}
-                  </span>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
+      <TreatmentSelectedChips
+        selectedKeys={selectedKeys}
+        productOptions={productOptions}
+        categories={categories}
+        onRemove={handleRemove}
+        showRemoveButton={true}
+      />
       
-      {/* 디버깅 정보 표시 */}
-      {(selectedKeys.length > 0 || productOptions.length > 0 || etc.trim() !== "") && (
-        <div className="mt-6 p-4 bg-card rounded-lg border border-border shadow-sm">
-          <div className="font-semibold text-foreground mb-3 flex items-center gap-2">
-            <span className="text-lg">📊</span> 선택된 시술 데이터
-          </div>
-          <div className="text-muted-foreground space-y-3">
-            <div className="text-sm"><strong className="text-foreground">시술 개수:</strong> {selectedKeys.length}개</div>
-            
-            {/* 선택된 시술명 목록 */}
-            {selectedKeys.length > 0 && (
-              <div>
-                <strong className="text-foreground">선택된 시술:</strong>
-                <div className="ml-4 mt-2 space-y-2">
-                  {selectedKeys.map((key, index) => (
-                    <div key={key} className="text-sm bg-muted/30 p-2 rounded-md">
-                      {index + 1}. {getLabelByKey(key)}
-                      {getUnitByKey(key) && (
-                        <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
-                          {getUnitByKey(key)}
-                        </span>
-                      )}
-                      {getDepartmentByKey(key) && (
-                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${
-                          getDepartmentByKey(key) === 'surgery' 
-                            ? 'text-purple-700 bg-purple-100' 
-                            : 'text-emerald-700 bg-emerald-100'
-                        }`}>
-                          {getDepartmentByKey(key) === 'surgery' ? '성형' : '피부'}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="text-sm"><strong className="text-foreground">상품옵션 개수:</strong> {productOptions.length}개</div>
-            
-            {/* 상품옵션 내용 목록 */}
-            {productOptions.map((option, index) => (
-              <div key={option.id} className="text-sm bg-muted/30 p-3 rounded-md border border-border/50">
-                <div className="font-medium text-foreground mb-1">
-                  {index + 1}. {getLabelByKey(option.treatmentKey)}
-                  {getUnitByKey(option.treatmentKey) && (
-                    <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
-                      {getUnitByKey(option.treatmentKey)}
-                    </span>
-                  )}
-                  {getDepartmentByKey(option.treatmentKey) && (
-                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-md font-medium ${
-                      getDepartmentByKey(option.treatmentKey) === 'surgery' 
-                        ? 'text-purple-700 bg-purple-100' 
-                        : 'text-emerald-700 bg-emerald-100'
-                    }`}>
-                      {getDepartmentByKey(option.treatmentKey) === 'surgery' ? '성형' : '피부'}
-                    </span>
-                  )}
-                </div>
-                <div className="text-muted-foreground">
-                  {option.value1 && Number(option.value1) >= 1
-                    ? (
-                        <>
-                          시술옵션: <span className="font-medium">{option.value1}</span> → 가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
-                        </>
-                      )
-                    : (
-                        <>
-                          옵션없음 → 가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
-                        </>
-                      )
-                  }
-                </div>
-              </div>
-            ))}
-            
-            {/* 기타 정보 */}
-            {etc.trim() !== "" && (
-              <div>
-                <strong className="text-foreground">기타 정보:</strong>
-                <div className="ml-4 mt-2 p-3 bg-muted/30 rounded-md border border-border/50 text-sm">
-                  {etc}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      
+      {/* 선택된 시술 정보 표시 */}
+      {/* <TreatmentSelectedOptionInfo
+        selectedKeys={selectedKeys}
+        productOptions={productOptions}
+        etc={etc}
+        categories={categories}
+      />
+       */}
       {/* 모달 */}
       <TreatmentSelectModal
         open={modalOpen}

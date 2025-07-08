@@ -24,7 +24,7 @@ export interface ExtraOptionState {
   has_night_counseling: boolean;
   has_female_doctor: boolean;
   has_anesthesiologist: boolean;
-  specialistCount: number;
+  specialist_count: number;
 }
 
 interface ExtraOptionStateProps {
@@ -44,7 +44,7 @@ export default function ExtraOptions({
       has_night_counseling: false,
       has_female_doctor: false,
       has_anesthesiologist: false,
-      specialistCount: 1,
+      specialist_count: 1,
     },
   );
 
@@ -103,47 +103,51 @@ export default function ExtraOptions({
 
     setOptions((prev) => ({
       ...prev,
-      specialistCount: val,
+      specialist_count: val,
     }));
   };
 
   return (
-    <div className='flex flex-row items-end gap-6 max-w-3xl mx-auto p-4 bg-white rounded-xl shadow'>
-      {/* 전문의 O명 (input만) */}
-      <div className='flex flex-row items-end gap-1'>
-        <span className='text-sm font-medium'>의사</span>
-        <input
-          type='number'
-          className='w-12 border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 text-center text-sm'
-          min={1}
-          value={options.specialistCount}
-          onChange={handleCountChange}
-        />
-        <span className='text-sm font-medium'>명</span>
-      </div>
-      {/* 나머지 체크박스 옵션 */}
-      {extraOptions.map((opt) => (
-        <label
-          key={opt.key}
-          className='flex flex-col items-center gap-1 min-w-[68px]'
-        >
+    <div className="flex flex-col gap-4 max-w-3xl mx-auto p-4 bg-white rounded-xl shadow">
+      {/* 제목 */}
+      <h2 className="text-lg font-bold">부가 정보 입력하기</h2>
+  
+      {/* 기존 내용 (가로 배치) */}
+      <div className="flex flex-row items-end gap-6">
+        {/* 전문의 O명 */}
+        <div className="flex flex-row items-end gap-1">
+          <span className="text-sm font-medium">의사</span>
           <input
-            type='checkbox'
-            checked={
-              options[
-                opt.key as keyof ExtraOptionState
-              ] as boolean
-            }
-            onChange={handleCheck(
-              opt.key as keyof ExtraOptionState,
-            )}
-            className='w-4 h-4 accent-blue-500'
+            type="number"
+            className="w-12 border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 text-center text-sm"
+            min={1}
+            value={options.specialist_count}
+            onChange={handleCountChange}
           />
-          <span className='text-xs text-gray-700'>
-            {opt.label}
-          </span>
-        </label>
-      ))}
+          <span className="text-sm font-medium">명</span>
+        </div>
+  
+        {/* 체크박스 옵션들 */}
+        {extraOptions.map((opt) => (
+          <label
+            key={opt.key}
+            className="flex flex-col items-center gap-1 min-w-[68px]"
+          >
+            <input
+              type="checkbox"
+              checked={
+                options[opt.key as keyof ExtraOptionState] as boolean
+              }
+              onChange={handleCheck(opt.key as keyof ExtraOptionState)}
+              className="w-4 h-4 accent-blue-500"
+            />
+            <span className="text-xs text-gray-700">
+              {opt.label}
+            </span>
+          </label>
+        ))}
+      </div>
     </div>
   );
+  
 }

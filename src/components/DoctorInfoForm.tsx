@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface DoctorInfo {
   id: string;
@@ -118,6 +119,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
         const result = fileReader.result as string;
         setImagePreview(result);
       };
+      // 새로 추가한 이미지는 base64 데이터로 생성 
       fileReader.readAsDataURL(file);
     },
     [useDefaultImage],
@@ -213,7 +215,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
       return;
     }
 
-    if (!useDefaultImage && !imageFile) {
+    if (!useDefaultImage && !imageFile && !imagePreview) {
       alert(
         '이미지를 업로드하거나 기본 이미지를 선택해주세요.',
       );
@@ -221,7 +223,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
     }
 
     const doctorInfo: DoctorInfo = {
-      id: initialData?.id || `doctor-${Date.now()}`,
+      id: initialData?.id || uuidv4(),
       name: name.trim(),
       bio: bio, // trim() 제거하여 줄바꿈 보존
       imageFile: useDefaultImage

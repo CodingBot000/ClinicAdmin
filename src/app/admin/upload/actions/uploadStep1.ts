@@ -1,0 +1,394 @@
+"use server";
+
+import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/lib/supabaseClient";
+import { revalidatePath } from "next/cache";
+import { getTimestamp } from '@/utils/address/getTimeStamp';
+import { makeUploadImageFileName } from '@/utils/makeUploadImageFileName';
+import {
+  TABLE_HOSPITAL,
+  TABLE_DOCTOR,
+  TABLE_HOSPITAL_DETAIL,
+  TABLE_HOSPITAL_TREATMENT,
+  TABLE_HOSPITAL_BUSINESS_HOUR,
+  TABLE_ADMIN,
+  TABLE_TREATMENT,
+  STORAGE_IMAGES,
+  STORAGE_HOSPITAL_IMG,
+  STORAGE_DOCTOR_IMG,
+  TABLE_FEEDBACKS
+} from '@/constants/tables';
+import { createClient } from '@supabase/supabase-js';
+import { HospitalDetailData } from '@/types/hospital';
+
+
+export const uploadActionsStep1 = async (prevState: any, formData: FormData) => {
+    const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
+    const id_uuid_hospital = formData.get("id_uuid") as string; // 클라이언트에서 생성한 UUID 사용
+    const current_user_uid = formData.get("current_user_uid") as string; // 현재 로그인한 사용자 UID
+  
+    const name = formData.get("name") as string;
+    const surgeries = formData.get("surgeries") as string;
+    const searchkey = formData.get("searchkey") as string;
+    const search_key = formData.get("search_key") as string;
+   
+// 올바른 방식
+const address = formData.get("address") as string; // JSON 문자열
+const addressData = address ? JSON.parse(address) : null;
+const address_full_road = addressData?.address_full_road || '';
+const address_full_road_en = addressData?.address_full_road_en || '';
+const address_full_jibun = addressData?.address_full_jibun || '';
+const address_full_jibun_en = addressData?.address_full_jibun_en || '';
+const address_si = addressData?.address_si || '';
+const address_si_en = addressData?.address_si_en || '';
+const address_gu = addressData?.address_gu || '';
+const address_gu_en = addressData?.address_gu_en || '';
+const address_dong = addressData?.address_dong || '';
+const address_dong_en = addressData?.address_dong_en || '';
+const zipcode = addressData?.zipcode || '';
+const latitude = addressData?.latitude || '';
+const longitude = addressData?.longitude || '';
+const address_detail = addressData?.address_detail || '';
+const address_detail_en = addressData?.address_detail_en || '';
+const directions_to_clinic = addressData?.directions_to_clinic || '';
+const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
+
+
+
+    const location = formData.get("location") as string;
+
+
+    // console.log('qqqqqqqqq current_user_uid', current_user_uid);
+    // console.log('qqqqqqqqq id_uuid_hospital', id_uuid_hospital);
+    // console.log('qqqqqqqqq name', name);
+    // console.log('qqqqqqqqq searchkey', searchkey);
+    // console.log('qqqqqqqqq search_key', search_key);
+    // console.log('qqqqqqqqq address_full_road', address_full_road);
+    // console.log('qqqqqqqqq address_full_road_en', address_full_road_en);
+    // console.log('qqqqqqqqq address_full_jibun', address_full_jibun);
+    // console.log('qqqqqqqqq address_full_jibun_en', address_full_jibun_en);
+    // console.log('qqqqqqqqq address_si', address_si);
+    // console.log('qqqqqqqqq address_si_en', address_si_en);
+    // console.log('qqqqqqqqq address_gu', address_gu);
+    // console.log('qqqqqqqqq address_gu_en', address_gu_en);
+    // console.log('qqqqqqqqq address_dong', address_dong);
+    // console.log('qqqqqqqqq address_dong_en', address_dong_en);
+    // console.log('qqqqqqqqq zipcode', zipcode);
+    // console.log('qqqqqqqqq latitude', latitude);
+    // console.log('qqqqqqqqq longitude', longitude);
+    // console.log('qqqqqqqqq address_detail', address_detail);
+    // console.log('qqqqqqqqq address_detail_en', address_detail_en);
+    // console.log('qqqqqqqqq directions_to_clinic', directions_to_clinic);
+    // console.log('qqqqqqqqq directions_to_clinic_en', directions_to_clinic_en);
+    // console.log('qqqqqqqqq location', location);
+
+    const lastUnique = await supabase
+    .from(TABLE_HOSPITAL)
+    .select("id_unique")
+    .order("id_unique", { ascending: false })
+    .limit(1);
+  
+  if (!lastUnique.data || lastUnique.error) {
+    console.log("uploadActions -b") ;
+    return {
+      ...prevState,
+      message: lastUnique.error.code || lastUnique.error.message,
+      status: "error",
+    };
+  }
+  // legacy id . 나중에 id_uuid로 완전전환후 삭제해야됨  끝
+  
+  const nextIdUnique = (lastUnique.data && lastUnique.data.length > 0)
+    ? lastUnique.data[0].id_unique + 1
+    : 0;
+  
+
+  // admin uuid 가져오기
+  const { data: adminData, error: adminError } = await supabase
+    .from(TABLE_ADMIN)
+    .select('id')
+    .eq('id_auth_user', current_user_uid)
+    .single();
+  
+  if (adminError) {
+    console.error('Admin UUID 조회 실패:', adminError);
+    // return await rollbackAll('관리자 정보를 찾을 수 없습니다.');
+    return {
+      ...prevState,
+      message: adminError.code || adminError.message,
+      status: "error",
+    };
+  }
+  
+  // const id_surgeries = (surgeries && surgeries.length > 0) ? surgeries.split(",") : [1010];
+  const form_hospital = {
+    id_unique: nextIdUnique,  // legacy id  나중에 삭제 
+    id_uuid: id_uuid_hospital,
+    id_uuid_admin: adminData.id, // admin uuid 추가
+    name,
+    searchkey,
+    search_key,
+    address_full_road,
+    address_full_road_en,
+    address_full_jibun,
+    address_full_jibun_en,
+    address_si,
+    address_si_en,
+    address_gu,
+    address_gu_en,
+    address_dong,
+    address_dong_en,
+    zipcode,
+    latitude,
+    longitude,
+    address_detail,
+    address_detail_en,
+    directions_to_clinic,
+    directions_to_clinic_en,
+    location,
+    // imageurls: hospitalFileNames,
+  };
+  
+  // 편집 모드인 경우 update, 신규인 경우 insert
+  let hospitalOperation;
+  if (isEditMode) {
+    console.log("병원 정보 업데이트 시도:", id_uuid_hospital);
+    hospitalOperation = await supabase
+      .from(TABLE_HOSPITAL)
+      .update(form_hospital)
+      .eq('id_uuid', id_uuid_hospital)
+      .select("*");
+  } else {
+    console.log("새로운 병원 정보 등록 시도");
+    hospitalOperation = await supabase
+      .from(TABLE_HOSPITAL)
+      .insert(form_hospital)
+      .select("*");
+  }
+  
+  if (hospitalOperation.error) {
+    console.log("uploadActions hospital operation error:", hospitalOperation.error);
+    // return await rollbackAll(hospitalOperation.error.message);
+    return {
+      ...prevState,
+      message: hospitalOperation.error.code || hospitalOperation.error.message,
+      status: "error",
+    };
+  }
+  
+//   console.log("병원 정보 처리 완료:", isEditMode ? "업데이트" : "신규 등록");
+  
+
+// let extra_options_parsed;
+// try {
+//   extra_options_parsed = JSON.parse(extra_options_raw);
+// } catch (error) {
+//   console.error("extra_options 파싱 실패:", error);
+//   return {
+//     ...prevState,
+//     message: "추가 옵션 데이터 파싱에 실패했습니다.",
+//     status: "error",
+//   };
+// }
+
+
+// const stringToBoolean = (value: any): boolean => {
+//     if (typeof value === 'boolean') return value;
+//     if (typeof value === 'string') {
+//       return value.toLowerCase() === 'true' || value === '1';
+//     }
+//     return Boolean(value);
+//   };
+
+//   const extra_options = {
+//     has_private_recovery_room: stringToBoolean(extra_options_parsed.has_private_recovery_room),
+//     has_parking: stringToBoolean(extra_options_parsed.has_parking),
+//     has_cctv: stringToBoolean(extra_options_parsed.has_cctv),
+//     has_night_counseling: stringToBoolean(extra_options_parsed.has_night_counseling),
+//     has_female_doctor: stringToBoolean(extra_options_parsed.has_female_doctor),
+//     has_anesthesiologist: stringToBoolean(extra_options_parsed.has_anesthesiologist),
+//     specialist_count: parseInt(extra_options_parsed.specialist_count) || 0,
+//   };
+  ///////////////////////////////
+  // hospital_details 테이블 입력 
+  // extra options 포함
+  
+  const sns_content_agreement_raw = formData.get("sns_content_agreement") as string;
+  const sns_content_agreement = sns_content_agreement_raw === 'null' ? null : Number(sns_content_agreement_raw) as 1 | 0;
+  
+  // hospital_details 데이터 생성 함수
+  const createHospitalDetailData = (formData: FormData, id_uuid: string, id_hospital: number) => {
+    // const available_languages_raw = formData.get('available_languages') as string;
+    // const available_languages = available_languages_raw ? JSON.parse(available_languages_raw) : [];
+  
+    
+    return {
+      id_hospital: id_hospital,
+      id_uuid_hospital: id_uuid,
+      // has_private_recovery_room: extra_options.has_private_recovery_room,
+      // has_parking: extra_options.has_parking,
+      // has_cctv: extra_options.has_cctv,
+      // has_night_counseling: extra_options.has_night_counseling,
+      // has_female_doctor: extra_options.has_female_doctor,
+      // has_anesthesiologist: extra_options.has_anesthesiologist,
+      // specialist_count: extra_options.specialist_count,
+      // has_private_recovery_room: false,
+      // has_parking: false,
+      // has_cctv: false,
+      // has_night_counseling: false,
+      // has_female_doctor: false,
+      // has_anesthesiologist: false,
+      // specialist_count: 0,
+      email: formData.get("email") as string || '',
+      tel: formData.get("tel") as string || '',
+      kakao_talk: formData.get("kakao_talk") as string || '',
+      line: formData.get("line") as string || '',
+      we_chat: formData.get("we_chat") as string || '',
+      whats_app: formData.get("whats_app") as string || '',
+      telegram: formData.get("telegram") as string || '',
+      facebook_messenger: formData.get("facebook_messenger") as string || '',
+      instagram: formData.get("instagram") as string || '',
+      tiktok: formData.get("tiktok") as string || '',
+      youtube: formData.get("youtube") as string || '',
+      other_channel: formData.get("other_channel") as string || '',
+      map: '',
+      etc: '',
+      sns_content_agreement: sns_content_agreement,
+      // available_languages: available_languages,
+    };
+  };
+  
+  // 먼저 기존 데이터가 있는지 확인
+  const { data: existingDetail, error: checkError } = await supabase
+    .from(TABLE_HOSPITAL_DETAIL)
+    .select('*')
+    .eq('id_uuid_hospital', id_uuid_hospital)
+    .maybeSingle();
+  
+  if (checkError) {
+    console.error("hospital_details 조회 중 에러:", checkError);
+    // return await rollbackAll(checkError.message);
+    return {
+      ...prevState,
+      message: checkError.code || checkError.message,
+      status: "error",
+    };
+  }
+  
+  // id_hospital을 삭제하면 사용하지않을 코드 레거시 
+  const { data: hospitalData, error: hospitalError } = await supabase
+  .from(TABLE_HOSPITAL)
+  .select("id_unique")
+  .eq('id_uuid', id_uuid_hospital)
+  .single();
+
+  if (hospitalError) {
+    console.error("병원 데이터 조회 실패:", hospitalError);
+    return {
+      ...prevState,
+      message: hospitalError.code || hospitalError.message,
+      status: "error",
+    };
+  }
+  
+  const id_hospital = hospitalData.id_unique;
+
+  let detailOperation;
+  if (isEditMode && existingDetail) {
+    // 편집 모드이고 기존 데이터가 있으면 UPDATE
+    console.log("hospital_details 업데이트 시도:", id_uuid_hospital);
+    detailOperation = await supabase
+      .from(TABLE_HOSPITAL_DETAIL)
+      .update(createHospitalDetailData(formData, id_uuid_hospital, id_hospital))
+      .eq('id_uuid_hospital', id_uuid_hospital);
+  } else {
+    // 신규 등록이거나 기존 데이터가 없으면 INSERT
+    console.log("hospital_details 신규 등록 시도");
+
+   
+    
+    detailOperation = await supabase
+      .from(TABLE_HOSPITAL_DETAIL)
+      .insert([createHospitalDetailData(formData, id_uuid_hospital, id_hospital)]);
+  }
+  
+  if (detailOperation.error) {
+    console.log("uploadActions hospital_details error:", detailOperation.error);
+    // return await rollbackAll(detailOperation.error.message);
+    return {
+      ...prevState,
+      message: detailOperation.error.code || detailOperation.error.message,
+      status: "error",
+    };
+  }
+  
+  console.log("hospital_details 처리 완료:", isEditMode && existingDetail ? "업데이트" : "신규 등록");
+  
+  // 모든 insert가 성공적으로 완료되면 admin 테이블의 id_uuid_hospital 업데이트
+  if (current_user_uid) {
+    console.log("Admin 테이블 업데이트 시작 - 현재 사용자 UID:", current_user_uid);
+    
+    // 현재 사용자의 admin 정보 확인
+    const { data: currentAdmin, error: adminSelectError } = await supabase
+      .from(TABLE_ADMIN)
+      .select("id, id_uuid_hospital")
+      .eq("id_auth_user", current_user_uid)
+      .maybeSingle();
+    
+    if (adminSelectError) {
+      console.error("Admin 정보 조회 실패:", adminSelectError);
+    } else if (currentAdmin && !currentAdmin.id_uuid_hospital) {
+      // id_uuid_hospital이 비어있으면 업데이트
+      console.log("Admin 테이블 업데이트 - 병원 UUID 연결:", id_uuid_hospital);
+      
+      const { error: adminUpdateError } = await supabase
+        .from(TABLE_ADMIN)
+        .update({ id_uuid_hospital: id_uuid_hospital })
+        .eq("id_auth_user", current_user_uid);
+      
+      if (adminUpdateError) {
+        console.error("Admin 테이블 업데이트 실패:", adminUpdateError);
+      } else {
+        console.log("Admin 테이블 업데이트 성공 - 병원 정보 연결 완료");
+      }
+    } else if (currentAdmin?.id_uuid_hospital) {
+      console.log("Admin 테이블 - 이미 병원 정보가 연결되어 있음:", currentAdmin.id_uuid_hospital);
+    } else {
+      console.log("Admin 정보를 찾을 수 없음");
+    }
+  } else {
+    console.log("현재 사용자 UID가 제공되지 않았습니다.");
+  }
+  
+  // 피드백이 있는 경우 저장
+  const feedback = formData.get('feedback');
+  if (feedback) {
+    const { error: feedbackError } = await supabase
+      .from(TABLE_FEEDBACKS)
+      .insert([
+        {
+          feedback_content: feedback,
+          id_uuid_hospital: id_uuid_hospital,
+        },
+      ]);
+  
+    if (feedbackError) {
+      console.error('피드백 저장 실패:', feedbackError);
+      // 피드백 저장 실패는 전체 프로세스를 중단하지 않습니다
+    }
+  }
+  
+//   revalidatePath("/", "layout");
+  console.log("uploadActions No error uploadActions ");
+  
+  // const endTime = Date.now();
+  // const totalTime = endTime - startTime;
+  // console.log("uploadActions 완료:", new Date().toISOString());
+  // console.log(`총 처리 시간: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}초)`);
+  
+  return {
+    ...prevState,
+    message: "성공적으로 등록되었습니다.",
+    status: "success",
+  };
+  }

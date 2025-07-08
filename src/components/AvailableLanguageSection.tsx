@@ -1,5 +1,5 @@
 import { languages } from '@/constants/languages';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AvailableLanguageSectionProps {
   onLanguagesChange: (selectedLanguages: string[]) => void;
@@ -12,6 +12,12 @@ const AvailableLanguageSection: React.FC<AvailableLanguageSectionProps> = ({
 }) => {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(initialLanguages);
 
+  // initialLanguages가 변경될 때 내부 상태 업데이트
+  useEffect(() => {
+    console.log('AvailableLanguageSection - initialLanguages 변경:', initialLanguages);
+    setSelectedLanguages(initialLanguages);
+  }, [initialLanguages]);
+
   const handleLanguageToggle = (languageCode: string) => {
     const updatedLanguages = selectedLanguages.includes(languageCode)
       ? selectedLanguages.filter(code => code !== languageCode)
@@ -20,6 +26,8 @@ const AvailableLanguageSection: React.FC<AvailableLanguageSectionProps> = ({
     setSelectedLanguages(updatedLanguages);
     onLanguagesChange(updatedLanguages);
   };
+
+  console.log('AvailableLanguageSection - 현재 선택된 언어:', selectedLanguages);
 
   return (
     <div className="w-full">

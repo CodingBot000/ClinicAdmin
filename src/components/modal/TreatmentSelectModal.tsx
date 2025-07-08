@@ -6,7 +6,7 @@ import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ProductOptionInput from "@/components/ProductOptionInput";
-import { useCategories } from "@/hooks/useCategories";
+import { useTreatmentCategories } from "@/hooks/useTreatmentCategories";
 
 interface ProductOption {
   id: string;
@@ -316,7 +316,7 @@ export function TreatmentSelectModal({
           flex flex-col
           ${isAnimating ? 'translate-y-0' : 'translate-y-full'}
         `}
-        style={{ height: '80vh' }}
+        style={{ height: '95vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}

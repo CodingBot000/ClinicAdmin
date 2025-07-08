@@ -1,5 +1,23 @@
 import { CategoryNode } from "@/types/category";
 
+
+export function findRegionByKey(
+  nodes: CategoryNode[],
+  key: number
+): CategoryNode | null {
+  for (const node of nodes) {
+    if (node.key === key) {
+      return node;
+    }
+    if (node.children) {
+      const found = findRegionByKey(node.children, key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+
 export const REGIONS: CategoryNode[] = [
     {
       key: 1000,
