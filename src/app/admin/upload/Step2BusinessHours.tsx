@@ -45,56 +45,6 @@ const Step2BusinessHours = ({
 }: Step2BusinessHoursProps) => {
     console.log('Step2BusinessHours id_uuid_hospital', id_uuid_hospital);
 
-//   //   'UploadClient 페이지 시작:',
-//   //   new Date().toISOString(),
-//   // );
-
-//   const {
-//     data: categories,
-//     isLoading: categoriesLoading,
-//     error: categoriesError,
-//   } = useCategories();
-
-//   // categories 디버깅
-//   // console.log('UploadClient - categories 상태:', {
-//   //   categoriesLoading,
-//   //   categoriesError,
-//   //   categoriesLength: categories?.length || 0,
-//   //   categories,
-//   // });
-
-//   const router = useRouter();
-//   const [address, setAddress] = useState('');
-//   const [addressForSendForm, setAddressForSendForm] =
-//     useState<HospitalAddress | null>(null);
-//   const [coordinates, setCoordinates] = useState<{
-//     latitude: number;
-//     longitude: number;
-//   } | null>(null);
-//   const [selectedLocation, setSelectedLocation] = useState<{
-//     key: number;
-//     label: string;
-//     name: string;
-//   } | null>(null);
-//   const [selectedTreatments, setSelectedTreatments] =
-//     useState<number[]>([]);
-//   const [treatmentOptions, setTreatmentOptions] = useState<
-//     any[]
-//   >([]);
-//   const [priceExpose, setPriceExpose] =
-//     useState<boolean>(true);
-//   const [treatmentEtc, setTreatmentEtc] =
-//     useState<string>('');
-//   const [initialTreatmentData, setInitialTreatmentData] =
-//     useState<{
-//       selectedKeys: number[];
-//       productOptions: any[];
-//       priceExpose: boolean;
-//       etc: string;
-//     } | null>(null);
-//   const [clinicImages, setClinicImages] = useState<File[]>(
-//     [],
-//   );
   const [openingHours, setOpeningHours] = useState<
     OpeningHour[]
   >([]);

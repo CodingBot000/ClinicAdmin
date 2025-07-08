@@ -222,11 +222,7 @@ const Step1BasicInfo = ({
 
       const queryEndTime = Date.now();
       const queryTime = queryEndTime - queryStartTime;
-      // console.log(`surgeryList 쿼리 완료: ${queryTime}ms`, {
-      //   dataLength: data?.length || 0,
-      //   error: error?.message || null,
-      // });
-
+    
       if (error) throw Error('surgery_info error');
       return data;
     },
@@ -240,33 +236,6 @@ const Step1BasicInfo = ({
     }
   }, [formState, showFinalResult]);
 
-  // 페이지 로딩 완료 시간 측정
-//   useEffect(() => {
-//     if (!categoriesLoading && !isPending && categories) {
-//       const pageEndTime = Date.now();
-//       const totalLoadTime = pageEndTime - pageStartTime;
-//       // console.log(
-//       //   'UploadClient 페이지 로딩 완료:',
-//       //   new Date().toISOString(),
-//       // );
-//       // console.log(
-//       //   `총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`,
-//       // );
-//       // console.log('로딩 완료 상태:', {
-//       //   categoriesCount: categories?.length || 0,
-//       //   surgeryListCount: surgeryList?.length || 0,
-//       //   categoriesLoading,
-//       //   isPending,
-//       // });
-//     }
-//   }, [
-//     categoriesLoading,
-//     isPending,
-//     categories,
-//     surgeryList,
-//     pageStartTime,
-//   ]);
-
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     console.log(
@@ -276,54 +245,6 @@ const Step1BasicInfo = ({
       loadExistingDataForEdit();
     }
   }, [isEditMode, currentUserUid]);
-
-  // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
-//   useEffect(() => {
-//     if (existingData && !basicInfo.name) {
-//       // 한 번만 실행되도록 조건 추가
-//       console.log('기존 데이터 상태 반영 시작');
-//       console.log('sns_content_agreement 값:', existingData.hospitalDetail?.sns_content_agreement);
-//       const formData = mapExistingDataToFormValues(existingData);
-
-//       // 부모에게 전달하여 모든 자식이 공유하기 위한 저장 
-//       setIdUUIDHospital(existingData.hospital.id_uuid);
-//       console.log('qq  existingData.hospital.id_uuid 값:', existingData.hospital.id_uuid);
-//       console.log('qq  id_uuid_hospital 값:', id_uuid_hospital);
-//       // SNS 채널 정보와 기본 정보 설정
-//       if (existingData.hospitalDetail) {
-//         setBasicInfo({
-//           name: formData.hospital.name || '',
-//           email: existingData.hospitalDetail.email || '',
-//           tel: existingData.hospitalDetail.tel || '',
-//           kakao_talk: existingData.hospitalDetail.kakao_talk || '',
-//           line: existingData.hospitalDetail.line || '',
-//           we_chat: existingData.hospitalDetail.we_chat || '',
-//           whats_app: existingData.hospitalDetail.whats_app || '',
-//           telegram: existingData.hospitalDetail.telegram || '',
-//           facebook_messenger: existingData.hospitalDetail.facebook_messenger || '',
-//           instagram: existingData.hospitalDetail.instagram || '',
-//           tiktok: existingData.hospitalDetail.tiktok || '',
-//           youtube: existingData.hospitalDetail.youtube || '',
-//           other_channel: existingData.hospitalDetail.other_channel || '',
-//           sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
-//         });
-//         console.log('기본 정보 및 SNS 채널 정보 설정 완료');
-//       }
-
-//       console.log('UploadClient 상태 업데이트 완료:', {
-//         hospitalName: formData.hospital.name,
-//         hasAddress: !!formData.address.roadAddress,
-//         doctorsCount: formData.doctors.length,
-//         sns_content_agreement: existingData.hospitalDetail?.sns_content_agreement
-//       });
-
-//       // 피드백 정보 설정
-//     //   if (existingData.feedback) {
-//     //     setFeedback(existingData.feedback);
-//     //     console.log('피드백 정보 설정 완료:', existingData.feedback);
-//     //   }
-//     }
-//   }, [existingData]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   useEffect(() => {
@@ -1223,46 +1144,7 @@ const Step1BasicInfo = ({
       'input[name="name"]',
     ) as HTMLInputElement;
     const clinicName = clinicNameInput?.value || '';
-    // console.log('qqqqqqqqq id_uuid_generate', id_uuid_hospital);
-    // console.log('qqqqqqqqq clinicName', clinicName);
-    // console.log('qqqqqqqqq basicInfo.email', basicInfo.email);
-    // console.log('qqqqqqqqq basicInfo.tel', basicInfo.tel);
-    // console.log('qqqqqqqqq addressForSendForm', addressForSendForm);
-    // console.log('qqqqqqqqq selectedLocation', selectedLocation?.name);
-    // console.log('qqqqqqqqq selectedTreatments', selectedTreatments);
-    // console.log('qqqqqqqqq treatmentOptions', treatmentOptions);
-    // console.log('qqqqqqqqq priceExpose', priceExpose);
-    // const formData = prepareFormData({
-    //   id_uuid: id_uuid_generate,
-    //   clinicName: clinicName,
-    //   email: basicInfo.email,
-    //   tel: basicInfo.tel,
-    //   addressForSendForm,
-    //   selectedLocation: selectedLocation?.name || '',
-    //   selectedTreatments,
-    //   treatmentOptions,
-    //   priceExpose,
-    //   treatmentEtc,
-    //   openingHours,
-    //   optionState,
-    //   clinicImageUrls: [],
-    //   doctorImageUrls: [],
-    //   doctors,
-    //   feedback,
-    //   selectedLanguages,
-    //   snsData: {
-    //     kakao_talk: basicInfo.kakao_talk,
-    //     line: basicInfo.line,
-    //     we_chat: basicInfo.we_chat,
-    //     whats_app: basicInfo.whats_app,
-    //     telegram: basicInfo.telegram,
-    //     facebook_messenger: basicInfo.facebook_messenger,
-    //     instagram: basicInfo.instagram,
-    //     tiktok: basicInfo.tiktok,
-    //     youtube: basicInfo.youtube,
-    //     other_channel: basicInfo.other_channel,
-    //   }
-    // });
+ 
 
     const formData = new FormData();
     formData.append('current_user_uid', currentUserUid);
@@ -1420,33 +1302,15 @@ const Step1BasicInfo = ({
         </div>
         <Divider />
 
-          {/* 디버깅 정보 표시 */}
-          {/* {(selectedTreatments.length > 0 ||
-            coordinates ||
-            selectedLocation ||
-            treatmentEtc.trim() !== '') && (
-            <div className='mt-4 p-4 bg-gray-100 rounded border'>
-              <h3 className='font-semibold mb-2'>
-                선택된 정보:
-              </h3>
-              {selectedLocation && (
-                <p className='text-sm'>
-                  <strong>위치:</strong>{' '}
-                  {selectedLocation.label}
-                </p>
-              )}
-              {coordinates && (
-                <p className='text-sm'>
-                  <strong>좌표:</strong> 위도{' '}
-                  {coordinates.latitude}, 경도{' '}
-                  {coordinates.longitude}
-                </p>
-              )}
-
-            </div>
-          )} */}
+      
         </div>
-        <Button onClick={handleNext}>Save And Next</Button>
+               {/* 하단 고정 버튼 영역 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+        <div className="max-w-4xl mx-auto flex justify-end gap-3">
+
+          <Button onClick={handleNext}>Save And Next</Button>
+        </div>
+      </div>
       </div>
     </main>
   );
