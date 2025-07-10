@@ -20,6 +20,7 @@ export interface HospitalData {
   directions_to_clinic_en: string;
   location: string;
   imageurls: string[];
+  thumbnail_url: string | null;
 }
 
 export interface HospitalDetailData {
