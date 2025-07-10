@@ -25,6 +25,7 @@ import ExtraOptions, {
 } from '@/components/ExtraOptions';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
+import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
 import type { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
@@ -85,6 +86,9 @@ const Step5LanguagesFeedback = ({
 
   const [feedback, setFeedback] = useState<string>('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+
+  // Preview 모달 상태 추가
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
 
   const { handleOpenModal, open } = useModal();
@@ -266,42 +270,8 @@ const Step5LanguagesFeedback = ({
 
 //   const id_uuid_generate = uuidv4();
   const handlePreview = async () => {
-    // const validationResult = validateFormDataAndUpdateUI(true);
-
-    // if (!validationResult.isValid) {
- 
-    //   setPreviewValidationMessages(validationResult.messages || []);
-    //   setIsSubmitting(false);
-    //   setShowConfirmModal(true);
-    //   return;
-    // }
-  
-    // setPreviewValidationMessages([]);
-
-    try {
-      console.log('handlePreview 3');
-     
-      // setPreparedFormData(formData);
-      setShowConfirmModal(true);
-
-    //   const validationResult = validateFormDataAndUpdateUI(true);
-    //   if (!validationResult.isValid) {
-    //     setPreviewValidationMessages(validationResult.messages || []);
-    //     setIsSubmitting(false);
-    //     setShowConfirmModal(true);
-    //     return;
-    //   }
-    
-      setPreviewValidationMessages([]);
-    } catch (error) {
-      console.error('미리보기 데이터 준비 중 오류:', error);
-      setFormState({
-        message: '미리보기 데이터 준비 중 오류가 발생했습니다.',
-        status: 'error',
-        errorType: 'server',
-      });
-      setShowFinalResult(true);
-    }
+    console.log('Preview 버튼 클릭 - 모달 열기');
+    setShowPreviewModal(true);
   };
 
   // 최종 제출 함수 (PreviewModal에서 호출)
@@ -709,6 +679,23 @@ const Step5LanguagesFeedback = ({
       </div>
 
     </div>
+
+    {/* Preview 모달 */}
+    <PreviewClinicInfoModal
+      isOpen={showPreviewModal}
+      onClose={() => setShowPreviewModal(false)}
+      id_uuid_hospital={id_uuid_hospital}
+    />
+
+    {/* 기존 Alert 모달 */}
+    <AlertModal
+      open={open}
+      onClose={handleModal}
+      title={formState?.status === 'success' ? '성공' : '오류'}
+      message={formState?.message || ''}
+      onConfirm={handleConfirm}
+      confirmText={formState?.status === 'success' ? '확인' : '닫기'}
+    />
     </main>
   );
 };

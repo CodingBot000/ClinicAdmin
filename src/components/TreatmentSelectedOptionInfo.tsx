@@ -132,7 +132,7 @@ export function TreatmentSelectedOptionInfo({
                                   )
                                 : (
                                     <>
-                                      옵션없음 → 가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
+                                      가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
                                     </>
                                   )
                               }
@@ -176,7 +176,7 @@ export function TreatmentSelectedOptionInfo({
                                   )
                                 : (
                                     <>
-                                      옵션없음 → 가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
+                                      가격: <span className="font-bold text-foreground">{option.value2?.toLocaleString()}원</span>
                                     </>
                                   )
                               }
@@ -188,7 +188,7 @@ export function TreatmentSelectedOptionInfo({
                   )}
 
                   {/* 부서 미지정 옵션 */}
-                  {noDepartmentOptions.length > 0 && (
+                  {/* {noDepartmentOptions.length > 0 && (
                     <div>
                       <div className="mb-2">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-gray-700 bg-gray-100">
@@ -200,11 +200,7 @@ export function TreatmentSelectedOptionInfo({
                           <div key={option.id} className="text-sm bg-muted/30 p-3 rounded-md border border-border/50">
                             <div className="font-medium text-foreground mb-1">
                               {index + 1}. {getLabelByKey(option.treatmentKey, categories)}
-                              {/* {getUnitByKey(option.treatmentKey, categories) && (
-                                <span className="ml-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md font-medium">
-                                  {getUnitByKey(option.treatmentKey, categories)}
-                                </span>
-                              )} */}
+                      
                             </div>
                             <div className="text-muted-foreground">
                               {option.value1 && Number(option.value1) >= 1
@@ -230,7 +226,7 @@ export function TreatmentSelectedOptionInfo({
                         ))}
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
               );
             })()}

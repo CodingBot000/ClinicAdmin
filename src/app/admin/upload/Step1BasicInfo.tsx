@@ -412,28 +412,6 @@ const Step1BasicInfo = ({
           } catch (error) {
             console.error('위치 정보 파싱 실패:', existingData.hospital.location, error);
           }
-        // try {
-        //   const locationData = JSON.parse(
-        //     existingData.hospital.location,
-        //   );
-        //   if (
-        //     locationData.key &&
-        //     locationData.label &&
-        //     locationData.name
-        //   ) {
-        //     setSelectedLocation(locationData);
-        //     console.log(
-        //       '위치 정보 설정 완료:',
-        //       locationData,
-        //     );
-        //   }
-        // } catch (error) {
-        //   console.error(
-        //     '위치 정보 파싱 실패:',
-        //     existingData.hospital.location,
-        //     error,
-        //   );
-        // }
       }
 
       // 6. 시술 정보 설정

@@ -7,6 +7,7 @@ import DoctorInfoForm, {
   DoctorInfo,
 } from './DoctorInfoForm';
 import DoctorOrderModal from './DoctorOrderModal';
+import DoctorCard from './DoctorCard';
 
 interface DoctorInfoSectionProps {
   title: string;
@@ -200,80 +201,15 @@ const DoctorInfoSection: React.FC<
       {doctors.length > 0 ? (
         <div className='flex flex-wrap gap-4'>
           {doctors.map((doctor) => (
-            <div
+            <DoctorCard
               key={doctor.id}
-              className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow'
-              style={{ width: '150px' }}
-            >
-              {/* 카드 헤더 - 편집/삭제 버튼 */}
-              <div className='flex justify-end gap-1 mb-3'>
-                <button
-                  type='button'
-                  onClick={() => handleEditDoctor(doctor)}
-                  className='p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors'
-                  title='편집'
-                >
-                  <Edit2 size={16} />
-                </button>
-                <button
-                  type='button'
-                  onClick={() =>
-                    handleDeleteDoctor(doctor.id)
-                  }
-                  className='p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors'
-                  title='삭제'
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-
-              {/* 프로필 이미지 */}
-              <div className='flex justify-center mb-3'>
-                <div className='w-20 h-20 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200'>
-                  <Image
-                    src={getValidImageUrl(
-                      doctor.imagePreview,
-                    )}
-                    alt={doctor.name}
-                    width={80}
-                    height={80}
-                    className='object-cover w-full h-full'
-                  />
-                </div>
-              </div>
-
-              {/* 이름 */}
-              <h3 className='text-center font-medium text-gray-900 mb-2'>
-                {doctor.name}
-              </h3>
-
-              {/* 소개 */}
-              {doctor.bio && (
-                <p className='text-xs text-gray-600 text-center mb-3 line-clamp-3 whitespace-pre-wrap'>
-                  {doctor.bio}
-                </p>
-              )}
-
-              {/* 대표원장 체크박스 */}
-              <div className='flex justify-center'>
-                <label className='flex items-center gap-2 cursor-pointer'>
-                  <input
-                    type='checkbox'
-                    checked={doctor.isChief}
-                    onChange={(e) =>
-                      handleChiefChange(
-                        doctor.id,
-                        e.target.checked,
-                      )
-                    }
-                    className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
-                  />
-                  <span className='text-sm text-gray-700'>
-                    대표원장
-                  </span>
-                </label>
-              </div>
-            </div>
+              doctor={doctor}
+              mode='edit'
+              onEdit={handleEditDoctor}
+              onDelete={handleDeleteDoctor}
+              onChiefChange={handleChiefChange}
+              getValidImageUrl={getValidImageUrl}
+            />
           ))}
         </div>
       ) : (
