@@ -5,7 +5,7 @@ import { AlertModal } from './modal';
 import { HelpCircle } from 'lucide-react';
 import SNSConsentButton from './modal/SNSContentModal';
 import Divider from './Divider';
-import { BasicInfo } from '@/app/admin/upload/ClinicInfoUploadClient';
+import { BasicInfo } from '@/types/basicinfo';
 
 const SNS_CHANNEL_LABELS = {
   kakao_talk: 'KakaoTalk',
@@ -112,6 +112,7 @@ const BasicInfoSection = ({
   const [info, setInfo] = useState<BasicInfo>({
     name: initialInfo?.name || '',
     email: initialInfo?.email || '',
+    introduction: initialInfo?.introduction || '',
     tel: initialInfo?.tel || '',
 
     kakao_talk: initialInfo?.kakao_talk || '',
@@ -134,6 +135,7 @@ const BasicInfoSection = ({
       setInfo({
         name: initialInfo.name || info.name,
         email: initialInfo.email || info.email,
+        introduction: initialInfo.introduction || info.introduction,
         tel: initialInfo.tel || info.tel,
        
         kakao_talk: initialInfo.kakao_talk || info.kakao_talk,
@@ -252,6 +254,26 @@ const BasicInfoSection = ({
           isError={!!emailError}
           errorMessage={emailError}
         />
+        
+        {/* 병원 소개 - textarea로 변경 */}
+        <div className="flex flex-col w-full gap-1">
+          <div className="flex items-start w-full gap-2">
+            <label htmlFor="introduction" className="min-w-[90px] font-medium pt-2">
+              병원 소개
+            </label>
+            <textarea
+              id="introduction"
+              name="introduction"
+              required
+              value={info.introduction}
+              onChange={(e) => handleChange('introduction', e.target.value)}
+              placeholder="예: 병원 소개"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded outline-none transition focus:border-blue-500 resize-none"
+              rows={4}
+            />
+          </div>
+        </div>
+
         <InputField
           label="대표 전화번호"
           name="tel"
@@ -277,7 +299,7 @@ const BasicInfoSection = ({
               추가하기
             </Button>
             <h4 className="text-sm text-gray-400">
-              카카오톡 외에도 필요시 새로 만드셔서 추가하시길 적극 권장합니다. 향후 언제든지 추가/변경 가능합니다. 
+              해외대상 서비스 이므로 카카오톡 외에도 필요시 새로 만드셔서 추가하시길 적극 권장합니다. 향후 언제든지 추가/변경 가능합니다. 
             </h4>
           </div>
           <div className="flex items-center gap-2">

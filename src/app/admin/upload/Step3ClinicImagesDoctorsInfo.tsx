@@ -16,11 +16,8 @@ import DoctorInfoSection from '@/components/DoctorInfoSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
 
-import { validateFormData } from '@/utils/validateFormData';
-import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
-import AvailableLanguageSection from '@/components/AvailableLanguageSection';
-import { HospitalAddress } from '@/types/address';
+
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
 import { supabase } from '@/lib/supabaseClient';
@@ -46,23 +43,6 @@ interface Step3ClinicImagesDoctorsInfoProps {
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
-}
-
-export interface BasicInfo {
-  name: string;
-  email: string;
-  tel: string;
-  kakao_talk: string;
-  line: string;
-  we_chat: string;
-  whats_app: string;
-  telegram: string;
-  facebook_messenger: string;
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  other_channel: string;
-  sns_content_agreement: 1 | 0 | null;
 }
 
 const Step3ClinicImagesDoctorsInfo = ({

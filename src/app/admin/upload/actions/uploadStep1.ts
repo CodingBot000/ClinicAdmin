@@ -58,30 +58,6 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
     const location = formData.get("location") as string;
 
 
-    // console.log('qqqqqqqqq current_user_uid', current_user_uid);
-    // console.log('qqqqqqqqq id_uuid_hospital', id_uuid_hospital);
-    // console.log('qqqqqqqqq name', name);
-    // console.log('qqqqqqqqq searchkey', searchkey);
-    // console.log('qqqqqqqqq search_key', search_key);
-    // console.log('qqqqqqqqq address_full_road', address_full_road);
-    // console.log('qqqqqqqqq address_full_road_en', address_full_road_en);
-    // console.log('qqqqqqqqq address_full_jibun', address_full_jibun);
-    // console.log('qqqqqqqqq address_full_jibun_en', address_full_jibun_en);
-    // console.log('qqqqqqqqq address_si', address_si);
-    // console.log('qqqqqqqqq address_si_en', address_si_en);
-    // console.log('qqqqqqqqq address_gu', address_gu);
-    // console.log('qqqqqqqqq address_gu_en', address_gu_en);
-    // console.log('qqqqqqqqq address_dong', address_dong);
-    // console.log('qqqqqqqqq address_dong_en', address_dong_en);
-    // console.log('qqqqqqqqq zipcode', zipcode);
-    // console.log('qqqqqqqqq latitude', latitude);
-    // console.log('qqqqqqqqq longitude', longitude);
-    // console.log('qqqqqqqqq address_detail', address_detail);
-    // console.log('qqqqqqqqq address_detail_en', address_detail_en);
-    // console.log('qqqqqqqqq directions_to_clinic', directions_to_clinic);
-    // console.log('qqqqqqqqq directions_to_clinic_en', directions_to_clinic_en);
-    // console.log('qqqqqqqqq location', location);
-
     const lastUnique = await supabase
     .from(TABLE_HOSPITAL)
     .select("id_unique")
@@ -255,6 +231,7 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
       etc: '',
       sns_content_agreement: sns_content_agreement,
       // available_languages: available_languages,
+      introduction: formData.get("introduction") as string || '',
     };
   };
   

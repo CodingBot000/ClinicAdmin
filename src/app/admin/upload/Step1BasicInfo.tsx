@@ -41,6 +41,8 @@ import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
 import { uploadActionsStep1 } from './actions/uploadStep1';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
+import { BasicInfo } from '@/types/basicinfo';
+import ContactsInfoSection from './ContactsInfoSection';
 
 interface Surgery {
   created_at: string;
@@ -61,23 +63,6 @@ interface Step1BasicInfoProps {
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
   onNext: () => void;
-}
-
-export interface BasicInfo {
-  name: string;
-  email: string;
-  tel: string;
-  kakao_talk: string;
-  line: string;
-  we_chat: string;
-  whats_app: string;
-  telegram: string;
-  facebook_messenger: string;
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  other_channel: string;
-  sns_content_agreement: 1 | 0 | null;
 }
 
 const Step1BasicInfo = ({
@@ -189,6 +174,7 @@ const Step1BasicInfo = ({
     name: hospitalName,
     email: '',
     tel: '',
+    introduction: '',
     kakao_talk: '',
     line: '',
     we_chat: '',
@@ -302,6 +288,7 @@ const Step1BasicInfo = ({
           name: formData.hospital.name || '',
           email: existingData.hospitalDetail.email || '',
           tel: existingData.hospitalDetail.tel || '',
+          introduction: existingData.hospitalDetail.introduction || '',
           kakao_talk: existingData.hospitalDetail.kakao_talk || '',
           line: existingData.hospitalDetail.line || '',
           we_chat: existingData.hospitalDetail.we_chat || '',
@@ -684,6 +671,7 @@ const Step1BasicInfo = ({
         name: basicInfo.name || '',
         email: basicInfo.email || '',
         tel: basicInfo.tel || '',
+        introduction: basicInfo.introduction || '',
         kakao_talk: basicInfo.kakao_talk || '',
         line: basicInfo.line || '',
         we_chat: basicInfo.we_chat || '',
@@ -811,6 +799,7 @@ const Step1BasicInfo = ({
         clinicName,
         email: basicInfo.email,
         tel: basicInfo.tel,
+        introduction: basicInfo.introduction || '',
         addressForSendForm,
         selectedLocation: selectedLocation?.name || '',
         selectedTreatments,
@@ -860,220 +849,220 @@ const Step1BasicInfo = ({
     }
   };
 
-  // 최종 제출 함수 (PreviewModal에서 호출)
-  const handleFinalSubmit = async () => {
-    if (!preparedFormData) return;
+  // // 최종 제출 함수 (PreviewModal에서 호출)
+  // const handleFinalSubmit = async () => {
+  //   if (!preparedFormData) return;
 
-    setIsSubmitting(true);
+  //   setIsSubmitting(true);
 
-    try {
-      console.log('최종 제출 시작...');
+  //   try {
+  //     console.log('최종 제출 시작...');
 
-      // 편집 모드와 기존 데이터 정보 추가
-      preparedFormData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-      if (isEditMode && existingData) {
-        preparedFormData.append('existing_data', JSON.stringify(existingData));
-      }
+  //     // 편집 모드와 기존 데이터 정보 추가
+  //     preparedFormData.append('is_edit_mode', isEditMode ? 'true' : 'false');
+  //     if (isEditMode && existingData) {
+  //       preparedFormData.append('existing_data', JSON.stringify(existingData));
+  //     }
 
-      // FormData 크기 측정 함수
-      const calculateFormDataSize = (
-        formData: FormData,
-      ) => {
-        let totalSize = 0;
-        let textDataSize = 0;
-        const details: any[] = [];
+  //     // FormData 크기 측정 함수
+  //     const calculateFormDataSize = (
+  //       formData: FormData,
+  //     ) => {
+  //       let totalSize = 0;
+  //       let textDataSize = 0;
+  //       const details: any[] = [];
 
-        for (const [key, value] of formData.entries()) {
-          // 모든 데이터가 텍스트 데이터 (이미지는 URL 문자열)
-          const textBytes = new TextEncoder().encode(
-            value.toString(),
-          ).length;
-          textDataSize += textBytes;
-          totalSize += textBytes;
+  //       for (const [key, value] of formData.entries()) {
+  //         // 모든 데이터가 텍스트 데이터 (이미지는 URL 문자열)
+  //         const textBytes = new TextEncoder().encode(
+  //           value.toString(),
+  //         ).length;
+  //         textDataSize += textBytes;
+  //         totalSize += textBytes;
 
-          details.push({
-            key,
-            type: 'TextData',
-            value:
-              value.toString().substring(0, 100) +
-              (value.toString().length > 100 ? '...' : ''),
-            size: textBytes,
-            sizeKB: (textBytes / 1024).toFixed(4),
-            category: getCategoryForKey(key),
-          });
-        }
+  //         details.push({
+  //           key,
+  //           type: 'TextData',
+  //           value:
+  //             value.toString().substring(0, 100) +
+  //             (value.toString().length > 100 ? '...' : ''),
+  //           size: textBytes,
+  //           sizeKB: (textBytes / 1024).toFixed(4),
+  //           category: getCategoryForKey(key),
+  //         });
+  //       }
 
-        return {
-          totalSize,
-          textDataSize,
-          totalSizeKB: (totalSize / 1024).toFixed(2),
-          totalSizeMB: (totalSize / (1024 * 1024)).toFixed(
-            4,
-          ),
-          textDataSizeKB: (textDataSize / 1024).toFixed(4),
-          details,
-        };
-      };
+  //       return {
+  //         totalSize,
+  //         textDataSize,
+  //         totalSizeKB: (totalSize / 1024).toFixed(2),
+  //         totalSizeMB: (totalSize / (1024 * 1024)).toFixed(
+  //           4,
+  //         ),
+  //         textDataSizeKB: (textDataSize / 1024).toFixed(4),
+  //         details,
+  //       };
+  //     };
 
-      // 키에 따른 카테고리 분류 함수
-      const getCategoryForKey = (key: string) => {
-        if (key.includes('image_urls')) return 'Image URLs';
-        if (key.includes('address')) return 'Address Info';
-        if (
-          key.includes('treatment') ||
-          key.includes('selected_treatments')
-        )
-          return 'Treatment Info';
-        if (key.includes('opening_hours'))
-          return 'Business Hours';
-        if (key.includes('extra_options'))
-          return 'Facility Options';
-        if (key.includes('location')) return 'Location';
-        if (
-          key === 'name' ||
-          key === 'searchkey' ||
-          key === 'search_key' ||
-          key === 'id_uuid'
-        )
-          return 'Basic Info';
-        return 'Other';
-      };
+  //     // 키에 따른 카테고리 분류 함수
+  //     const getCategoryForKey = (key: string) => {
+  //       if (key.includes('image_urls')) return 'Image URLs';
+  //       if (key.includes('address')) return 'Address Info';
+  //       if (
+  //         key.includes('treatment') ||
+  //         key.includes('selected_treatments')
+  //       )
+  //         return 'Treatment Info';
+  //       if (key.includes('opening_hours'))
+  //         return 'Business Hours';
+  //       if (key.includes('extra_options'))
+  //         return 'Facility Options';
+  //       if (key.includes('location')) return 'Location';
+  //       if (
+  //         key === 'name' ||
+  //         key === 'searchkey' ||
+  //         key === 'search_key' ||
+  //         key === 'id_uuid'
+  //       )
+  //         return 'Basic Info';
+  //       return 'Other';
+  //     };
 
-      // FormData 크기 분석
-      const sizeInfo = calculateFormDataSize(
-        preparedFormData,
-      );
+  //     // FormData 크기 분석
+  //     const sizeInfo = calculateFormDataSize(
+  //       preparedFormData,
+  //     );
 
-      console.log(
-        '===== FormData 크기 분석 (개선된 구조) =====',
-      );
-      console.log(
-        `전체 크기 (Server Actions로 전송): ${sizeInfo.totalSizeMB} MB (${sizeInfo.totalSizeKB} KB)`,
-      );
-      console.log(
-        `텍스트 데이터 크기: ${sizeInfo.textDataSizeKB} KB (이미지 URL 포함)`,
-      );
-      console.log('');
-      console.log(
-        '이미지 파일은 이미 Supabase Storage에 업로드 완료!',
-      );
-      console.log(
-        'Server Actions에는 이미지 URL만 전송되므로 크기 제한 해결!',
-      );
-      console.log('상세 내역:');
+  //     console.log(
+  //       '===== FormData 크기 분석 (개선된 구조) =====',
+  //     );
+  //     console.log(
+  //       `전체 크기 (Server Actions로 전송): ${sizeInfo.totalSizeMB} MB (${sizeInfo.totalSizeKB} KB)`,
+  //     );
+  //     console.log(
+  //       `텍스트 데이터 크기: ${sizeInfo.textDataSizeKB} KB (이미지 URL 포함)`,
+  //     );
+  //     console.log('');
+  //     console.log(
+  //       '이미지 파일은 이미 Supabase Storage에 업로드 완료!',
+  //     );
+  //     console.log(
+  //       'Server Actions에는 이미지 URL만 전송되므로 크기 제한 해결!',
+  //     );
+  //     console.log('상세 내역:');
 
-      // 카테고리별로 그룹화
-      const groupedByCategory = sizeInfo.details.reduce(
-        (acc: any, item) => {
-          const category = item.category || item.type;
-          if (!acc[category]) acc[category] = [];
-          acc[category].push(item);
-          return acc;
-        },
-        {},
-      );
+  //     // 카테고리별로 그룹화
+  //     const groupedByCategory = sizeInfo.details.reduce(
+  //       (acc: any, item) => {
+  //         const category = item.category || item.type;
+  //         if (!acc[category]) acc[category] = [];
+  //         acc[category].push(item);
+  //         return acc;
+  //       },
+  //       {},
+  //     );
 
-      Object.entries(groupedByCategory).forEach(
-        ([category, items]: [string, any]) => {
-          console.log(`\n  ${category}:`);
-          items.forEach((item: any) => {
-            console.log(
-              `    ${item.key}: ${item.sizeKB} KB - "${item.value}"`,
-            );
-          });
-        },
-      );
+  //     Object.entries(groupedByCategory).forEach(
+  //       ([category, items]: [string, any]) => {
+  //         console.log(`\n  ${category}:`);
+  //         items.forEach((item: any) => {
+  //           console.log(
+  //             `    ${item.key}: ${item.sizeKB} KB - "${item.value}"`,
+  //           );
+  //         });
+  //       },
+  //     );
 
-      // 1MB 제한과 비교 (이제는 통과할 것)
-      const limitMB = 1;
-      const limitBytes = limitMB * 1024 * 1024;
-      const isOverLimit = sizeInfo.totalSize > limitBytes;
+  //     // 1MB 제한과 비교 (이제는 통과할 것)
+  //     const limitMB = 1;
+  //     const limitBytes = limitMB * 1024 * 1024;
+  //     const isOverLimit = sizeInfo.totalSize > limitBytes;
 
-      if (isOverLimit) {
-        console.warn(
-          `여전히 Server Actions 크기 제한 초과 (예상되지 않음)`,
-        );
-        console.warn(
-          `현재: ${sizeInfo.totalSizeMB} MB, 제한: ${limitMB} MB`,
-        );
+  //     if (isOverLimit) {
+  //       console.warn(
+  //         `여전히 Server Actions 크기 제한 초과 (예상되지 않음)`,
+  //       );
+  //       console.warn(
+  //         `현재: ${sizeInfo.totalSizeMB} MB, 제한: ${limitMB} MB`,
+  //       );
 
-        setFormState({
-          message: `데이터 크기가 여전히 큽니다: ${sizeInfo.totalSizeMB} MB`,
-          status: 'error',
-          errorType: 'server',
-        });
+  //       setFormState({
+  //         message: `데이터 크기가 여전히 큽니다: ${sizeInfo.totalSizeMB} MB`,
+  //         status: 'error',
+  //         errorType: 'server',
+  //       });
 
-        setShowConfirmModal(false);
-        setPreparedFormData(null);
-        return;
-      } else {
-        console.log(
-          `Server Actions 크기 제한 통과: ${sizeInfo.totalSizeMB} MB < ${limitMB} MB`,
-        );
-        console.log(
-          `모든 데이터가 텍스트: ${sizeInfo.textDataSizeKB} KB`,
-        );
-      }
+  //       setShowConfirmModal(false);
+  //       setPreparedFormData(null);
+  //       return;
+  //     } else {
+  //       console.log(
+  //         `Server Actions 크기 제한 통과: ${sizeInfo.totalSizeMB} MB < ${limitMB} MB`,
+  //       );
+  //       console.log(
+  //         `모든 데이터가 텍스트: ${sizeInfo.textDataSizeKB} KB`,
+  //       );
+  //     }
 
-      console.log('FormData 내용 확인:');
+  //     console.log('FormData 내용 확인:');
 
-      // FormData 내용을 간단히 로그로 출력
-      for (const [
-        key,
-        value,
-      ] of preparedFormData.entries()) {
-        if (value instanceof File) {
-          console.log(
-            `  - ${key}: [File] ${value.name} (${(value.size / 1024).toFixed(2)} KB)`,
-          );
-        } else {
-          const preview =
-            value.toString().length > 50
-              ? value.toString().substring(0, 50) + '...'
-              : value.toString();
-          console.log(`  - ${key}: "${preview}"`);
-        }
-      }
+  //     // FormData 내용을 간단히 로그로 출력
+  //     for (const [
+  //       key,
+  //       value,
+  //     ] of preparedFormData.entries()) {
+  //       if (value instanceof File) {
+  //         console.log(
+  //           `  - ${key}: [File] ${value.name} (${(value.size / 1024).toFixed(2)} KB)`,
+  //         );
+  //       } else {
+  //         const preview =
+  //           value.toString().length > 50
+  //             ? value.toString().substring(0, 50) + '...'
+  //             : value.toString();
+  //         console.log(`  - ${key}: "${preview}"`);
+  //       }
+  //     }
 
-      // 직접 uploadActions 호출
-      const result = await uploadActions(
-        null,
-        preparedFormData,
-      );
+  //     // 직접 uploadActions 호출
+  //     const result = await uploadActions(
+  //       null,
+  //       preparedFormData,
+  //     );
 
-      console.log('uploadActions 응답:', result);
-      setFormState(result);
-      setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
+  //     console.log('uploadActions 응답:', result);
+  //     setFormState(result);
+  //     setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
 
-      setShowConfirmModal(false);
-      setPreparedFormData(null);
-    } catch (error) {
-      console.error('uploadActions 호출 에러:', error);
+  //     setShowConfirmModal(false);
+  //     setPreparedFormData(null);
+  //   } catch (error) {
+  //     console.error('uploadActions 호출 에러:', error);
 
-      let errorMessage = '업로드 중 오류가 발생했습니다.';
+  //     let errorMessage = '업로드 중 오류가 발생했습니다.';
 
-      if (error instanceof Error && error.message) {
-        errorMessage = `업로드 오류: ${error.message}`;
-      }
+  //     if (error instanceof Error && error.message) {
+  //       errorMessage = `업로드 오류: ${error.message}`;
+  //     }
 
-      setFormState({
-        message: errorMessage,
-        status: 'error',
-        errorType: 'server',
-      });
-      setShowFinalResult(true); // 에러도 최종 결과로 표시
-      setShowConfirmModal(false);
-      setPreparedFormData(null);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //     setFormState({
+  //       message: errorMessage,
+  //       status: 'error',
+  //       errorType: 'server',
+  //     });
+  //     setShowFinalResult(true); // 에러도 최종 결과로 표시
+  //     setShowConfirmModal(false);
+  //     setPreparedFormData(null);
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   // 모달 취소 처리
-  const handleModalCancel = () => {
-    setShowConfirmModal(false);
-    setPreparedFormData(null);
-  };
+  // const handleModalCancel = () => {
+  //   setShowConfirmModal(false);
+  //   setPreparedFormData(null);
+  // };
 
   // 렌더링 시점 디버깅
   console.log('UploadClient 렌더링:', {
@@ -1131,7 +1120,7 @@ const Step1BasicInfo = ({
   formData.append('name', clinicName);
   formData.append('email', basicInfo.email);
   formData.append('tel', basicInfo.tel);
-
+  formData.append('introduction', basicInfo.introduction);
   formData.append(
   'sns_content_agreement',
   basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
@@ -1242,6 +1231,7 @@ const Step1BasicInfo = ({
             onInfoChange={setBasicInfo}
             initialInfo={basicInfo}
           />
+ 
           <Divider />
           <div className='w-full'>
             <AddressSection
@@ -1279,7 +1269,11 @@ const Step1BasicInfo = ({
           /> */}
         </div>
         <Divider />
-
+     
+          <ContactsInfoSection
+            onSave={() => {}}
+            onCancel={() => {}}
+          />
       
         </div>
                {/* 하단 고정 버튼 영역 */}

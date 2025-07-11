@@ -28,6 +28,7 @@ export interface HospitalDetailData {
   id_uuid_hospital: string;
   tel: string;
   email: string;
+  introduction: string;
   kakao_talk: string;
   line: string;
   we_chat: string;

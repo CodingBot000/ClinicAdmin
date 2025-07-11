@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Phone, Mail, Clock, Camera, Users, Star, Globe, MessageSquare } from 'lucide-react';
+import { X, MapPin, Phone, Mail, Clock, Camera, Users, Star, Globe, MessageSquare, Edit } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import { 
@@ -29,6 +29,8 @@ interface PreviewClinicInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   id_uuid_hospital: string;
+  onStepChange?: (step: number) => void;
+  currentStep?: number;
 }
 
 // 치료 정보를 위한 인터페이스 (실제 DB 구조에 맞게)
@@ -55,6 +57,8 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
   isOpen,
   onClose,
   id_uuid_hospital,
+  onStepChange,
+  currentStep = 5,
 }) => {
   const [hospitalData, setHospitalData] = useState<CombinedHospitalData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -166,9 +170,9 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         ...hospitalDetails,
       };
 
-console.log('combinedData START ==================================');
-      console.log('combinedData', combinedData);
-      console.log('combinedData END ==================================');
+// console.log('combinedData START ==================================');
+//       console.log('combinedData', combinedData);
+//       console.log('combinedData END ==================================');
 
       setHospitalData(combinedData);
     } catch (err) {
@@ -225,6 +229,14 @@ console.log('combinedData START ==================================');
     return time.substring(0, 5); // HH:MM 형식으로 변환
   };
 
+  const handleMoveStep = (step: number) => {
+    // PageHeader의 handleStepClick과 동일한 로직
+    if (step < currentStep && onStepChange) {
+      onStepChange(step);
+      onClose(); // 모달을 닫고 해당 스텝으로 이동
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -259,9 +271,24 @@ console.log('combinedData START ==================================');
             <div className="space-y-8">
               {/* Step 1: 기본 정보 */}
               <div className="bg-blue-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-blue-800 flex items-center">
-                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 1</span>
-                  기본 정보
+                <h3 className="text-xl font-semibold mb-4 text-blue-800 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 1</span>
+                    기본 정보
+                  </div>
+                  <button
+                    onClick={() => handleMoveStep(1)}
+                    className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      1 < currentStep
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={1 >= currentStep}
+                    title={1 < currentStep ? 'Step 1 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    편집
+                  </button>
                 </h3>
                 <div className="space-y-4">
                   {/* 병원 기본 정보 */}
@@ -288,6 +315,22 @@ console.log('combinedData START ==================================');
                         <strong className="w-16 text-gray-700">지역:</strong>
                         <span>{findRegionByKey(REGIONS, parseInt(hospitalData.location, 10))?.label || '입력되지 않음'}</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 병원 소개 */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 text-gray-800">병원 소개</h4>
+                    <div className="p-4 bg-gray-50 rounded-lg border">
+                      {hospitalData.introduction && hospitalData.introduction.trim() !== '' ? (
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {hospitalData.introduction}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500 italic">
+                          병원 소개가 입력되지 않았습니다.
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -477,9 +520,24 @@ console.log('combinedData START ==================================');
 
               {/* Step 2: 운영 시간 및 부가 정보 */}
               <div className="bg-green-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center">
-                  <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 2</span>
-                  운영 시간 및 부가 정보
+                <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 2</span>
+                    운영 시간 및 부가 정보
+                  </div>
+                  <button
+                    onClick={() => handleMoveStep(2)}
+                    className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      2 < currentStep
+                        ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={2 >= currentStep}
+                    title={2 < currentStep ? 'Step 2 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    편집
+                  </button>
                 </h3>
                 
                 {/* 운영 시간 */}
@@ -578,9 +636,24 @@ console.log('combinedData START ==================================');
 
               {/* Step 3: 이미지 및 의사 정보 */}
               <div className="bg-purple-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-purple-800 flex items-center">
-                  <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 3</span>
-                  이미지 및 의사 정보
+                <h3 className="text-xl font-semibold mb-4 text-purple-800 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 3</span>
+                    이미지 및 의사 정보
+                  </div>
+                  <button
+                    onClick={() => handleMoveStep(3)}
+                    className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      3 < currentStep
+                        ? 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={3 >= currentStep}
+                    title={3 < currentStep ? 'Step 3 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    편집
+                  </button>
                 </h3>
                 
                 {/* 썸네일 이미지 */}
@@ -652,9 +725,24 @@ console.log('combinedData START ==================================');
               {/* Step 4: 치료 정보 */}
               {hospitalData.treatments && hospitalData.treatments.length > 0 && (
                 <div className="bg-green-50 p-6 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center">
-                    <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 4</span>
-                    치료 정보
+                  <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 4</span>
+                      치료 정보
+                    </div>
+                    <button
+                      onClick={() => handleMoveStep(4)}
+                      className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        4 < currentStep
+                          ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={4 >= currentStep}
+                      title={4 < currentStep ? 'Step 4 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      편집
+                    </button>
                   </h3>
                   
                   {/* TreatmentSelectedOptionInfo 컴포넌트 사용 */}
@@ -702,9 +790,24 @@ console.log('combinedData START ==================================');
 
               {/* Step 5: 사용가능 언어 및 피드백 정보  */}
               <div className="bg-pink-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-pink-800 flex items-center">
-                  <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 5</span>
-                  사용 가능 언어 및 피드백 정보
+                <h3 className="text-xl font-semibold mb-4 text-pink-800 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 5</span>
+                    사용 가능 언어 및 피드백 정보
+                  </div>
+                  <button
+                    onClick={() => handleMoveStep(5)}
+                    className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      5 < currentStep
+                        ? 'bg-pink-600 text-white hover:bg-pink-700 cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={5 >= currentStep}
+                    title={5 < currentStep ? 'Step 5 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    편집
+                  </button>
                 </h3>
                 
                 {/* 사용 가능한 언어 */}

@@ -33,8 +33,7 @@ import { HospitalAddress } from '@/types/address';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { STORAGE_IMAGES } from '@/constants/tables';
-import BasicInfoSection from '@/components/BasicInfoSection';
+
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
@@ -48,7 +47,8 @@ interface Step5LanguagesFeedbackProps {
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
-  onSubmit: () => void;
+  onComplete: () => void;
+  onStepChange?: (step: number) => void;
 }
 
 
@@ -57,7 +57,8 @@ const Step5LanguagesFeedback = ({
   currentUserUid,
   isEditMode = false,
   onPrev,
-  onSubmit,
+  onComplete,
+  onStepChange,
 }: Step5LanguagesFeedbackProps) => {
     console.log(' Step5LanguagesFeedback id_uuid_hospital', id_uuid_hospital);
 
@@ -226,12 +227,12 @@ const Step5LanguagesFeedback = ({
 
   // 성공 시 관리자 페이지로 이동하는 함수
   const handleConfirm = () => {
-    if (formState?.status === 'success') {
-      router.replace('/admin');
-      router.refresh();
-    } else {
+    // if (formState?.status === 'success') {
+    //   router.replace('/admin');
+    //   router.refresh();
+    // } else {
       handleModal();
-    }
+    // }
   };
 
   const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
@@ -674,7 +675,7 @@ const Step5LanguagesFeedback = ({
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handlePreview}>Preview</Button>
           <Button onClick={handleSave}>Save</Button>
-          <Button onClick={onSubmit}>Submit</Button>
+          <Button onClick={onComplete}>Complete</Button>
         </div>
       </div>
 
@@ -685,14 +686,16 @@ const Step5LanguagesFeedback = ({
       isOpen={showPreviewModal}
       onClose={() => setShowPreviewModal(false)}
       id_uuid_hospital={id_uuid_hospital}
+      currentStep={5}
+      onStepChange={onStepChange}
     />
 
     {/* 기존 Alert 모달 */}
     <AlertModal
       open={open}
-      onClose={handleModal}
+      onCancel={handleModal}
       title={formState?.status === 'success' ? '성공' : '오류'}
-      message={formState?.message || ''}
+      children={formState?.message || ''}
       onConfirm={handleConfirm}
       confirmText={formState?.status === 'success' ? '확인' : '닫기'}
     />
