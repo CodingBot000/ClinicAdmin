@@ -1,6 +1,6 @@
 import { DoctorInfo } from "@/components/DoctorInfoForm";
 import { HospitalAddress } from "@/types/address";
-import { BasicInfo } from "@/app/admin/upload/ClinicInfoUploadClient";
+import { BasicInfo } from "@/types/basicinfo";
 
 export interface ValidationResult {
   isValid: boolean;
