@@ -82,4 +82,5 @@ export interface ExistingHospitalData {
   doctors: any[];
   treatments: any[];
   feedback: string;
+  contacts?: any[];
 }

@@ -203,6 +203,7 @@ const handleNext = async () => {
     console.log('handleSave 시작');
     try {
         const formData = new FormData();
+        formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
         // 시설 정보
         formData.append('extra_options', JSON.stringify(optionState));
 
@@ -234,6 +235,43 @@ const handleNext = async () => {
       );
 
       console.log('uploadActionsStep2 응답:', result);
+
+      if (result?.status === 'error') {
+        // 에러 발생 시 상세 정보와 함께 알림 표시
+        let errorMessage = result.message || '알 수 없는 오류가 발생했습니다.';
+        
+        // 에러 상세 정보가 있으면 추가
+        if (result.errorDetails) {
+          console.error('에러 상세 정보:', result.errorDetails);
+          errorMessage += `\n\n상세 정보:\n- 작업: ${result.errorDetails.operation}\n- 코드: ${result.errorDetails.code}`;
+        }
+        
+        setFormState({
+          message: errorMessage,
+          status: 'error',
+          errorType: 'server',
+        });
+        setShowFinalResult(true);
+        
+        return {
+          status: 'error',
+          message: errorMessage
+        };
+      } else if (result?.status === 'success') {
+        // 성공 시 처리
+        console.log('데이터 저장 성공');
+        setFormState({
+          message: result.message || '성공적으로 저장되었습니다.',
+          status: 'success',
+          errorType: undefined,
+        });
+        
+        return {
+          status: 'success',
+          message: result.message
+        };
+      }
+      
       setFormState(result);
       if (result?.status === 'error') {
         setFormState({

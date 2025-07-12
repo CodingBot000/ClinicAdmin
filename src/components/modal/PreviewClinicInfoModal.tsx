@@ -11,7 +11,8 @@ import {
   TABLE_HOSPITAL_TREATMENT, 
   TABLE_HOSPITAL_BUSINESS_HOUR, 
   TABLE_TREATMENT,
-  TABLE_FEEDBACKS
+  TABLE_FEEDBACKS,
+  TABLE_CONTACTS
 } from '@/constants/tables';
 import { 
   HospitalData, 
@@ -51,6 +52,7 @@ interface CombinedHospitalData extends HospitalData, Partial<HospitalDetailData>
   treatments?: TreatmentData[];
   treatmentDetails?: any[];
   feedback?: string;
+  contacts?: any[];
 }
 
 const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
@@ -157,6 +159,17 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
       if (feedbackError) {
         console.error('피드백 정보 로딩 실패:', feedbackError);
       }
+
+      // Step 7: 연락처 정보 조회
+      const { data: contactsData, error: contactsError } = await supabase
+        .from(TABLE_CONTACTS)
+        .select('*')
+        .eq('id_uuid_hospital', id_uuid_hospital)
+        .order('type, sequence');
+
+      if (contactsError) {
+        console.error('연락처 정보 로딩 실패:', contactsError);
+      }
       
       // 데이터 조합
       const combinedData: CombinedHospitalData = {
@@ -167,6 +180,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         treatmentDetails: treatmentDetails || [],
         available_languages: hospitalDetails?.available_languages || [],
         feedback: feedbackData?.feedback_content || '',
+        contacts: contactsData || [],
         ...hospitalDetails,
       };
 
@@ -231,9 +245,19 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
 
   const handleMoveStep = (step: number) => {
     // PageHeader의 handleStepClick과 동일한 로직
-    if (step < currentStep && onStepChange) {
-      onStepChange(step);
-      onClose(); // 모달을 닫고 해당 스텝으로 이동
+    console.log(`handleMoveStep  step:${step}, currentStep:${currentStep}`);
+    if (step < currentStep) {
+      console.log('handleMoveStep step:', step);
+      if (onStepChange) {
+        onStepChange(step);
+        onClose(); // 모달을 닫고 해당 스텝으로 이동
+      } else {
+        console.log('onStepChange가 전달되지 않았습니다. Step으로 이동할 수 없습니다.');
+        // onStepChange가 없을 때는 모달만 닫기
+        onClose();
+      }
+    } else {
+      console.log('현재 단계이거나 진행되지 않은 단계입니다.');
     }
   };
 
@@ -505,7 +529,9 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                         <span className="text-yellow-800 font-medium">✗ SNS 콘텐츠 사용 동의하지 않음</span>
                       </div>
                       <div className="text-sm text-yellow-700 mt-1">
-                        (동의해 주신다면 귀하의 병원을 홍보하는데 더욱 효과적입니다. 동의는 추후 철회 가능합니다)
+                    
+
+                    (동의해 주신다면 귀하의 병원을 홍보하는데 더욱 효과적입니다. 동의는 추후 철회 가능합니다)
                       </div>
                     </div>
                   )}
@@ -516,6 +542,78 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                     </div>
                   )}
                 </div>
+                
+                {/* 연락처 정보 */}
+                {hospitalData.contacts && hospitalData.contacts.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium mb-2 flex items-center">
+                      <Phone className="w-4 h-4 mr-2" />
+                      연락처 정보
+                    </h4>
+                    <div className="space-y-3">
+                      {/* 진료문의 전화번호 */}
+                      {hospitalData.contacts.filter(contact => contact.type === 'consultation_phone').length > 0 && (
+                        <div className="flex items-center p-2 bg-white rounded border">
+                          <strong className="w-28 text-gray-700">진료문의:</strong>
+                          <span>{hospitalData.contacts.find(contact => contact.type === 'consultation_phone')?.value}</span>
+                         
+                        </div>
+                      )}
+                      
+                      {/* 상담 관리자 번호 */}
+                      {hospitalData.contacts.filter(contact => contact.type === 'consult_manager_phone').length > 0 && (
+                        <div className="p-2 bg-white rounded border">
+                          <strong className="text-gray-700 mb-2 block">상담 관리자 번호:</strong>
+                          <div className="space-y-1">
+                            {hospitalData.contacts
+                              .filter(contact => contact.type === 'consult_manager_phone')
+                              .sort((a, b) => a.sequence - b.sequence)
+                              .map((contact, index) => (
+                                <div key={index} className="flex items-center ml-4">
+                                  <span className="text-sm text-gray-600 mr-2">{index + 1}.</span>
+                                  <span className="text-sm">{contact.value}</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* SMS 발신 번호 */}
+                      {hospitalData.contacts.find(contact => contact.type === 'sms_phone') && (
+                        <div className="flex items-center p-2 bg-white rounded border">
+                          <strong className="w-28 text-gray-700">SMS 발신:</strong>
+                          <span>{hospitalData.contacts.find(contact => contact.type === 'sms_phone')?.value}</span>
+                        </div>
+                      )}
+                      
+                      {/* 이벤트 관리자 번호 */}
+                      {hospitalData.contacts.find(contact => contact.type === 'event_manager_phone') && (
+                        <div className="flex items-center p-2 bg-white rounded border">
+                          <strong className="w-28 text-gray-700">이벤트 관리자:</strong>
+                          <span>{hospitalData.contacts.find(contact => contact.type === 'event_manager_phone')?.value}</span>
+                        </div>
+                      )}
+                      
+                      {/* 마케팅 이메일 */}
+                      {hospitalData.contacts.filter(contact => contact.type === 'marketing_email').length > 0 && (
+                        <div className="p-2 bg-white rounded border">
+                          <strong className="text-gray-700 mb-2 block">마케팅 이메일:</strong>
+                          <div className="space-y-1">
+                            {hospitalData.contacts
+                              .filter(contact => contact.type === 'marketing_email')
+                              .sort((a, b) => a.sequence - b.sequence)
+                              .map((contact, index) => (
+                                <div key={index} className="flex items-center ml-4">
+                                  <span className="text-sm text-gray-600 mr-2">{index + 1}.</span>
+                                  <span className="text-sm">{contact.value}</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Step 2: 운영 시간 및 부가 정보 */}

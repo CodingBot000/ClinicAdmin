@@ -127,6 +127,7 @@ export default function ClinicInfoInsertClient(
             router.refresh();
           }}
           onPrev={goBack}
+          onStepChange={goToStep}
           currentUserUid={currentUserUid}
         />
       )}

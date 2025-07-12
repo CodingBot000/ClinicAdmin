@@ -17,3 +17,11 @@ export interface BasicInfo {
     sns_content_agreement: 1 | 0 | null;
   }
   
+
+  export interface ContactsInfo {
+    consultationPhone: string;
+    consultationManagerPhones: string[];
+    smsPhone: string;
+    eventManagerPhone: string;
+    marketingEmails: string[];
+  }

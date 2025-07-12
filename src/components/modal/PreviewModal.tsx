@@ -3,7 +3,7 @@
 import React from "react";
 import { X, Check, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BasicInfo } from "@/app/admin/upload/ClinicInfoUploadClient";
+import { BasicInfo } from "@/types/basicinfo";
 
 
 export interface FormDataSummary {

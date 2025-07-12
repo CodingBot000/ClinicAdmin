@@ -4,7 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
-import { uploadActions } from './actions';
+
 
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
@@ -36,13 +36,13 @@ import { STORAGE_IMAGES } from '@/constants/tables';
 import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
+import ContactsInfoSection from './ContactsInfoSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
 import { uploadActionsStep1 } from './actions/uploadStep1';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
-import { BasicInfo } from '@/types/basicinfo';
-import ContactsInfoSection from './ContactsInfoSection';
+import { BasicInfo, ContactsInfo } from '@/types/basicinfo';
 
 interface Surgery {
   created_at: string;
@@ -171,7 +171,7 @@ const Step1BasicInfo = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [basicInfo, setBasicInfo] = useState<BasicInfo>({
-    name: hospitalName,
+    name: '',
     email: '',
     tel: '',
     introduction: '',
@@ -186,6 +186,15 @@ const Step1BasicInfo = ({
     youtube: '',
     other_channel: '',
     sns_content_agreement: null,
+  });
+
+  // 연락처 정보 상태 추가
+  const [contactsInfo, setContactsInfo] = useState<ContactsInfo>({
+    consultationPhone: '',
+    consultationManagerPhones: ['', '', ''],
+    smsPhone: '',
+    eventManagerPhone: '',
+    marketingEmails: ['', '', '']
   });
 
   const [feedback, setFeedback] = useState<string>('');
@@ -243,7 +252,7 @@ const Step1BasicInfo = ({
       console.log(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 1);
+        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -412,6 +421,47 @@ const Step1BasicInfo = ({
         'initialTreatmentData 상태 업데이트 완료',
       );
 
+      // 7. 연락처 정보 설정
+      if (existingData.contacts && existingData.contacts.length > 0) {
+        console.log('연락처 정보 설정 시작:', existingData.contacts);
+        
+        // 연락처 데이터를 ContactsInfo 형태로 변환
+        const contactsData: ContactsInfo = {
+          consultationPhone: '',
+          consultationManagerPhones: ['', '', ''],
+          smsPhone: '',
+          eventManagerPhone: '',
+          marketingEmails: ['', '', '']
+        };
+
+        existingData.contacts.forEach((contact: any) => {
+          switch (contact.type) {
+            case 'consultation_phone':
+              contactsData.consultationPhone = contact.value;
+              break;
+            case 'consult_manager_phone':
+              if (contact.sequence >= 0 && contact.sequence < 3) {
+                contactsData.consultationManagerPhones[contact.sequence] = contact.value;
+              }
+              break;
+            case 'sms_phone':
+              contactsData.smsPhone = contact.value;
+              break;
+            case 'event_manager_phone':
+              contactsData.eventManagerPhone = contact.value;
+              break;
+            case 'marketing_email':
+              if (contact.sequence >= 0 && contact.sequence < 3) {
+                contactsData.marketingEmails[contact.sequence] = contact.value;
+              }
+              break;
+          }
+        });
+
+        setContactsInfo(contactsData);
+        console.log('연락처 정보 설정 완료:', contactsData);
+      }
+
       console.log('기존 데이터 적용 완료!');
       console.log('적용된 데이터:', {
         병원명: formData.hospital.name,
@@ -470,384 +520,384 @@ const Step1BasicInfo = ({
     setOptionState(data);
   };
 
-  const emptyFormDataSummary: FormDataSummary = {
-    basicInfo: {
-      name: '',
-      email: '',
-      tel: '',
-      kakao_talk: '',
-      line: '',
-      we_chat: '',
-      whats_app: '',
-      telegram: '',
-      facebook_messenger: '',
-      instagram: '',
-      tiktok: '',
-      youtube: '',
-      other_channel: '',
-      sns_content_agreement: null,
-    },
-    address: {
-      road: '',
-      jibun: '',
-      detail: '',
-      detail_en: '',
-      directions_to_clinic: '',
-      directions_to_clinic_en: '',
-      coordinates: '',
-    },
-    location: '',
-    treatments: {
-      count: 0,
-      items: [],
-    },
-    treatmentOptions: {
-      count: 0,
-      items: [],
-    },
-    treatmentEtc: '',
-    openingHours: {
-      count: 0,
-      items: [],
-    },
-    extraOptions: {
-      facilities: [],
-      specialist_count: 0,
-    },
-    images: {
-      clinicImages: 0,
-      doctorImages: 0,
-      clinicImageUrls: [],
-    },
-    doctors: undefined,
-    availableLanguages: [],
-    feedback: '',
-  };
+  // const emptyFormDataSummary: FormDataSummary = {
+  //   basicInfo: {
+  //     name: '',
+  //     email: '',
+  //     tel: '',
+  //     kakao_talk: '',
+  //     line: '',
+  //     we_chat: '',
+  //     whats_app: '',
+  //     telegram: '',
+  //     facebook_messenger: '',
+  //     instagram: '',
+  //     tiktok: '',
+  //     youtube: '',
+  //     other_channel: '',
+  //     sns_content_agreement: null,
+  //   },
+  //   address: {
+  //     road: '',
+  //     jibun: '',
+  //     detail: '',
+  //     detail_en: '',
+  //     directions_to_clinic: '',
+  //     directions_to_clinic_en: '',
+  //     coordinates: '',
+  //   },
+  //   location: '',
+  //   treatments: {
+  //     count: 0,
+  //     items: [],
+  //   },
+  //   treatmentOptions: {
+  //     count: 0,
+  //     items: [],
+  //   },
+  //   treatmentEtc: '',
+  //   openingHours: {
+  //     count: 0,
+  //     items: [],
+  //   },
+  //   extraOptions: {
+  //     facilities: [],
+  //     specialist_count: 0,
+  //   },
+  //   images: {
+  //     clinicImages: 0,
+  //     doctorImages: 0,
+  //     clinicImageUrls: [],
+  //   },
+  //   doctors: undefined,
+  //   availableLanguages: [],
+  //   feedback: '',
+  // };
   
-  // FormData에서 데이터를 요약 정보로 변환하는 함수
-  const prepareFormDataSummary = (formData: FormData | null): FormDataSummary => {
-    if (!formData) {
-      return emptyFormDataSummary;
-    }
-    // 시술 이름 매핑 생성 - 중첩된 구조를 재귀적으로 탐색
-    const treatmentMap = new Map<number, string>();
-    const departmentMap = new Map<number, string>(); // department 매핑 추가
+  // // FormData에서 데이터를 요약 정보로 변환하는 함수
+  // const prepareFormDataSummary = (formData: FormData | null): FormDataSummary => {
+  //   if (!formData) {
+  //     return emptyFormDataSummary;
+  //   }
+  //   // 시술 이름 매핑 생성 - 중첩된 구조를 재귀적으로 탐색
+  //   const treatmentMap = new Map<number, string>();
+  //   const departmentMap = new Map<number, string>(); // department 매핑 추가
 
-    const flattenCategories = (nodes: CategoryNode[]) => {
-      nodes.forEach((node) => {
-        // key가 -1이 아닌 것만 매핑 (실제 시술)
-        if (node.key !== -1) {
-          treatmentMap.set(node.key, node.label);
-          // department 정보도 매핑
-          if (node.department) {
-            departmentMap.set(node.key, node.department);
-          }
-        }
-        if (node.children) {
-          flattenCategories(node.children);
-        }
-      });
-    };
+  //   const flattenCategories = (nodes: CategoryNode[]) => {
+  //     nodes.forEach((node) => {
+  //       // key가 -1이 아닌 것만 매핑 (실제 시술)
+  //       if (node.key !== -1) {
+  //         treatmentMap.set(node.key, node.label);
+  //         // department 정보도 매핑
+  //         if (node.department) {
+  //           departmentMap.set(node.key, node.department);
+  //         }
+  //       }
+  //       if (node.children) {
+  //         flattenCategories(node.children);
+  //       }
+  //     });
+  //   };
 
-    if (categories) {
-      flattenCategories(categories);
-    }
+  //   if (categories) {
+  //     flattenCategories(categories);
+  //   }
 
-    const getStatusText = (openingHour: OpeningHour) => {
-      if (openingHour.open) return '영업';
-      if (openingHour.closed) return '휴무';
-      if (openingHour.ask) return '진료시간 문의 필요';
-      return '미설정';
-    };
+  //   const getStatusText = (openingHour: OpeningHour) => {
+  //     if (openingHour.open) return '영업';
+  //     if (openingHour.closed) return '휴무';
+  //     if (openingHour.ask) return '진료시간 문의 필요';
+  //     return '미설정';
+  //   };
 
-    const formatTime = (hour: number, minute: number) => {
-      if (hour === 0 && minute === 0) return '00:00';
-      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    };
+  //   const formatTime = (hour: number, minute: number) => {
+  //     if (hour === 0 && minute === 0) return '00:00';
+  //     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  //   };
 
-    // 영업시간 요약
-    const openingHoursSummary = openingHours.map(
-      (hour) => ({
-        day: hour.day,
-        status: getStatusText(hour),
-        time: hour.open
-          ? `${formatTime(hour.from.hour, hour.from.minute)} - ${formatTime(hour.to.hour, hour.to.minute)}`
-          : '',
-      }),
-    );
+  //   // 영업시간 요약
+  //   const openingHoursSummary = openingHours.map(
+  //     (hour) => ({
+  //       day: hour.day,
+  //       status: getStatusText(hour),
+  //       time: hour.open
+  //         ? `${formatTime(hour.from.hour, hour.from.minute)} - ${formatTime(hour.to.hour, hour.to.minute)}`
+  //         : '',
+  //     }),
+  //   );
 
-    // 선택된 시술 이름들 가져오기
-    const selectedTreatmentNames = selectedTreatments.map(
-      (id) => {
-        const name = treatmentMap.get(id);
-        const department = departmentMap.get(id);
-        return {
-          name: name || `알 수 없는 시술 (ID: ${id})`,
-          department: department || null,
-        };
-      },
-    );
+  //   // 선택된 시술 이름들 가져오기
+  //   const selectedTreatmentNames = selectedTreatments.map(
+  //     (id) => {
+  //       const name = treatmentMap.get(id);
+  //       const department = departmentMap.get(id);
+  //       return {
+  //         name: name || `알 수 없는 시술 (ID: ${id})`,
+  //         department: department || null,
+  //       };
+  //     },
+  //   );
 
-    // 좌표 정보 문자열로 변환
-    const coordinatesText = coordinates
-      ? `위도: ${coordinates.latitude}, 경도: ${coordinates.longitude}`
-      : '설정되지 않음';
+  //   // 좌표 정보 문자열로 변환
+  //   const coordinatesText = coordinates
+  //     ? `위도: ${coordinates.latitude}, 경도: ${coordinates.longitude}`
+  //     : '설정되지 않음';
 
-    // 치료옵션 요약 - 실제 데이터 구조에 맞게 수정
-    const treatmentOptionsSummary = treatmentOptions.map(
-      (option) => {
-        // 시술 이름 찾기
-        const treatmentName =
-          treatmentMap.get(option.treatmentKey) ||
-          `시술 ${option.treatmentKey}`;
+  //   // 치료옵션 요약 - 실제 데이터 구조에 맞게 수정
+  //   const treatmentOptionsSummary = treatmentOptions.map(
+  //     (option) => {
+  //       // 시술 이름 찾기
+  //       const treatmentName =
+  //         treatmentMap.get(option.treatmentKey) ||
+  //         `시술 ${option.treatmentKey}`;
 
-        // department 정보 찾기
-        const department = departmentMap.get(
-          option.treatmentKey,
-        );
+  //       // department 정보 찾기
+  //       const department = departmentMap.get(
+  //         option.treatmentKey,
+  //       );
 
-        // 옵션명 생성
-        const optionName =
-          option.value1 && Number(option.value1) >= 1
-            ? `[${treatmentName}] ${option.value1}`
-            : `[${treatmentName}] 옵션없음`;
+  //       // 옵션명 생성
+  //       const optionName =
+  //         option.value1 && Number(option.value1) >= 1
+  //           ? `[${treatmentName}] ${option.value1}`
+  //           : `[${treatmentName}] 옵션없음`;
 
-        return {
-          treatmentKey: option.treatmentKey,
-          optionName: optionName,
-          price: Number(option.value2) || 0,
-          department: department || null,
-        };
-      },
-    );
+  //       return {
+  //         treatmentKey: option.treatmentKey,
+  //         optionName: optionName,
+  //         price: Number(option.value2) || 0,
+  //         department: department || null,
+  //       };
+  //     },
+  //   );
 
-    // 부가옵션 요약 - 배열 형태로 변환
-    const facilities = Object.entries(optionState)
-      .filter(
-        ([key, value]) =>
-          key !== 'specialist_count' && value === true,
-      )
-      .map(([key]) => {
-        switch (key) {
-          case HAS_PRIVATE_RECOVERY_ROOM:
-            return '전담회복실';
-          case HAS_PARKING:
-            return '주차가능';
-          case HAS_CCTV:
-            return 'CCTV';
-          case HAS_NIGHT_COUNSELING:
-            return '야간상담';
-          case HAS_FEMALE_DOCTOR:
-            return '여의사진료';
-          case HAS_ANESTHESIOLOGIST:
-            return '마취전문의';
-          default:
-            return key;
-        }
-      });
+  //   // 부가옵션 요약 - 배열 형태로 변환
+  //   const facilities = Object.entries(optionState)
+  //     .filter(
+  //       ([key, value]) =>
+  //         key !== 'specialist_count' && value === true,
+  //     )
+  //     .map(([key]) => {
+  //       switch (key) {
+  //         case HAS_PRIVATE_RECOVERY_ROOM:
+  //           return '전담회복실';
+  //         case HAS_PARKING:
+  //           return '주차가능';
+  //         case HAS_CCTV:
+  //           return 'CCTV';
+  //         case HAS_NIGHT_COUNSELING:
+  //           return '야간상담';
+  //         case HAS_FEMALE_DOCTOR:
+  //           return '여의사진료';
+  //         case HAS_ANESTHESIOLOGIST:
+  //           return '마취전문의';
+  //         default:
+  //           return key;
+  //       }
+  //     });
 
-    // 이미지 URL 개수 계산
-    let clinicImageCount = 0;
-    let clinicImageUrls: string[] = [];
+  //   // 이미지 URL 개수 계산
+  //   let clinicImageCount = 0;
+  //   let clinicImageUrls: string[] = [];
 
-    try {
-      const clinicUrls = formData.get(
-        'clinic_image_urls',
-      ) as string;
+  //   try {
+  //     const clinicUrls = formData.get(
+  //       'clinic_image_urls',
+  //     ) as string;
 
-      if (clinicUrls) {
-        const parsedClinicUrls = JSON.parse(clinicUrls);
-        if (Array.isArray(parsedClinicUrls)) {
-          clinicImageCount = parsedClinicUrls.length;
-          clinicImageUrls = parsedClinicUrls;
-        }
-      }
-    } catch (e) {
-      console.error('이미지 URL 파싱 실패:', e);
-    }
+  //     if (clinicUrls) {
+  //       const parsedClinicUrls = JSON.parse(clinicUrls);
+  //       if (Array.isArray(parsedClinicUrls)) {
+  //         clinicImageCount = parsedClinicUrls.length;
+  //         clinicImageUrls = parsedClinicUrls;
+  //       }
+  //     }
+  //   } catch (e) {
+  //     console.error('이미지 URL 파싱 실패:', e);
+  //   }
 
-    return {
-      basicInfo: {
-        name: basicInfo.name || '',
-        email: basicInfo.email || '',
-        tel: basicInfo.tel || '',
-        introduction: basicInfo.introduction || '',
-        kakao_talk: basicInfo.kakao_talk || '',
-        line: basicInfo.line || '',
-        we_chat: basicInfo.we_chat || '',
-        whats_app: basicInfo.whats_app || '',
-        telegram: basicInfo.telegram || '',
-        facebook_messenger: basicInfo.facebook_messenger || '',
-        instagram: basicInfo.instagram || '',
-        tiktok: basicInfo.tiktok || '',
-        youtube: basicInfo.youtube || '',
-        other_channel: basicInfo.other_channel || '',
-        sns_content_agreement: basicInfo.sns_content_agreement,
-      },
-      address: {
-        road: addressForSendForm?.address_full_road || '',
-        jibun: addressForSendForm?.address_full_jibun || '',
-        detail: addressForSendForm?.address_detail || '',
-        detail_en: addressForSendForm?.address_detail_en || '',
-        directions_to_clinic: addressForSendForm?.directions_to_clinic || '',
-        directions_to_clinic_en: addressForSendForm?.directions_to_clinic_en || '',
-        coordinates: coordinatesText,
-      },
-      location: selectedLocation?.label || '선택되지 않음',
-      treatments: {
-        count: selectedTreatments.length,
-        items: selectedTreatmentNames,
-      },
-      treatmentOptions: {
-        count: treatmentOptionsSummary.length,
-        items: treatmentOptionsSummary,
-      },
-      treatmentEtc: treatmentEtc.trim(),
-      openingHours: {
-        count: openingHours.length,
-        items: openingHoursSummary,
-      },
-      extraOptions: {
-        facilities,
-        specialist_count: optionState.specialist_count,
-      },
-      images: {
-        clinicImages: clinicImageCount,
-        doctorImages: doctors.length,
-        clinicImageUrls: clinicImageUrls,
-      },
-      doctors: doctors.length > 0
-        ? {
-            count: doctors.length,
-            items: doctors.map((doctor) => ({
-              name: doctor.name,
-              bio: doctor.bio || '',
-              isChief: doctor.isChief ? '대표원장' : '의사',
-              hasImage: doctor.useDefaultImage ? '기본 이미지' : '업로드 이미지',
-              imageUrl: doctor.useDefaultImage
-                ? doctor.defaultImageType === 'woman'
-                  ? '/default/doctor_default_woman.png'
-                  : '/default/doctor_default_man.png'
-                : doctor.imagePreview || undefined, // 업로드된 이미지 미리보기 URL
-            })),
-          }
-        : undefined,
-      availableLanguages: selectedLanguages,
-      feedback: feedback.trim(),
-    };
-  };
+  //   return {
+  //     basicInfo: {
+  //       name: basicInfo.name || '',
+  //       email: basicInfo.email || '',
+  //       tel: basicInfo.tel || '',
+  //       introduction: basicInfo.introduction || '',
+  //       kakao_talk: basicInfo.kakao_talk || '',
+  //       line: basicInfo.line || '',
+  //       we_chat: basicInfo.we_chat || '',
+  //       whats_app: basicInfo.whats_app || '',
+  //       telegram: basicInfo.telegram || '',
+  //       facebook_messenger: basicInfo.facebook_messenger || '',
+  //       instagram: basicInfo.instagram || '',
+  //       tiktok: basicInfo.tiktok || '',
+  //       youtube: basicInfo.youtube || '',
+  //       other_channel: basicInfo.other_channel || '',
+  //       sns_content_agreement: basicInfo.sns_content_agreement,
+  //     },
+  //     address: {
+  //       road: addressForSendForm?.address_full_road || '',
+  //       jibun: addressForSendForm?.address_full_jibun || '',
+  //       detail: addressForSendForm?.address_detail || '',
+  //       detail_en: addressForSendForm?.address_detail_en || '',
+  //       directions_to_clinic: addressForSendForm?.directions_to_clinic || '',
+  //       directions_to_clinic_en: addressForSendForm?.directions_to_clinic_en || '',
+  //       coordinates: coordinatesText,
+  //     },
+  //     location: selectedLocation?.label || '선택되지 않음',
+  //     treatments: {
+  //       count: selectedTreatments.length,
+  //       items: selectedTreatmentNames,
+  //     },
+  //     treatmentOptions: {
+  //       count: treatmentOptionsSummary.length,
+  //       items: treatmentOptionsSummary,
+  //     },
+  //     treatmentEtc: treatmentEtc.trim(),
+  //     openingHours: {
+  //       count: openingHours.length,
+  //       items: openingHoursSummary,
+  //     },
+  //     extraOptions: {
+  //       facilities,
+  //       specialist_count: optionState.specialist_count,
+  //     },
+  //     images: {
+  //       clinicImages: clinicImageCount,
+  //       doctorImages: doctors.length,
+  //       clinicImageUrls: clinicImageUrls,
+  //     },
+  //     doctors: doctors.length > 0
+  //       ? {
+  //           count: doctors.length,
+  //           items: doctors.map((doctor) => ({
+  //             name: doctor.name,
+  //             bio: doctor.bio || '',
+  //             isChief: doctor.isChief ? '대표원장' : '의사',
+  //             hasImage: doctor.useDefaultImage ? '기본 이미지' : '업로드 이미지',
+  //             imageUrl: doctor.useDefaultImage
+  //               ? doctor.defaultImageType === 'woman'
+  //                 ? '/default/doctor_default_woman.png'
+  //                 : '/default/doctor_default_man.png'
+  //               : doctor.imagePreview || undefined, // 업로드된 이미지 미리보기 URL
+  //           })),
+  //         }
+  //       : undefined,
+  //     availableLanguages: selectedLanguages,
+  //     feedback: feedback.trim(),
+  //   };
+  // };
 
-  const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
+  // const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
 
-  const validateFormDataAndUpdateUI = (returnMessage = false) => {
-    const clinicNameInput = document.querySelector(
-      'input[name="name"]',
-    ) as HTMLInputElement;
-    const clinicName = clinicNameInput?.value || '';
+  // const validateFormDataAndUpdateUI = (returnMessage = false) => {
+  //   const clinicNameInput = document.querySelector(
+  //     'input[name="name"]',
+  //   ) as HTMLInputElement;
+  //   const clinicName = clinicNameInput?.value || '';
 
-    const validationResult = validateFormData({
-      basicInfo,
-      clinicName,
-      addressForSendForm,
-      selectedLocation,
-      selectedTreatments,
-      clinicImages,
-      existingImageUrls: existingData?.hospital?.imageurls,
-      doctors,
-    });
+  //   const validationResult = validateFormData({
+  //     basicInfo,
+  //     clinicName,
+  //     addressForSendForm,
+  //     selectedLocation,
+  //     selectedTreatments,
+  //     clinicImages,
+  //     existingImageUrls: existingData?.hospital?.imageurls,
+  //     doctors,
+  //   });
 
-    if (!validationResult.isValid && validationResult.messages && validationResult.messages.length > 0) {
-      if (!returnMessage) {
-        setFormState({
-          message: validationResult.messages.join('\n'),
-          status: 'error',
-          errorType: 'validation',
-        });
-        setShowFinalResult(true);
-      }
-      return { isValid: false, messages: validationResult.messages };
-    }
-    return { isValid: true, messages: [] };
-  };
+  //   if (!validationResult.isValid && validationResult.messages && validationResult.messages.length > 0) {
+  //     if (!returnMessage) {
+  //       setFormState({
+  //         message: validationResult.messages.join('\n'),
+  //         status: 'error',
+  //         errorType: 'validation',
+  //       });
+  //       setShowFinalResult(true);
+  //     }
+  //     return { isValid: false, messages: validationResult.messages };
+  //   }
+  //   return { isValid: true, messages: [] };
+  // };
 
 
 
-  const handlePreview = async () => {
-    // const validationResult = validateFormDataAndUpdateUI(true);
+  // const handlePreview = async () => {
+  //   // const validationResult = validateFormDataAndUpdateUI(true);
 
-    // if (!validationResult.isValid) {
+  //   // if (!validationResult.isValid) {
  
-    //   setPreviewValidationMessages(validationResult.messages || []);
-    //   setIsSubmitting(false);
-    //   setShowConfirmModal(true);
-    //   return;
-    // }
+  //   //   setPreviewValidationMessages(validationResult.messages || []);
+  //   //   setIsSubmitting(false);
+  //   //   setShowConfirmModal(true);
+  //   //   return;
+  //   // }
   
-    // setPreviewValidationMessages([]);
+  //   // setPreviewValidationMessages([]);
 
-    try {
-      console.log('handlePreview 3');
-      const clinicNameInput = document.querySelector(
-        'input[name="name"]',
-      ) as HTMLInputElement;
-      const clinicName = clinicNameInput?.value || '';
-      const existingUrls = existingData?.hospital?.imageurls || [];
-      const newImageUrls = clinicImages.map(img => URL.createObjectURL(img));
-      const allClinicImageUrls = [...existingUrls, ...newImageUrls];
-      const formData = prepareFormData({
-        id_uuid: id_uuid_hospital,
-        clinicName,
-        email: basicInfo.email,
-        tel: basicInfo.tel,
-        introduction: basicInfo.introduction || '',
-        addressForSendForm,
-        selectedLocation: selectedLocation?.name || '',
-        selectedTreatments,
-        treatmentOptions,
-        priceExpose,
-        treatmentEtc,
-        openingHours,
-        optionState,
-        clinicImageUrls: allClinicImageUrls,
-        doctorImageUrls: [],
-        doctors,
-        feedback,
-        selectedLanguages,
-        snsData: {
-          kakao_talk: basicInfo.kakao_talk,
-          line: basicInfo.line,
-          we_chat: basicInfo.we_chat,
-          whats_app: basicInfo.whats_app,
-          telegram: basicInfo.telegram,
-          facebook_messenger: basicInfo.facebook_messenger,
-          instagram: basicInfo.instagram,
-          tiktok: basicInfo.tiktok,
-          youtube: basicInfo.youtube,
-          other_channel: basicInfo.other_channel,
-        }
-      });
-      setPreparedFormData(formData);
-      // setShowConfirmModal(true);
+  //   try {
+  //     console.log('handlePreview 3');
+  //     const clinicNameInput = document.querySelector(
+  //       'input[name="name"]',
+  //     ) as HTMLInputElement;
+  //     const clinicName = clinicNameInput?.value || '';
+  //     const existingUrls = existingData?.hospital?.imageurls || [];
+  //     const newImageUrls = clinicImages.map(img => URL.createObjectURL(img));
+  //     const allClinicImageUrls = [...existingUrls, ...newImageUrls];
+  //     const formData = prepareFormData({
+  //       id_uuid: id_uuid_hospital,
+  //       clinicName,
+  //       email: basicInfo.email,
+  //       tel: basicInfo.tel,
+  //       introduction: basicInfo.introduction || '',
+  //       addressForSendForm,
+  //       selectedLocation: selectedLocation?.name || '',
+  //       selectedTreatments,
+  //       treatmentOptions,
+  //       priceExpose,
+  //       treatmentEtc,
+  //       openingHours,
+  //       optionState,
+  //       clinicImageUrls: allClinicImageUrls,
+  //       doctorImageUrls: [],
+  //       doctors,
+  //       feedback,
+  //       selectedLanguages,
+  //       snsData: {
+  //         kakao_talk: basicInfo.kakao_talk,
+  //         line: basicInfo.line,
+  //         we_chat: basicInfo.we_chat,
+  //         whats_app: basicInfo.whats_app,
+  //         telegram: basicInfo.telegram,
+  //         facebook_messenger: basicInfo.facebook_messenger,
+  //         instagram: basicInfo.instagram,
+  //         tiktok: basicInfo.tiktok,
+  //         youtube: basicInfo.youtube,
+  //         other_channel: basicInfo.other_channel,
+  //       }
+  //     });
+  //     setPreparedFormData(formData);
+  //     // setShowConfirmModal(true);
 
-      const validationResult = validateFormDataAndUpdateUI(true);
-      if (!validationResult.isValid) {
-        setPreviewValidationMessages(validationResult.messages || []);
-        setIsSubmitting(false);
-        setShowConfirmModal(true);
-        return;
-      }
+  //     const validationResult = validateFormDataAndUpdateUI(true);
+  //     if (!validationResult.isValid) {
+  //       setPreviewValidationMessages(validationResult.messages || []);
+  //       setIsSubmitting(false);
+  //       setShowConfirmModal(true);
+  //       return;
+  //     }
     
-      setPreviewValidationMessages([]);
-    } catch (error) {
-      console.error('미리보기 데이터 준비 중 오류:', error);
-      setFormState({
-        message: '미리보기 데이터 준비 중 오류가 발생했습니다.',
-        status: 'error',
-        errorType: 'server',
-      });
-      setShowFinalResult(true);
-    }
-  };
+  //     setPreviewValidationMessages([]);
+  //   } catch (error) {
+  //     console.error('미리보기 데이터 준비 중 오류:', error);
+  //     setFormState({
+  //       message: '미리보기 데이터 준비 중 오류가 발생했습니다.',
+  //       status: 'error',
+  //       errorType: 'server',
+  //     });
+  //     setShowFinalResult(true);
+  //   }
+  // };
 
   // // 최종 제출 함수 (PreviewModal에서 호출)
   // const handleFinalSubmit = async () => {
@@ -1115,6 +1165,7 @@ const Step1BasicInfo = ({
 
     const formData = new FormData();
     formData.append('current_user_uid', currentUserUid);
+    formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
      // 기본 정보
   formData.append('id_uuid', id_uuid_hospital);
   formData.append('name', clinicName);
@@ -1155,6 +1206,9 @@ const Step1BasicInfo = ({
     formData.append('location', selectedLocation.key.toString() || '');
   }
 
+  // 연락처 정보 추가
+  formData.append('contacts_info', JSON.stringify(contactsInfo));
+
     // setPreparedFormData(formData);
 
     console.log('qqqqqqqqq preparedFormData', preparedFormData);
@@ -1175,22 +1229,47 @@ const Step1BasicInfo = ({
         formData,
       );
 
-    //   console.log('uploadActionsStep1 응답:', result);
-    //   setFormState(result);
-    //   setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
-    if (result?.status === 'error') {
+      console.log('uploadActionsStep1 응답:', result);
+      
+      if (result?.status === 'error') {
+        // 에러 발생 시 상세 정보와 함께 알림 표시
+        let errorMessage = result.message || '알 수 없는 오류가 발생했습니다.';
+        
+        // 에러 상세 정보가 있으면 추가
+        if (result.errorDetails) {
+          console.error('에러 상세 정보:', result.errorDetails);
+          errorMessage += `\n\n상세 정보:\n- 작업: ${result.errorDetails.operation}\n- 코드: ${result.errorDetails.code}`;
+        }
+        
         setFormState({
-            message: `uploadActionsStep1 처리 오류: ${result?.message}`,
-            status: 'error',
-            errorType: 'server',
-          });
+          message: errorMessage,
+          status: 'error',
+          errorType: 'server',
+        });
         setShowFinalResult(true);
+        
+        return {
+          status: 'error',
+          message: errorMessage
+        };
+      } else if (result?.status === 'success') {
+        // 성공 시 처리
+        console.log('데이터 저장 성공');
+        setFormState({
+          message: result.message || '성공적으로 저장되었습니다.',
+          status: 'success',
+          errorType: undefined,
+        });
+        
+        return {
+          status: 'success',
+          message: result.message
+        };
       }
-    //   setShowConfirmModal(false);
-    //   setPreparedFormData(null);
+      
       return {
         status: 'success',
-    }
+      };
   } catch (error) {
     console.error('uploadActionsStep1 호출 에러:', error);
 
@@ -1271,8 +1350,8 @@ const Step1BasicInfo = ({
         <Divider />
      
           <ContactsInfoSection
-            onSave={() => {}}
-            onCancel={() => {}}
+            onContactsChange={setContactsInfo}
+            initialContacts={contactsInfo}
           />
       
         </div>

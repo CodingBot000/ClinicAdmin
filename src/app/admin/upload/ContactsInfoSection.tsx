@@ -1,20 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '@/components/Button';
+import { ContactsInfo } from '@/types/basicinfo';
+
 
 interface ContactsInfoSectionProps {
-  onSave?: () => void;
-  onCancel?: () => void;
+  onContactsChange: (contacts: ContactsInfo) => void;
+  initialContacts?: ContactsInfo;
 }
 
-const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
-    // representativePhone: '',
-    consultationPhone: '',
-    consultationManagerPhones: ['', '', ''], // 3개 항목으로 초기화
-    smsPhone: '',
-    eventManagerPhone: '',
-    marketingEmails: [''] // 1개 항목으로 초기화
+const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ 
+  onContactsChange, 
+  initialContacts 
+}) => {
+  const [formData, setFormData] = useState<ContactsInfo>({
+    consultationPhone: initialContacts?.consultationPhone || '',
+    consultationManagerPhones: initialContacts?.consultationManagerPhones || ['', '', ''],
+    smsPhone: initialContacts?.smsPhone || '',
+    eventManagerPhone: initialContacts?.eventManagerPhone || '',
+    marketingEmails: initialContacts?.marketingEmails || ['', '', ''] // 3개로 초기화
   });
+
+  // 데이터가 변경될 때마다 부모 컴포넌트에 전달
+  useEffect(() => {
+    onContactsChange(formData);
+  }, [formData, onContactsChange]);
 
   const handleInputChange = (field: string, value: string, index?: number) => {
     setFormData(prev => {
@@ -105,11 +114,13 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ onSave, onCan
             진료문의 전화 번호
           </label>
           <input
+          name="consultationPhone"
             type="tel"
-            inputMode="tel"
+            inputMode="tel" 
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.consultationPhone}
             onChange={(e) => handleInputChange('consultationPhone', e.target.value)}
+            placeholder="예: 02-1234-5678 또는 010-1234-5678"
           />
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -127,28 +138,35 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ onSave, onCan
           <label className="block text-sm font-medium text-gray-700 mb-2">
             상담 관리자 전화 번호
           </label>
-          <input
-            type="tel"
-            inputMode="tel"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.consultationManagerPhones[0]}
-            onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 0)}
-          />
-           <input
-            type="tel"
-            inputMode="tel"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.consultationManagerPhones[1]}
-            onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 1)}
-          />
-           <input
-            type="tel"
-            inputMode="tel"
- className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.consultationManagerPhones[2]}
-            onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 2)}
-          />
-
+          <div className="flex flex-col space-y-2">
+            <input
+              name="consultationManagerPhone-1"
+              type="tel"
+              inputMode="tel"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.consultationManagerPhones[0]}
+              onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 0)}
+              placeholder="예: 02-1234-5678 또는 010-1234-5678"
+            />
+            <input
+              name="consultationManagerPhone-2"
+              type="tel"
+              inputMode="tel"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.consultationManagerPhones[1]}
+              onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 1)}
+              placeholder="예: 02-1234-5678 또는 010-1234-5678"
+            />
+            <input
+              name="consultationManagerPhone-3"
+              type="tel"
+              inputMode="tel"
+  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.consultationManagerPhones[2]}
+              onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 2)}
+              placeholder="예: 02-1234-5678 또는 010-1234-5678"
+            />
+            </div>
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-white text-xs font-bold">i</span>
@@ -165,11 +183,13 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ onSave, onCan
             SMS 발신 번호
           </label>
           <input
+            name="smsPhone"
             type="tel"
             inputMode="tel"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.smsPhone}
             onChange={(e) => handleInputChange('smsPhone', e.target.value)}
+            placeholder="예: 02-1234-5678 또는 010-1234-5678"
           />
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -187,11 +207,13 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ onSave, onCan
             이벤트 관리자 전화 번호
           </label>
           <input
+            name="eventManagerPhone"
             type="tel"
             inputMode="tel"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.eventManagerPhone}
             onChange={(e) => handleInputChange('eventManagerPhone', e.target.value)}
+            placeholder="예: 02-1234-5678 또는 010-1234-5678"
           />
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -208,30 +230,36 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({ onSave, onCan
           <label className="block text-sm font-medium text-gray-700 mb-2">
             마케팅 담당자 이메일
           </label>
-          <input
-            type="email"
-            inputMode="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="이메일주소"
-            value={formData.marketingEmails[0]} 
-            onChange={(e) => handleInputChange('marketingEmails', e.target.value, 0)}
-          />
-          <input
-            type="email"
-            inputMode="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="이메일주소"
-            value={formData.marketingEmails[1]} 
-            onChange={(e) => handleInputChange('marketingEmails', e.target.value, 1)}
-          />
-          <input
-            type="email"
-            inputMode="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="이메일주소"
-            value={formData.marketingEmails[2]} 
-            onChange={(e) => handleInputChange('marketingEmails', e.target.value, 2)}
-          />
+          <div className="flex flex-col space-y-2">
+            <input
+              name="marketingEmail-1"
+              type="email"
+              inputMode="email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="이메일주소"
+              value={formData.marketingEmails[0] || ''} 
+              onChange={(e) => handleInputChange('marketingEmails', e.target.value, 0)}
+
+            />
+            <input
+            name="marketingEmail-2"
+              type="email"
+              inputMode="email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="이메일주소"
+              value={formData.marketingEmails[1] || ''} 
+              onChange={(e) => handleInputChange('marketingEmails', e.target.value, 1)}
+            />
+            <input
+              name="marketingEmail-3"
+              type="email"
+              inputMode="email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="이메일주소"
+              value={formData.marketingEmails[2] || ''} 
+              onChange={(e) => handleInputChange('marketingEmails', e.target.value, 2)}
+            />
+            </div>
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-white text-xs font-bold">i</span>

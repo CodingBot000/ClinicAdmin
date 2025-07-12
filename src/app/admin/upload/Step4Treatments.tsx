@@ -4,7 +4,6 @@ import PageHeader from '@/components/PageHeader';
 import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
-import { uploadActions } from './actions';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
