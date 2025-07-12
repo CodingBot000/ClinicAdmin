@@ -774,7 +774,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   <div className="mb-6">
                     <h4 className="font-medium mb-2 flex items-center">
                       <Camera className="w-4 h-4 mr-2" />
-                      썸네일 이미지
+                      썸네일 이미지 (타 병원들과 함께 리스트로 나오는 이미지입니다 )
                     </h4>
                     <div className="w-64 h-40 relative rounded-lg overflow-hidden border">
                       <Image
