@@ -265,7 +265,7 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
               <span className="text-white text-xs font-bold">i</span>
             </div>
             <p className="text-sm text-gray-600">
-              주요 광고사항, 뉴스레터(플랫폼 운영 현황 등 소식), 플랫폼 이용 정보(변경 사항 포함))및 플랫폼내 병원 관리에 도움이 될 안내를 받습니다.
+              주요 광고사항, 뉴스레터(플랫폼 운영 현황 등 소식), 플랫폼 이용 정보(변경 사항 포함)및 플랫폼내 병원 관리에 도움이 될 안내를 받습니다.
             </p>
           </div>
         </div>

@@ -344,7 +344,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
 
                   {/* 병원 소개 */}
                   <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3 text-gray-800">병원 소개</h4>
+                    <h4 className="font-medium mb-3 text-gray-800">병원 소개 (국문)</h4>
                     <div className="p-4 bg-gray-50 rounded-lg border">
                       {hospitalData.introduction && hospitalData.introduction.trim() !== '' ? (
                         <div className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -353,6 +353,21 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                       ) : (
                         <div className="text-sm text-gray-500 italic">
                           병원 소개가 입력되지 않았습니다.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 text-gray-800">병원 소개 (영문)</h4>
+                    <div className="p-4 bg-gray-50 rounded-lg border">
+                      {hospitalData.introduction_en && hospitalData.introduction_en.trim() !== '' ? (
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {hospitalData.introduction_en}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500 italic">
+                          병원 소개 (영문)가 입력되지 않았습니다.
                         </div>
                       )}
                     </div>
@@ -777,7 +792,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   <div className="mb-6">
                     <h4 className="font-medium mb-2 flex items-center">
                       <Camera className="w-4 h-4 mr-2" />
-                      병원 이미지 ({hospitalData.imageurls.length}개)
+                      병원 이미지 ({hospitalData.imageurls.length}개) -  나열된 순서대로 보여집니다.
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {hospitalData.imageurls.map((url, index) => (

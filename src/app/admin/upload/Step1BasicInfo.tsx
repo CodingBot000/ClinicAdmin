@@ -175,6 +175,7 @@ const Step1BasicInfo = ({
     email: '',
     tel: '',
     introduction: '',
+    introduction_en: '',
     kakao_talk: '',
     line: '',
     we_chat: '',
@@ -298,6 +299,7 @@ const Step1BasicInfo = ({
           email: existingData.hospitalDetail.email || '',
           tel: existingData.hospitalDetail.tel || '',
           introduction: existingData.hospitalDetail.introduction || '',
+          introduction_en: existingData.hospitalDetail.introduction_en || '',
           kakao_talk: existingData.hospitalDetail.kakao_talk || '',
           line: existingData.hospitalDetail.line || '',
           we_chat: existingData.hospitalDetail.we_chat || '',
@@ -1172,6 +1174,7 @@ const Step1BasicInfo = ({
   formData.append('email', basicInfo.email);
   formData.append('tel', basicInfo.tel);
   formData.append('introduction', basicInfo.introduction);
+  formData.append('introduction_en', basicInfo.introduction_en);
   formData.append(
   'sns_content_agreement',
   basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
@@ -1302,7 +1305,7 @@ const Step1BasicInfo = ({
     <main>
       {/* <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} /> */}
       <div
-        className='my-8 mx-auto px-6'
+        className='my-8 mx-auto px-6 pb-24'
         style={{ width: '100vw', maxWidth: '1024px' }}
       >
         <div className='space-y-4 w-full'>
@@ -1340,13 +1343,7 @@ const Step1BasicInfo = ({
             selectedLocation={selectedLocation}
           />
 
-          <Divider />
-          <div className='w-full mt-4'>
-          {/* <ExtraOptions
-            onSelectOptionState={handleExtraOptionsChange}
-            initialOptions={optionState}
-          /> */}
-        </div>
+          
         <Divider />
      
           <ContactsInfoSection
@@ -1355,13 +1352,13 @@ const Step1BasicInfo = ({
           />
       
         </div>
-               {/* 하단 고정 버튼 영역 */}
+      </div>
+      
+      {/* 하단 고정 버튼 영역 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
-
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
-      </div>
       </div>
     </main>
   );

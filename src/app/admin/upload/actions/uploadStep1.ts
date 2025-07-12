@@ -196,7 +196,7 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
   
     // introduction 필드 디버깅
     const introduction = formData.get("introduction") as string || '';
-    
+    const introduction_en = formData.get("introduction_en") as string || '';
     return {
       id_hospital: id_hospital,
       id_uuid_hospital: id_uuid,
@@ -231,6 +231,7 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
       sns_content_agreement: sns_content_agreement,
       // available_languages: available_languages,
       introduction: introduction,
+      introduction_en: introduction_en,
     };
   };
   

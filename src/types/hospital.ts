@@ -29,6 +29,7 @@ export interface HospitalDetailData {
   tel: string;
   email: string;
   introduction: string;
+  introduction_en: string;
   kakao_talk: string;
   line: string;
   we_chat: string;
