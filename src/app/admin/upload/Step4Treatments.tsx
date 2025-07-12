@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-import { AlertModal } from '@/components/modal';
+// AlertModal 제거
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import AddressSection from '@/components/AddressSection';
@@ -35,7 +35,8 @@ import { STORAGE_IMAGES } from '@/constants/tables';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
 
-import { uploadActionsStep4 } from './actions/uploadStep4';
+import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+
 import { 
   getLabelByKey, 
   getUnitByKey, 
@@ -1018,76 +1019,63 @@ const handleNext = async () => {
 
  
   const handleSave = async () => {
-    console.log('handleSave');
+    console.log('Step4 handleSave 시작');
     
-    const formData = new FormData();
-    formData.append('id_uuid_hospital', id_uuid_hospital);
-    formData.append('current_user_uid', currentUserUid);
-    formData.append('is_edit_mode', isEditMode.toString());
-    
-    // 시술 정보 - 서버에서 selected_treatments로 받으므로 키 이름 맞춤
-    if (selectedTreatments.length > 0) {
-      formData.append('selected_treatments', selectedTreatments.join(','));
-    }
-
-    // 시술 옵션
-    if (treatmentOptions.length > 0) {
-      formData.append('treatment_options', JSON.stringify(treatmentOptions));
-    }
-
-    // 가격 노출 설정
-    formData.append('price_expose', priceExpose ? 'true' : 'false');
-    
-    // 기타 시술 정보 추가
-    if (treatmentEtc.trim() !== '') {
-      formData.append('etc', treatmentEtc.trim());
-    }
-
-    console.log('FormData 내용:', {
-      id_uuid_hospital,
-      selectedTreatments,
-      treatmentOptions,
-      priceExpose,
-      treatmentEtc
-    });
-
     try {
-      const result = await uploadActionsStep4(
-        null,
-        formData,
-      );
-
-      console.log('uploadActionsStep4 응답:', result);
+      // FormData 구성
+      const formData = new FormData();
+      formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
+      formData.append('current_user_uid', currentUserUid);
+      formData.append('id_uuid_hospital', id_uuid_hospital);
       
-      if (result?.status === 'error') {
+      // 치료 옵션과 가격 정보
+      formData.append('treatment_options', JSON.stringify(treatmentOptions));
+      formData.append('price_expose', priceExpose.toString());
+      formData.append('etc', treatmentEtc);
+      
+      // 선택된 치료 항목들
+      formData.append('selected_treatments', selectedTreatments.join(','));
+
+      console.log('Step4 API 호출 시작');
+      
+      // 새로운 API Route 호출
+      const result = await uploadAPI.step4(formData);
+      console.log('Step4 API 응답:', result);
+
+      if (!isApiSuccess(result)) {
+        // 에러 발생 시 처리
+        const errorMessage = formatApiError(result.error);
+        
         setFormState({
-          message: `시술 정보 저장 오류: ${result?.message}`,
+          message: errorMessage,
           status: 'error',
           errorType: 'server',
         });
         setShowFinalResult(true);
+        
         return {
           status: 'error',
+          message: errorMessage
+        };
+      } else {
+        // 성공 시 처리
+        console.log('Step4 데이터 저장 성공');
+        setFormState({
+          message: result.message || '성공적으로 저장되었습니다.',
+          status: 'success',
+          errorType: undefined,
+        });
+        
+        return {
+          status: 'success',
+          message: result.message
         };
       }
       
-      setFormState({
-        message: '시술 정보가 성공적으로 저장되었습니다.',
-        status: 'success',
-      });
-      
-      return {
-        status: 'success',
-      };
-      
     } catch (error) {
-      console.error('uploadActionsStep4 호출 에러:', error);
+      console.error('Step4 API 호출 에러:', error);
 
-      let errorMessage = '업로드 중 오류가 발생했습니다.';
-
-      if (error instanceof Error && error.message) {
-        errorMessage = `업로드 오류: ${error.message}`;
-      }
+      const errorMessage = formatApiError(error);
 
       setFormState({
         message: errorMessage,
@@ -1098,6 +1086,7 @@ const handleNext = async () => {
       
       return {
         status: 'error',
+        message: errorMessage
       };
     }
   };
@@ -1171,6 +1160,19 @@ const handleNext = async () => {
 </div>
 
       </div>
+
+      {/* 기본 모달 */}
+      {formState?.message && showFinalResult && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
+            <p className="text-sm text-gray-800 mb-4">{formState.message}</p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleModal}>확인</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

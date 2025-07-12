@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-import { AlertModal } from '@/components/modal';
+// AlertModal 제거
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import AddressSection from '@/components/AddressSection';
@@ -36,11 +36,11 @@ import { STORAGE_IMAGES } from '@/constants/tables';
 import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
-import ContactsInfoSection from './ContactsInfoSection';
+import ContactsInfoSection from '../../../components/ContactsInfoSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadActionsStep1 } from './actions/uploadStep1';
+import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
 import { BasicInfo, ContactsInfo } from '@/types/basicinfo';
 
@@ -1158,91 +1158,102 @@ const Step1BasicInfo = ({
     }
  
   const handleSave = async () => {
-    console.log('handleSave');
-    const clinicNameInput = document.querySelector(
-      'input[name="name"]',
-    ) as HTMLInputElement;
-    const clinicName = clinicNameInput?.value || '';
- 
-
-    const formData = new FormData();
-    formData.append('current_user_uid', currentUserUid);
-    formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-     // 기본 정보
-  formData.append('id_uuid', id_uuid_hospital);
-  formData.append('name', clinicName);
-  formData.append('email', basicInfo.email);
-  formData.append('tel', basicInfo.tel);
-  formData.append('introduction', basicInfo.introduction);
-  formData.append('introduction_en', basicInfo.introduction_en);
-  formData.append(
-  'sns_content_agreement',
-  basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
-);
-
-  const  snsData = {
-    kakao_talk: basicInfo.kakao_talk,
-    line: basicInfo.line,
-    we_chat: basicInfo.we_chat,
-    whats_app: basicInfo.whats_app,
-    telegram: basicInfo.telegram,
-    facebook_messenger: basicInfo.facebook_messenger,
-    instagram: basicInfo.instagram,
-    tiktok: basicInfo.tiktok,
-    youtube: basicInfo.youtube,
-    other_channel: basicInfo.other_channel,
-  }
-  // SNS 정보
-  Object.entries(snsData).forEach(([key, value]) => {
-    if (value) {
-      formData.append(key, value);
-    }
-  });
-
-  // 주소 정보
-  if (addressForSendForm) {
-    formData.append('address', JSON.stringify(addressForSendForm));
-  }
-
-  // 위치 정보
-  if (selectedLocation) {
-    formData.append('location', selectedLocation.key.toString() || '');
-  }
-
-  // 연락처 정보 추가
-  formData.append('contacts_info', JSON.stringify(contactsInfo));
-
-    // setPreparedFormData(formData);
-
-    console.log('qqqqqqqqq preparedFormData', preparedFormData);
-    console.log('qqqqqqqqq formData', formData);
+    console.log('handleSave 시작');
+    setIsSubmitting(true);
+    
     try {
-      if (!formData) {
+      // 클라이언트 측 검증
+      const clinicName = basicInfo.name;
+      if (!clinicName.trim()) {
         setFormState({
-          message: '데이터가 준비되지 않았습니다.',
+          message: '병원명을 입력해주세요.',
           status: 'error',
           errorType: 'validation',
         });
         setShowFinalResult(true);
-        return;
+        return { status: 'error' };
       }
 
-      const result = await uploadActionsStep1(
-        null,
-        formData,
+      if (!selectedLocation) {
+        setFormState({
+          message: '지역을 선택해주세요.',
+          status: 'error',
+          errorType: 'validation',
+        });
+        setShowFinalResult(true);
+        return { status: 'error' };
+      }
+
+      if (!addressForSendForm) {
+        setFormState({
+          message: '주소를 입력해주세요.',
+          status: 'error',
+          errorType: 'validation',
+        });
+        setShowFinalResult(true);
+        return { status: 'error' };
+      }
+
+      // FormData 구성
+      const formData = new FormData();
+      formData.append('current_user_uid', currentUserUid);
+      formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
+      
+      // 기본 정보
+      formData.append('id_uuid', id_uuid_hospital);
+      formData.append('name', clinicName);
+      formData.append('email', basicInfo.email);
+      formData.append('tel', basicInfo.tel);
+      formData.append('introduction', basicInfo.introduction);
+      formData.append('introduction_en', basicInfo.introduction_en);
+      formData.append(
+        'sns_content_agreement',
+        basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
       );
 
-      console.log('uploadActionsStep1 응답:', result);
-      
-      if (result?.status === 'error') {
-        // 에러 발생 시 상세 정보와 함께 알림 표시
-        let errorMessage = result.message || '알 수 없는 오류가 발생했습니다.';
-        
-        // 에러 상세 정보가 있으면 추가
-        if (result.errorDetails) {
-          console.error('에러 상세 정보:', result.errorDetails);
-          errorMessage += `\n\n상세 정보:\n- 작업: ${result.errorDetails.operation}\n- 코드: ${result.errorDetails.code}`;
+      const snsData = {
+        kakao_talk: basicInfo.kakao_talk,
+        line: basicInfo.line,
+        we_chat: basicInfo.we_chat,
+        whats_app: basicInfo.whats_app,
+        telegram: basicInfo.telegram,
+        facebook_messenger: basicInfo.facebook_messenger,
+        instagram: basicInfo.instagram,
+        tiktok: basicInfo.tiktok,
+        youtube: basicInfo.youtube,
+        other_channel: basicInfo.other_channel,
+      };
+
+      // SNS 정보
+      Object.entries(snsData).forEach(([key, value]) => {
+        if (value) {
+          formData.append(key, value);
         }
+      });
+
+      // 주소 정보
+      if (addressForSendForm) {
+        formData.append('address', JSON.stringify(addressForSendForm));
+      }
+
+      // 위치 정보
+      if (selectedLocation) {
+        formData.append('location', selectedLocation.key.toString() || '');
+      }
+
+      // 연락처 정보 추가
+      formData.append('contacts_info', JSON.stringify(contactsInfo));
+
+      console.log('API 호출 시작 - Step1');
+      
+      // 새로운 API Route 호출
+      const result = await uploadAPI.step1(formData);
+
+      console.log('Step1 API 응답:', result);
+      
+      if (!isApiSuccess(result)) {
+        // 에러 발생 시 처리
+        const errorMessage = formatApiError(result.error);
         
         setFormState({
           message: errorMessage,
@@ -1255,9 +1266,9 @@ const Step1BasicInfo = ({
           status: 'error',
           message: errorMessage
         };
-      } else if (result?.status === 'success') {
+      } else {
         // 성공 시 처리
-        console.log('데이터 저장 성공');
+        console.log('Step1 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',
@@ -1270,35 +1281,27 @@ const Step1BasicInfo = ({
         };
       }
       
-      return {
-        status: 'success',
-      };
-  } catch (error) {
-    console.error('uploadActionsStep1 호출 에러:', error);
+    } catch (error) {
+      console.error('Step1 API 호출 에러:', error);
 
-    let errorMessage = '업로드 중 오류가 발생했습니다.';
+      const errorMessage = formatApiError(error);
 
-    if (error instanceof Error && error.message) {
-      errorMessage = `업로드 오류: ${error.message}`;
-    }
-
-    setFormState({
-      message: errorMessage,
-      status: 'error',
-      errorType: 'server',
-    });
-    setShowFinalResult(true); // 에러도 최종 결과로 표시
-    setShowConfirmModal(false);
-    setPreparedFormData(null);
-    return {
+      setFormState({
+        message: errorMessage,
         status: 'error',
+        errorType: 'server',
+      });
+      setShowFinalResult(true);
+      setShowConfirmModal(false);
+      setPreparedFormData(null);
+      
+      return {
+        status: 'error',
+        message: errorMessage
+      };
+    } finally {
+      setIsSubmitting(false);
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-        return {
-            status: 'success',
-        }
   };
 
   return (
@@ -1360,6 +1363,19 @@ const Step1BasicInfo = ({
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div>
+
+      {/* 기본 모달 */}
+      {formState?.message && showFinalResult && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
+            <p className="text-sm text-gray-800 mb-4">{formState.message}</p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleModal}>확인</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

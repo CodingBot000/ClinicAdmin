@@ -26,6 +26,10 @@ function fetchCategories() {
       console.error(" fetchCategories 에러:", new Date().toISOString());
       console.error(` Categories fetch 실패 시간: ${fetchTime}ms`);
       console.error("Error details:", error);
+      console.error("Error message:", error?.message);
+      console.error("Error stack:", error?.stack);
+      console.error("Error type:", typeof error);
+      console.error("Full error object:", JSON.stringify(error, null, 2));
       throw error;
     });
 }

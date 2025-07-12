@@ -7,7 +7,7 @@ import { useSupabaseSession } from '@/hooks/useSupabaseSession';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 // import { uploadHospitalImages, uploadDoctorImages } from '@/lib/clinicUploadApi';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadActionsStep3 } from './actions/uploadStep3';
+import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import Button from '@/components/Button';
 import PageHeader from '@/components/PageHeader';
@@ -729,12 +729,18 @@ const Step3ClinicImagesDoctorsInfo = ({
 
       console.log('Step3 uploadActionStep3 before formData:', formData);
       
-      const result = await uploadActionsStep3(null, formData);
-      console.log('uploadActionsStep3 응답:', result);
+      console.log('Step3 API 호출 시작');
       
-      if (result?.status === 'error') {
+      // 새로운 API Route 호출
+      const result = await uploadAPI.step3(formData);
+      console.log('Step3 API 응답:', result);
+      
+      if (!isApiSuccess(result)) {
+        // 에러 발생 시 처리
+        const errorMessage = formatApiError(result.error);
+        
         setFormState({
-          message: `uploadActionsStep3 처리 오류: ${result?.message}`,
+          message: errorMessage,
           status: 'error',
           errorType: 'server',
         });
@@ -742,11 +748,16 @@ const Step3ClinicImagesDoctorsInfo = ({
         return { status: 'error' };
       }
 
+      console.log('Step3 데이터 저장 성공');
       return { status: 'success' };
+      
     } catch (error) {
-      console.error('handleSave Step3 오류:', error);
+      console.error('Step3 API 호출 에러:', error);
+      
+      const errorMessage = formatApiError(error);
+      
       setFormState({
-        message: `업로드 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
+        message: errorMessage,
         status: 'error',
         errorType: 'server',
       });
@@ -858,6 +869,19 @@ const Step3ClinicImagesDoctorsInfo = ({
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div>
+
+      {/* 기본 모달 */}
+      {formState?.message && showFinalResult && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
+            <p className="text-sm text-gray-800 mb-4">{formState.message}</p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
