@@ -66,7 +66,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   const [useDefaultImage, setUseDefaultImage] =
     useState(false);
   const [defaultImageType, setDefaultImageType] = useState<
-    'man' | 'woman'
+    'man' | 'woman' | undefined
   >('man');
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -90,7 +90,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
         setImageFile(null);
         setImagePreview('');
         setUseDefaultImage(false);
-        setDefaultImageType('man');
+        setDefaultImageType(undefined);
       }
       // 스크롤 막기
       document.body.style.overflow = 'hidden';
@@ -147,8 +147,14 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   ) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // 업로드된 이미지와 미리보기 제거
     setImageFile(null);
     setImagePreview('');
+    
+    // 디폴트 이미지 상태도 초기화 (체크박스 해제와 같은 상태)
+    setUseDefaultImage(false);
+    setDefaultImageType(undefined);
   };
 
   // 기본 이미지 선택
@@ -306,17 +312,18 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
                   />
 
                   {/* 기본 이미지가 아닐 때만 삭제 버튼 표시 */}
-                  {!useDefaultImage && (
+                  {/* {!useDefaultImage && ( */}
                     <button
                       type='button'
                       onClick={handleDeleteImage}
                       className='
                         absolute top-2 right-2 
-                        opacity-0 group-hover:opacity-100 
                         transition-opacity duration-200
                         bg-white rounded-full p-1
                         hover:bg-red-50 hover:scale-110
                         transform transition-transform
+                        shadow-lg border-2 border-white
+                        z-10
                       '
                     >
                       <XCircleIcon
@@ -325,7 +332,8 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
                         strokeWidth={2}
                       />
                     </button>
-                  )}
+                  )
+                  {/* } */}
                 </div>
               </div>
             ) : (
@@ -394,6 +402,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
                 </label>
               ))}
             </div>
+            <p>디폴트 이미지는 바뀔 수 있습니다. </p>
           </div>
 
           {/* 이름 입력 */}

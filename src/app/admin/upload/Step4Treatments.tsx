@@ -4,7 +4,6 @@ import PageHeader from '@/components/PageHeader';
 import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
-import { uploadActions } from './actions';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
@@ -33,10 +32,6 @@ import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
-import BasicInfoSection from '@/components/BasicInfoSection';
-import Divider from '@/components/Divider';
-import AvailableLanguageSection from '@/components/AvailableLanguageSection';
-import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
 
@@ -71,23 +66,6 @@ interface Step4TreatmentsProps {
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
-}
-
-export interface BasicInfo {
-  name: string;
-  email: string;
-  tel: string;
-  kakao_talk: string;
-  line: string;
-  we_chat: string;
-  whats_app: string;
-  telegram: string;
-  facebook_messenger: string;
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  other_channel: string;
-  sns_content_agreement: 1 | 0 | null;
 }
 
 const Step4Treatments = ({

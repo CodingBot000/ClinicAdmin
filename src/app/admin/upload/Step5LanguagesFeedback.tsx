@@ -4,7 +4,6 @@ import PageHeader from '@/components/PageHeader';
 import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
-import { uploadActions } from './actions';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
@@ -25,6 +24,7 @@ import ExtraOptions, {
 } from '@/components/ExtraOptions';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
+import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
 import type { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
@@ -32,8 +32,7 @@ import { HospitalAddress } from '@/types/address';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { STORAGE_IMAGES } from '@/constants/tables';
-import BasicInfoSection from '@/components/BasicInfoSection';
+
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
@@ -47,7 +46,8 @@ interface Step5LanguagesFeedbackProps {
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
-  onSubmit: () => void;
+  onComplete: () => void;
+  onStepChange?: (step: number) => void;
 }
 
 
@@ -56,7 +56,8 @@ const Step5LanguagesFeedback = ({
   currentUserUid,
   isEditMode = false,
   onPrev,
-  onSubmit,
+  onComplete,
+  onStepChange,
 }: Step5LanguagesFeedbackProps) => {
     console.log(' Step5LanguagesFeedback id_uuid_hospital', id_uuid_hospital);
 
@@ -85,6 +86,9 @@ const Step5LanguagesFeedback = ({
 
   const [feedback, setFeedback] = useState<string>('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+
+  // Preview 모달 상태 추가
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
 
   const { handleOpenModal, open } = useModal();
@@ -222,12 +226,12 @@ const Step5LanguagesFeedback = ({
 
   // 성공 시 관리자 페이지로 이동하는 함수
   const handleConfirm = () => {
-    if (formState?.status === 'success') {
-      router.replace('/admin');
-      router.refresh();
-    } else {
+    // if (formState?.status === 'success') {
+    //   router.replace('/admin');
+    //   router.refresh();
+    // } else {
       handleModal();
-    }
+    // }
   };
 
   const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
@@ -266,42 +270,8 @@ const Step5LanguagesFeedback = ({
 
 //   const id_uuid_generate = uuidv4();
   const handlePreview = async () => {
-    // const validationResult = validateFormDataAndUpdateUI(true);
-
-    // if (!validationResult.isValid) {
- 
-    //   setPreviewValidationMessages(validationResult.messages || []);
-    //   setIsSubmitting(false);
-    //   setShowConfirmModal(true);
-    //   return;
-    // }
-  
-    // setPreviewValidationMessages([]);
-
-    try {
-      console.log('handlePreview 3');
-     
-      // setPreparedFormData(formData);
-      setShowConfirmModal(true);
-
-    //   const validationResult = validateFormDataAndUpdateUI(true);
-    //   if (!validationResult.isValid) {
-    //     setPreviewValidationMessages(validationResult.messages || []);
-    //     setIsSubmitting(false);
-    //     setShowConfirmModal(true);
-    //     return;
-    //   }
-    
-      setPreviewValidationMessages([]);
-    } catch (error) {
-      console.error('미리보기 데이터 준비 중 오류:', error);
-      setFormState({
-        message: '미리보기 데이터 준비 중 오류가 발생했습니다.',
-        status: 'error',
-        errorType: 'server',
-      });
-      setShowFinalResult(true);
-    }
+    console.log('Preview 버튼 클릭 - 모달 열기');
+    setShowPreviewModal(true);
   };
 
   // 최종 제출 함수 (PreviewModal에서 호출)
@@ -704,11 +674,30 @@ const Step5LanguagesFeedback = ({
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handlePreview}>Preview</Button>
           <Button onClick={handleSave}>Save</Button>
-          <Button onClick={onSubmit}>Submit</Button>
+          <Button onClick={onComplete}>Complete</Button>
         </div>
       </div>
 
     </div>
+
+    {/* Preview 모달 */}
+    <PreviewClinicInfoModal
+      isOpen={showPreviewModal}
+      onClose={() => setShowPreviewModal(false)}
+      id_uuid_hospital={id_uuid_hospital}
+      currentStep={5}
+      onStepChange={onStepChange}
+    />
+
+    {/* 기존 Alert 모달 */}
+    <AlertModal
+      open={open}
+      onCancel={handleModal}
+      title={formState?.status === 'success' ? '성공' : '오류'}
+      children={formState?.message || ''}
+      onConfirm={handleConfirm}
+      confirmText={formState?.status === 'success' ? '확인' : '닫기'}
+    />
     </main>
   );
 };

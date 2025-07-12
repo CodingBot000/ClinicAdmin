@@ -20,6 +20,7 @@ export interface HospitalData {
   directions_to_clinic_en: string;
   location: string;
   imageurls: string[];
+  thumbnail_url: string | null;
 }
 
 export interface HospitalDetailData {
@@ -27,6 +28,8 @@ export interface HospitalDetailData {
   id_uuid_hospital: string;
   tel: string;
   email: string;
+  introduction: string;
+  introduction_en: string;
   kakao_talk: string;
   line: string;
   we_chat: string;
@@ -80,4 +83,5 @@ export interface ExistingHospitalData {
   doctors: any[];
   treatments: any[];
   feedback: string;
+  contacts?: any[];
 }

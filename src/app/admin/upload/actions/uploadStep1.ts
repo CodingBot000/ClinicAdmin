@@ -16,7 +16,8 @@ import {
   STORAGE_IMAGES,
   STORAGE_HOSPITAL_IMG,
   STORAGE_DOCTOR_IMG,
-  TABLE_FEEDBACKS
+  TABLE_FEEDBACKS,
+  TABLE_CONTACTS
 } from '@/constants/tables';
 import { createClient } from '@supabase/supabase-js';
 import { HospitalDetailData } from '@/types/hospital';
@@ -31,8 +32,7 @@ export const uploadActionsStep1 = async (prevState: any, formData: FormData) => 
     const surgeries = formData.get("surgeries") as string;
     const searchkey = formData.get("searchkey") as string;
     const search_key = formData.get("search_key") as string;
-   
-// 올바른 방식
+  
 const address = formData.get("address") as string; // JSON 문자열
 const addressData = address ? JSON.parse(address) : null;
 const address_full_road = addressData?.address_full_road || '';
@@ -46,8 +46,8 @@ const address_gu_en = addressData?.address_gu_en || '';
 const address_dong = addressData?.address_dong || '';
 const address_dong_en = addressData?.address_dong_en || '';
 const zipcode = addressData?.zipcode || '';
-const latitude = addressData?.latitude || '';
-const longitude = addressData?.longitude || '';
+const latitude = addressData?.latitude ? Number(addressData.latitude) : null;
+const longitude = addressData?.longitude ? Number(addressData.longitude) : null;
 const address_detail = addressData?.address_detail || '';
 const address_detail_en = addressData?.address_detail_en || '';
 const directions_to_clinic = addressData?.directions_to_clinic || '';
@@ -57,30 +57,6 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
 
     const location = formData.get("location") as string;
 
-
-    // console.log('qqqqqqqqq current_user_uid', current_user_uid);
-    // console.log('qqqqqqqqq id_uuid_hospital', id_uuid_hospital);
-    // console.log('qqqqqqqqq name', name);
-    // console.log('qqqqqqqqq searchkey', searchkey);
-    // console.log('qqqqqqqqq search_key', search_key);
-    // console.log('qqqqqqqqq address_full_road', address_full_road);
-    // console.log('qqqqqqqqq address_full_road_en', address_full_road_en);
-    // console.log('qqqqqqqqq address_full_jibun', address_full_jibun);
-    // console.log('qqqqqqqqq address_full_jibun_en', address_full_jibun_en);
-    // console.log('qqqqqqqqq address_si', address_si);
-    // console.log('qqqqqqqqq address_si_en', address_si_en);
-    // console.log('qqqqqqqqq address_gu', address_gu);
-    // console.log('qqqqqqqqq address_gu_en', address_gu_en);
-    // console.log('qqqqqqqqq address_dong', address_dong);
-    // console.log('qqqqqqqqq address_dong_en', address_dong_en);
-    // console.log('qqqqqqqqq zipcode', zipcode);
-    // console.log('qqqqqqqqq latitude', latitude);
-    // console.log('qqqqqqqqq longitude', longitude);
-    // console.log('qqqqqqqqq address_detail', address_detail);
-    // console.log('qqqqqqqqq address_detail_en', address_detail_en);
-    // console.log('qqqqqqqqq directions_to_clinic', directions_to_clinic);
-    // console.log('qqqqqqqqq directions_to_clinic_en', directions_to_clinic_en);
-    // console.log('qqqqqqqqq location', location);
 
     const lastUnique = await supabase
     .from(TABLE_HOSPITAL)
@@ -148,18 +124,15 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
     location,
     // imageurls: hospitalFileNames,
   };
-  
   // 편집 모드인 경우 update, 신규인 경우 insert
   let hospitalOperation;
   if (isEditMode) {
-    console.log("병원 정보 업데이트 시도:", id_uuid_hospital);
     hospitalOperation = await supabase
       .from(TABLE_HOSPITAL)
       .update(form_hospital)
       .eq('id_uuid', id_uuid_hospital)
       .select("*");
   } else {
-    console.log("새로운 병원 정보 등록 시도");
     hospitalOperation = await supabase
       .from(TABLE_HOSPITAL)
       .insert(form_hospital)
@@ -221,7 +194,9 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
     // const available_languages_raw = formData.get('available_languages') as string;
     // const available_languages = available_languages_raw ? JSON.parse(available_languages_raw) : [];
   
-    
+    // introduction 필드 디버깅
+    const introduction = formData.get("introduction") as string || '';
+    const introduction_en = formData.get("introduction_en") as string || '';
     return {
       id_hospital: id_hospital,
       id_uuid_hospital: id_uuid,
@@ -255,6 +230,8 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
       etc: '',
       sns_content_agreement: sns_content_agreement,
       // available_languages: available_languages,
+      introduction: introduction,
+      introduction_en: introduction_en,
     };
   };
   
@@ -296,38 +273,51 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
   let detailOperation;
   if (isEditMode && existingDetail) {
     // 편집 모드이고 기존 데이터가 있으면 UPDATE
-    console.log("hospital_details 업데이트 시도:", id_uuid_hospital);
+    const updateData = createHospitalDetailData(formData, id_uuid_hospital, id_hospital);
+    
     detailOperation = await supabase
       .from(TABLE_HOSPITAL_DETAIL)
-      .update(createHospitalDetailData(formData, id_uuid_hospital, id_hospital))
+      .update(updateData)
       .eq('id_uuid_hospital', id_uuid_hospital);
   } else {
     // 신규 등록이거나 기존 데이터가 없으면 INSERT
-    console.log("hospital_details 신규 등록 시도");
+    const insertData = createHospitalDetailData(formData, id_uuid_hospital, id_hospital);
 
-   
-    
     detailOperation = await supabase
       .from(TABLE_HOSPITAL_DETAIL)
-      .insert([createHospitalDetailData(formData, id_uuid_hospital, id_hospital)]);
+      .insert([insertData]);
   }
   
   if (detailOperation.error) {
-    console.log("uploadActions hospital_details error:", detailOperation.error);
-    // return await rollbackAll(detailOperation.error.message);
+    // 에러 타입에 따른 사용자 친화적 메시지 생성
+    let userMessage = "병원 정보 저장 중 오류가 발생했습니다.";
+    
+    if (detailOperation.error.code === '23505') {
+      userMessage = "이미 등록된 병원 정보입니다. 중복된 데이터가 있는지 확인해주세요.";
+    } else if (detailOperation.error.code === '23503') {
+      userMessage = "연결된 데이터에 문제가 있습니다. 관리자에게 문의해주세요.";
+    } else if (detailOperation.error.code === '22P02') {
+      userMessage = "입력된 데이터 형식이 올바르지 않습니다. 숫자 필드를 확인해주세요.";
+    } else if (detailOperation.error.message.includes('latitude') || detailOperation.error.message.includes('longitude')) {
+      userMessage = "위치 정보(위도/경도) 형식이 올바르지 않습니다. 주소를 다시 검색해주세요.";
+    } else if (detailOperation.error.message.includes('double precision')) {
+      userMessage = "숫자 형식 데이터에 오류가 있습니다. 입력값을 확인해주세요.";
+    }
+    
     return {
       ...prevState,
-      message: detailOperation.error.code || detailOperation.error.message,
+      message: userMessage,
       status: "error",
+      errorDetails: {
+        code: detailOperation.error.code,
+        message: detailOperation.error.message,
+        operation: isEditMode && existingDetail ? "업데이트" : "신규 등록"
+      }
     };
   }
   
-  console.log("hospital_details 처리 완료:", isEditMode && existingDetail ? "업데이트" : "신규 등록");
-  
   // 모든 insert가 성공적으로 완료되면 admin 테이블의 id_uuid_hospital 업데이트
   if (current_user_uid) {
-    console.log("Admin 테이블 업데이트 시작 - 현재 사용자 UID:", current_user_uid);
-    
     // 현재 사용자의 admin 정보 확인
     const { data: currentAdmin, error: adminSelectError } = await supabase
       .from(TABLE_ADMIN)
@@ -339,7 +329,6 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
       console.error("Admin 정보 조회 실패:", adminSelectError);
     } else if (currentAdmin && !currentAdmin.id_uuid_hospital) {
       // id_uuid_hospital이 비어있으면 업데이트
-      console.log("Admin 테이블 업데이트 - 병원 UUID 연결:", id_uuid_hospital);
       
       const { error: adminUpdateError } = await supabase
         .from(TABLE_ADMIN)
@@ -375,6 +364,102 @@ const directions_to_clinic_en = addressData?.directions_to_clinic_en || '';
     if (feedbackError) {
       console.error('피드백 저장 실패:', feedbackError);
       // 피드백 저장 실패는 전체 프로세스를 중단하지 않습니다
+    }
+  }
+
+  // 연락처 정보 저장
+  const contactsInfoRaw = formData.get('contacts_info') as string;
+  if (contactsInfoRaw) {
+    try {
+      const contactsInfo = JSON.parse(contactsInfoRaw);
+      console.log('연락처 정보 저장 시작:', contactsInfo);
+
+      // 기존 연락처 정보 삭제 (편집 모드인 경우)
+      if (isEditMode) {
+        await supabase
+          .from(TABLE_CONTACTS)
+          .delete()
+          .eq('id_uuid_hospital', id_uuid_hospital);
+      }
+
+      const contactsToInsert: any[] = [];
+
+
+        // 진료문의 전화 번호 
+      if (contactsInfo.consultationPhone && contactsInfo.consultationPhone.trim() !== '') 
+      {
+        contactsToInsert.push({
+          id_uuid_hospital: id_uuid_hospital,
+          type: 'consultation_phone',
+          value: contactsInfo.consultationPhone.trim(),
+          sequence: 1
+        });
+      }
+
+      // 상담 관리자 전화번호 (배열)
+      if (contactsInfo.consultationManagerPhones && Array.isArray(contactsInfo.consultationManagerPhones)) {
+        contactsInfo.consultationManagerPhones.forEach((phone: string, index: number) => {
+          if (phone && phone.trim() !== '') {
+            contactsToInsert.push({
+              id_uuid_hospital: id_uuid_hospital,
+              type: 'consult_manager_phone',
+              value: phone.trim(),
+              sequence: index
+            });
+          }
+        });
+      }
+      
+
+      // SMS 발신 번호
+      if (contactsInfo.smsPhone && contactsInfo.smsPhone.trim() !== '') {
+        contactsToInsert.push({
+          id_uuid_hospital: id_uuid_hospital,
+          type: 'sms_phone',
+          value: contactsInfo.smsPhone.trim(),
+          sequence: 1
+        });
+      }
+
+      // 이벤트 관리자 번호
+      if (contactsInfo.eventManagerPhone && contactsInfo.eventManagerPhone.trim() !== '') {
+        contactsToInsert.push({
+          id_uuid_hospital: id_uuid_hospital,
+          type: 'event_manager_phone',
+          value: contactsInfo.eventManagerPhone.trim(),
+          sequence: 1
+        });
+      }
+
+      // 마케팅 이메일 (배열)
+      if (contactsInfo.marketingEmails && Array.isArray(contactsInfo.marketingEmails)) {
+        contactsInfo.marketingEmails.forEach((email: string, index: number) => {
+          if (email && email.trim() !== '') {
+            contactsToInsert.push({
+              id_uuid_hospital: id_uuid_hospital,
+              type: 'marketing_email',
+              value: email.trim(),
+              sequence: index
+            });
+          }
+        });
+      }
+
+      // 연락처 정보 저장
+      if (contactsToInsert.length > 0) {
+        const { error: contactsError } = await supabase
+          .from(TABLE_CONTACTS)
+          .insert(contactsToInsert);
+
+        if (contactsError) {
+          console.error('연락처 정보 저장 실패:', contactsError);
+          // 연락처 저장 실패는 전체 프로세스를 중단하지 않습니다
+        } else {
+          console.log('연락처 정보 저장 완료:', contactsToInsert.length, '개 항목');
+        }
+      }
+    } catch (error) {
+      console.error('연락처 정보 파싱 실패:', error);
     }
   }
   

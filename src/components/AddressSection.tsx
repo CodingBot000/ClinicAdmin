@@ -273,7 +273,7 @@ export default function AddressSection({
         <InputField
           label="상세주소 영문"
           name="address_detail_en"
-          placeholder="위에 입력한 상세주소를 영문으로 입력해주세요 (선택)"
+          placeholder="위에 입력한 상세주소를 영문으로 입력해주세요 (선택) 입력하지 않으면 국문 입력을 기반으로 자동번역됩니다."
           value={localAddressDetailEn}
           onChange={(e) => handleLocalAddressDetailEnChange(e.target.value)}
           onBlur={handleAddressDetailEnBlur}
@@ -292,7 +292,7 @@ export default function AddressSection({
         <InputField
           label="찾아오는 방법 상세안내 영문"
           name="directions_to_clinic_en"
-          placeholder="위에 입력한 찾아오는 방법을 영문으로 입력해주세요 (선택)"
+          placeholder="위에 입력한 찾아오는 방법을 영문으로 입력해주세요 (선택) 입력하지 않으면 국문 입력을 기반으로 자동번역됩니다."
           value={localDirectionsToClinicEn}
           onChange={(e) => handleLocalDirectionsToClinicEnChange(e.target.value)}
           onBlur={handleDirectionsToClinicEnBlur}

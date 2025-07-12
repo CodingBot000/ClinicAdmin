@@ -8,7 +8,8 @@ import {
   TABLE_HOSPITAL_BUSINESS_HOUR,
   TABLE_ADMIN,
   TABLE_TREATMENT,
-  TABLE_FEEDBACKS
+  TABLE_FEEDBACKS,
+  TABLE_CONTACTS
 } from '@/constants/tables';
 
 import { supabase } from "@/lib/supabaseClient";
@@ -221,6 +222,27 @@ async function loadFeedback(hospitalUuid: string) {
 }
 
 /**
+ * 연락처 정보를 가져옵니다
+ */
+async function loadContacts(hospitalUuid: string) {
+  console.log(' 연락처 정보 로딩:', hospitalUuid);
+  
+  const { data, error } = await supabase
+    .from(TABLE_CONTACTS)
+    .select('*')
+    .eq('id_uuid_hospital', hospitalUuid)
+    .order('type, sequence');
+
+  if (error) {
+    console.error('연락처 정보 로딩 실패:', error);
+    return [];
+  }
+
+  console.log(' 연락처 정보 로딩 완료:', data?.length || 0, '개');
+  return data || [];
+}
+
+/**
  * 모든 병원 관련 데이터를 통합해서 가져옵니다
  */
 export async function loadExistingHospitalData(
@@ -250,7 +272,8 @@ export async function loadExistingHospitalData(
       businessHours: [],
       doctors: [],
       treatments: [],
-      feedback: ''
+      feedback: '',
+      contacts: []
     };
 
     let result: ExistingHospitalData = { ...base };
@@ -319,14 +342,26 @@ export async function loadExistingHospitalData(
         break;
       }
 
+      case 6: {
+        const [contacts] = await Promise.all([
+          loadContacts(hospitalUuid)
+        ]);
+        result = {
+          ...base,
+          contacts: contacts ?? base.contacts
+        };
+        break;
+      }
+
       case 100: {
-        const [hospital, hospitalDetail, businessHours, doctors, treatments, feedback] = await Promise.all([
+        const [hospital, hospitalDetail, businessHours, doctors, treatments, feedback, contacts] = await Promise.all([
           loadHospitalData(hospitalUuid),
           loadHospitalDetailData(hospitalUuid),
           loadBusinessHours(hospitalUuid),
           loadDoctors(hospitalUuid),
           loadTreatments(hospitalUuid),
-          loadFeedback(hospitalUuid)
+          loadFeedback(hospitalUuid),
+          loadContacts(hospitalUuid)
         ]);
         result = {
           hospital: hospital ?? base.hospital,
@@ -334,7 +369,8 @@ export async function loadExistingHospitalData(
           businessHours: businessHours ?? base.businessHours,
           doctors: doctors ?? base.doctors,
           treatments: treatments ?? base.treatments,
-          feedback: feedback ?? base.feedback
+          feedback: feedback ?? base.feedback,
+          contacts: contacts ?? base.contacts
         };
         break;
       }
@@ -349,7 +385,8 @@ export async function loadExistingHospitalData(
       영업시간: result.businessHours?.length ?? 0,
       의사정보: result.doctors?.length ?? 0,
       시술정보: result.treatments?.length ?? 0,
-      피드백: result.feedback ? '✅' : '⛔️'
+      피드백: result.feedback ? '✅' : '⛔️',
+      연락처: result.contacts ? '✅' : '⛔️'
     });
 
     return result;

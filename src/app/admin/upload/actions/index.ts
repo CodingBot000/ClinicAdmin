@@ -756,6 +756,7 @@ export const uploadActions = async (prevState: any, formData: FormData) => {
       etc: '',
       sns_content_agreement: sns_content_agreement,
       available_languages: available_languages,
+      introduction: formData.get("introduction") as string || '',
     };
   };
 

@@ -122,8 +122,12 @@ export default function ClinicInfoInsertClient(
         <Step5LanguagesFeedback
           id_uuid_hospital={id_uuid_hospital}
           isEditMode={isEditMode}
-          onSubmit={() => {}}
+          onComplete={() => {
+            router.replace('/admin');
+            router.refresh();
+          }}
           onPrev={goBack}
+          onStepChange={goToStep}
           currentUserUid={currentUserUid}
         />
       )}

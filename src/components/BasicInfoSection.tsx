@@ -5,7 +5,7 @@ import { AlertModal } from './modal';
 import { HelpCircle } from 'lucide-react';
 import SNSConsentButton from './modal/SNSContentModal';
 import Divider from './Divider';
-import { BasicInfo } from '@/app/admin/upload/ClinicInfoUploadClient';
+import { BasicInfo } from '@/types/basicinfo';
 
 const SNS_CHANNEL_LABELS = {
   kakao_talk: 'KakaoTalk',
@@ -112,6 +112,8 @@ const BasicInfoSection = ({
   const [info, setInfo] = useState<BasicInfo>({
     name: initialInfo?.name || '',
     email: initialInfo?.email || '',
+    introduction: initialInfo?.introduction || '',
+    introduction_en: initialInfo?.introduction_en || '',
     tel: initialInfo?.tel || '',
 
     kakao_talk: initialInfo?.kakao_talk || '',
@@ -134,6 +136,8 @@ const BasicInfoSection = ({
       setInfo({
         name: initialInfo.name || info.name,
         email: initialInfo.email || info.email,
+        introduction: initialInfo.introduction || info.introduction,
+        introduction_en: initialInfo.introduction_en || info.introduction_en,
         tel: initialInfo.tel || info.tel,
        
         kakao_talk: initialInfo.kakao_talk || info.kakao_talk,
@@ -252,6 +256,44 @@ const BasicInfoSection = ({
           isError={!!emailError}
           errorMessage={emailError}
         />
+        
+        <div className="flex flex-row w-full gap-6">
+          {/* 병원 소개 - 국문 */}
+          <div className="flex flex-col w-1/2 gap-1">
+            <label htmlFor="introduction" className="font-medium">
+              병원 소개 (국문입력)
+            </label>
+            <textarea
+              id="introduction"
+              name="introduction"
+              required
+              value={info.introduction}
+              onChange={(e) => handleChange('introduction', e.target.value)}
+              placeholder="예: 저희 병원은 최신 장비와..."
+              className="w-full px-3 py-2 border border-gray-300 rounded outline-none transition focus:border-blue-500 resize-none"
+              rows={4}
+            />
+          </div>
+
+          {/* 병원 소개 - 영문 */}
+          <div className="flex flex-col w-1/2 gap-1">
+            <label htmlFor="introduction_en" className="font-medium">
+              병원 소개 (영문입력)
+            </label>
+            <textarea
+              id="introduction_en"
+              name="introduction_en"
+              required
+              value={info.introduction_en}
+              onChange={(e) => handleChange('introduction_en', e.target.value)}
+              placeholder="입력하지 않으면 국문 입력을 기반으로 자동번역됩니다."
+              className="w-full px-3 py-2 border border-gray-300 rounded outline-none transition focus:border-blue-500 resize-none"
+              rows={4}
+            />
+          </div>
+        </div>
+
+
         <InputField
           label="대표 전화번호"
           name="tel"
@@ -277,7 +319,7 @@ const BasicInfoSection = ({
               추가하기
             </Button>
             <h4 className="text-sm text-gray-400">
-              카카오톡 외에도 필요시 새로 만드셔서 추가하시길 적극 권장합니다. 향후 언제든지 추가/변경 가능합니다. 
+              해외대상 서비스 이므로 카카오톡 외에도 필요시 새로 만드셔서 추가하시길 적극 권장합니다. 향후 언제든지 추가/변경 가능합니다. 
             </h4>
           </div>
           <div className="flex items-center gap-2">

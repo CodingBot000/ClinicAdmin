@@ -28,6 +28,7 @@ interface PrepareFormDataParams {
   id_uuid: string;
   clinicName: string;
   email: string;
+  introduction: string;
   tel: string;
   addressForSendForm: any;
   selectedLocation: string;
@@ -60,6 +61,7 @@ export const prepareFormData = ({
   id_uuid,
   clinicName,
   email,
+  introduction,
   tel,
   addressForSendForm,
   selectedLocation,
@@ -84,6 +86,7 @@ export const prepareFormData = ({
   formData.append('name', clinicName);
   formData.append('email', email);
   formData.append('tel', tel);
+  formData.append('introduction', introduction);
 
   // SNS 정보
   Object.entries(snsData).forEach(([key, value]) => {
