@@ -1,103 +1,61 @@
-import { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
-import { supabase } from "@/lib/supabaseClient";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 import { 
-  createSuccessResponse, 
-  createErrorResponse, 
-  extractAndValidateUser,
-  handleApiError,
-  checkRateLimit,
-  logRequest
-} from '@/lib/api-utils';
-import {
   TABLE_HOSPITAL,
   TABLE_DOCTOR,
   STORAGE_IMAGES
 } from '@/constants/tables';
+import { v4 as uuidv4 } from 'uuid';
 
-// 파일명 생성 함수 (기존 코드와 동일)
-const generateFileName = (originalName: string, prefix: string = '', suffix: string = '') => {
-  const timestamp = Date.now();
-  const uuid = uuidv4().split('-')[0];
-  const extension = originalName.split('.').pop() || 'jpg';
-  const sanitizedName = originalName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-  
-  return `${prefix}${sanitizedName}_${uuid}_${timestamp}.${extension}`;
+// CORS 헤더 정의
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// 병원 이미지 파일명 생성 (기존 코드와 동일)
-const generateHospitalImageFileName = (originalName: string) => {
-  return generateFileName(originalName, 'hospital_');
-};
-
-// 의사 이미지 파일명 생성 (기존 코드와 동일)
-const generateDoctorImageFileName = (originalName: string, doctorName: string) => {
-  const nameSlug = doctorName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  return generateFileName(originalName, `doctor_${nameSlug}_`);
-};
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
 
 export async function POST(request: NextRequest) {
   console.log('=== uploadStep3 START ===');
 
-  // 에러 발생 시 모든 작업을 롤백하는 함수 (기존 코드와 동일)
-  const rollbackAll = async (errorMessage: string) => {
-    console.error('롤백 실행:', errorMessage);
-    return createErrorResponse(errorMessage, 500);
-  };
-
   try {
-    logRequest(request, { step: 'step3' });
-
     const formData = await request.formData();
     
-    // Rate limiting 체크 (이미지 업로드는 더 엄격하게)
-    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    if (!checkRateLimit(clientIP, 3, 120000)) { // 2분에 3번
-      return createErrorResponse('너무 많은 업로드 요청입니다. 잠시 후 다시 시도해주세요.', 429);
-    }
-
-    // 사용자 인증 및 검증
-    const userValidation = await extractAndValidateUser(formData);
-    if (!userValidation.isValid) {
-      return createErrorResponse(userValidation.error || 'Unauthorized', 401);
-    }
-
-    // FormData에서 기본 정보 추출 (기존 코드와 동일)
+    // FormData에서 기본 정보 추출
     const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
     const id_uuid_hospital = formData.get("id_uuid_hospital") as string;
     const current_user_uid = formData.get("current_user_uid") as string;
     
-    if (!id_uuid_hospital) {
-      return createErrorResponse('병원 ID가 필요합니다.', 400);
-    }
-
-    // 기존 데이터 파싱 (편집 모드용) - 기존 코드와 동일
+    // 기존 데이터 파싱 (편집 모드용)
     const existingDataRaw = formData.get("existing_data")?.toString();
     const existingData = existingDataRaw ? JSON.parse(existingDataRaw) : null;
 
-    // 썸네일 이미지 관련 데이터 (기존 코드와 동일)
+    // 썸네일 이미지 관련 데이터
     const existingThumbnailUrl = formData.get("existing_thumbnail_url")?.toString() || null;
     const newThumbnailUrl = formData.get("new_thumbnail_url")?.toString() || null;
     const finalThumbnailUrl = formData.get("final_thumbnail_url")?.toString() || null;
     const deletedThumbnailUrl = formData.get("deleted_thumbnail_url")?.toString() || null;
 
-    // 기존 병원 이미지 URL들 (기존 코드와 동일)
+    // 기존 병원 이미지 URL들
     const existingClinicUrlsRaw = formData.get("existing_clinic_urls") as string;
     const existingClinicUrls = existingClinicUrlsRaw ? JSON.parse(existingClinicUrlsRaw) : [];
     
-    // 새로 업로드된 병원 이미지 URL들 (기존 코드와 동일)
+    // 새로 업로드된 병원 이미지 URL들
     const newClinicImageUrlsRaw = formData.get("new_clinic_image_urls") as string;
     const newClinicImageUrls = newClinicImageUrlsRaw ? JSON.parse(newClinicImageUrlsRaw) : [];
     
-    // 최종 병원 이미지 URL들 (클라이언트에서 전달받은 순서) - 기존 코드와 동일
+    // 최종 병원 이미지 URL들 (클라이언트에서 전달받은 순서)
     const finalClinicImageUrlsRaw = formData.get("final_clinic_image_urls") as string;
     const finalClinicImageUrls = finalClinicImageUrlsRaw ? JSON.parse(finalClinicImageUrlsRaw) : [];
     
-    // 삭제된 병원 이미지 URL들 (기존 코드와 동일)
+    // 삭제된 병원 이미지 URL들
     const deletedClinicUrlsRaw = formData.get("deleted_clinic_urls") as string;
     const deletedClinicUrls = deletedClinicUrlsRaw ? JSON.parse(deletedClinicUrlsRaw) : [];
     
-    // 의사 정보 파싱 (기존 코드와 동일)
+    // 의사 정보 파싱
     const doctorsRaw = formData.get("doctors") as string;
     console.log('=== 의사 데이터 원본 ===');
     console.log('doctorsRaw:', doctorsRaw);
@@ -123,9 +81,7 @@ export async function POST(request: NextRequest) {
     console.log('- deletedClinicUrls:', deletedClinicUrls);
     console.log('- doctors count:', doctors.length);
 
-    // 1. 썸네일 이미지 처리 (exist vs cur 비교) - 기존 코드와 동일
-    // exist: 기존에 로딩된 썸네일 이미지 URL
-    // cur: 현재 설정된 썸네일 이미지 URL
+    // 1. 썸네일 이미지 처리 (exist vs cur 비교)
     const existThumbnail = existingThumbnailUrl;
     const curThumbnail = finalThumbnailUrl;
     
@@ -134,7 +90,7 @@ export async function POST(request: NextRequest) {
     console.log('- cur (현재):', curThumbnail);
     console.log('- 변경사항 있음:', existThumbnail !== curThumbnail);
     
-    // 변경사항이 있으면 기존 썸네일 이미지 삭제 (기존 코드와 동일)
+    // 변경사항이 있으면 기존 썸네일 이미지 삭제
     if (existThumbnail && existThumbnail !== curThumbnail && !existThumbnail.includes('/default/')) {
       console.log('기존 썸네일 이미지 삭제 시작:', existThumbnail);
       
@@ -160,7 +116,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. 클라이언트에서 명시적으로 삭제된 썸네일 이미지 처리 (기존 로직 유지 - 중복 방지) - 기존 코드와 동일
+    // 2. 클라이언트에서 명시적으로 삭제된 썸네일 이미지 처리
     if (deletedThumbnailUrl && deletedThumbnailUrl !== existThumbnail) {
       console.log('- 추가로 삭제할 썸네일 이미지 URL:', deletedThumbnailUrl);
       
@@ -186,7 +142,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. 클라이언트에서 명시적으로 삭제된 병원 이미지 파일들 처리 (기존 코드와 동일)
+    // 3. 클라이언트에서 명시적으로 삭제된 병원 이미지 파일들 처리
     if (deletedClinicUrls.length > 0) {
       console.log('- 클라이언트에서 삭제된 병원 이미지 URL들:', deletedClinicUrls);
       
@@ -214,7 +170,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. 기존 이미지와 최종 이미지 비교하여 추가로 삭제할 이미지들 처리 (기존 코드와 동일)
+    // 4. 기존 이미지와 최종 이미지 비교하여 추가로 삭제할 이미지들 처리
     if (isEditMode && existingClinicUrls.length > 0) {
       const additionalDeletedImageUrls = existingClinicUrls.filter(
         (url: string) => !finalClinicImageUrls.includes(url) && !deletedClinicUrls.includes(url)
@@ -248,7 +204,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. 병원 테이블 업데이트 (썸네일 이미지 URL과 최종 이미지 URL 배열) - 기존 코드와 동일
+    // 5. 병원 테이블 업데이트 (썸네일 이미지 URL과 최종 이미지 URL 배열)
     console.log('병원 테이블 업데이트 시작:', {
       id_uuid_hospital,
       thumbnail_url: finalThumbnailUrl,
@@ -266,12 +222,15 @@ export async function POST(request: NextRequest) {
 
     if (hospitalUpdateError) {
       console.error('병원 테이블 업데이트 실패:', hospitalUpdateError);
-      return await rollbackAll(`병원 테이블 업데이트 실패: ${hospitalUpdateError.message}`);
+      return NextResponse.json({
+        message: `병원 테이블 업데이트 실패: ${hospitalUpdateError.message}`,
+        status: "error",
+      }, { status: 500 });
     }
 
     console.log('병원 테이블 업데이트 성공:', hospitalUpdateData);
 
-    // 각 의사 정보 처리 (기존 코드와 동일)
+    // 각 의사 정보 처리
     for (let i = 0; i < doctors.length; i++) {
       const doctor = doctors[i];
       
@@ -283,7 +242,7 @@ export async function POST(request: NextRequest) {
         imageUrlLength: doctor.image_url?.length || 0
       });
       
-      // 의사 데이터 준비 (이미지 URL은 이미 클라이언트에서 업로드 완료) - 기존 코드와 동일
+      // 의사 데이터 준비 (이미지 URL은 이미 클라이언트에서 업로드 완료)
       const doctorData = {
         id_uuid_hospital,
         name: doctor.name,
@@ -293,7 +252,7 @@ export async function POST(request: NextRequest) {
       };
 
       if (doctor.id_uuid) {
-        // 기존 의사 정보 업데이트 (기존 코드와 동일)
+        // 기존 의사 정보 업데이트
         console.log(`- 의사 정보 업데이트: ${doctor.name} (${doctor.id_uuid})`);
         console.log(`  업데이트할 이미지 URL: ${doctorData.image_url}`);
 
@@ -315,7 +274,10 @@ export async function POST(request: NextRequest) {
 
           if (insertError) {
             console.error('의사 정보 추가 실패:', insertError);
-            return await rollbackAll(`의사 정보 추가 실패: ${insertError.message}`);
+            return NextResponse.json({
+              message: `의사 정보 추가 실패: ${insertError.message}`,
+              status: "error",
+            }, { status: 500 });
           }
           
           console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
@@ -360,13 +322,16 @@ export async function POST(request: NextRequest) {
 
           if (updateError) {
             console.error('의사 정보 업데이트 실패:', updateError);
-            return await rollbackAll(`의사 정보 업데이트 실패: ${updateError.message}`);
+            return NextResponse.json({
+              message: `의사 정보 업데이트 실패: ${updateError.message}`,
+              status: "error",
+            }, { status: 500 });
           }
           
           console.log(`- 의사 정보 업데이트 성공: ${doctor.name}`, updateData);
         }
       } else {
-        // 새 의사 정보 추가 (기존 코드와 동일)
+        // 새 의사 정보 추가
         console.log(`- 새 의사 정보 추가: ${doctor.name}`);
         const { data: insertData, error: insertError } = await supabase
           .from(TABLE_DOCTOR)
@@ -375,14 +340,17 @@ export async function POST(request: NextRequest) {
 
         if (insertError) {
           console.error('의사 정보 추가 실패:', insertError);
-          return await rollbackAll(`의사 정보 추가 실패: ${insertError.message}`);
+          return NextResponse.json({
+            message: `의사 정보 추가 실패: ${insertError.message}`,
+            status: "error",
+          }, { status: 500 });
         }
         
         console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
       }
     }
 
-    // 편집 모드에서 삭제된 의사들 처리 (기존 코드와 동일)
+    // 편집 모드에서 삭제된 의사들 처리
     if (isEditMode && existingData?.doctors) {
       const existingDoctorIds = existingData.doctors.map((d: any) => d.id_uuid);
       const currentDoctorIds = doctors.map((d: any) => d.id_uuid).filter(Boolean);
@@ -423,7 +391,10 @@ export async function POST(request: NextRequest) {
           
         if (deleteError) {
           console.error('의사 정보 삭제 실패:', deleteError);
-          return await rollbackAll(`의사 정보 삭제 실패: ${deleteError.message}`);
+          return NextResponse.json({
+            message: `의사 정보 삭제 실패: ${deleteError.message}`,
+            status: "error",
+          }, { status: 500 });
         }
         
         console.log(`- 의사 정보 삭제 성공: ${deletedId}`);
@@ -431,25 +402,17 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('=== uploadStep3 성공 완료 ===');
-
-    return createSuccessResponse({
+  
+    return NextResponse.json({
       message: "썸네일 이미지, 병원 이미지 및 의사 정보가 성공적으로 저장되었습니다.",
-      id_uuid_hospital
-    });
+      status: "success",
+    }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
     console.error('uploadStep3 전체 오류:', error);
-    return await rollbackAll(`처리 중 오류가 발생했습니다: ${error}`);
+    return NextResponse.json({
+      message: `처리 중 오류가 발생했습니다: ${error}`,
+      status: "error",
+    }, { status: 500, headers: corsHeaders });
   }
-}
-
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 } 

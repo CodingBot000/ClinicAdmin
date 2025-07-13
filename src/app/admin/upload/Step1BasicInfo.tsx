@@ -24,7 +24,6 @@ import ExtraOptions, {
   ExtraOptionState,
 } from '@/components/ExtraOptions';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
 import type { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
@@ -43,6 +42,7 @@ import { prepareFormData } from '@/lib/formDataHelper';
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
 import { BasicInfo, ContactsInfo } from '@/types/basicinfo';
+import { validateEmail } from '@/utils/validate-check/validate-forms';
 
 interface Surgery {
   created_at: string;
@@ -54,8 +54,6 @@ interface Surgery {
   type: string;
 }
 
-const doctorImageUploadLength = 3;
-const clinicImageUploadLength = 7;
 
 interface Step1BasicInfoProps {
   id_uuid_hospital: string;
@@ -235,7 +233,7 @@ const Step1BasicInfo = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     console.log(
-      `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `Step1 - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
       loadExistingDataForEdit();
@@ -250,20 +248,20 @@ const Step1BasicInfo = ({
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      console.log(' 편집 모드 - 기존 데이터 로딩 시작');
+      console.log('Step1 - 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
-        console.log(' 편집 모드 - 기존 데이터 로딩 완료');
+        console.log('Step1 - 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        console.log(' 편집 모드 - 기존 데이터가 없습니다');
+        console.log('Step1 - 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
-        ' 편집 모드 - 데이터 로딩 실패:',
+        'Step1 - 편집 모드 - 데이터 로딩 실패:',
         error,
       );
       setFormState({
@@ -280,12 +278,12 @@ const Step1BasicInfo = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    console.log('폼에 기존 데이터 적용 시작');
+    console.log('Step1 - 폼에 기존 데이터 적용 시작');
 
     try {
       // 1. 데이터를 폼 형식으로 변환
       const formData = mapExistingDataToFormValues(existingData);
-      console.log('변환된 폼 데이터:', formData);
+      console.log('Step1 - 변환된 폼 데이터:', formData);
 
       // 2. 병원 기본 정보 설정
       setHospitalName(formData.hospital.name);
@@ -312,18 +310,18 @@ const Step1BasicInfo = ({
           other_channel: existingData.hospitalDetail.other_channel || '',
           sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
         });
-        console.log('기본 정보 및 SNS 채널 정보 설정 완료');
+        console.log('Step1 - 기본 정보 및 SNS 채널 정보 설정 완료');
       }
 
       console.log(
-        '병원 기본 정보 설정 완료:',
+        'Step1 - 병원 기본 정보 설정 완료:',
         formData.hospital.name,
       );
 
       // 3. 의사 정보 설정
       setDoctors(formData.doctors);
       console.log(
-        '의사 정보 설정 완료:',
+        'Step1 - 의사 정보 설정 완료:',
         formData.doctors.length,
         '명',
       );
@@ -331,7 +329,7 @@ const Step1BasicInfo = ({
       // 피드백 정보 설정
       if (existingData.feedback) {
         setFeedback(existingData.feedback);
-        console.log('피드백 정보 설정 완료:', existingData.feedback);
+        console.log('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
       }
 
       // 3. 주소 정보 설정
@@ -359,18 +357,18 @@ const Step1BasicInfo = ({
             longitude: formData.address.coordinates.lng,
           });
         }
-        console.log('주소 정보 설정 완료');
+        console.log('Step1 - 주소 정보 설정 완료');
       }
 
       // 4. 영업시간 설정
-      console.log('영업시간 설정 시작');
-      console.log(
-        '변환된 영업시간 데이터:',
+      console.log('Step1 - 영업시간 설정 시작');
+      console.debug(
+        'Step1 - 변환된 영업시간 데이터:',
         formData.businessHours,
       );
       setInitialBusinessHours(formData.businessHours);
       console.log(
-        'initialBusinessHours 상태 업데이트 완료',
+        'Step1 - initialBusinessHours 상태 업데이트 완료',
       );
 
       // 5. 편의시설 설정
@@ -388,13 +386,13 @@ const Step1BasicInfo = ({
           specialist_count:
           formData.facilities.specialist_count,
       });
-      console.log('편의시설 설정 완료');
+      console.log('Step1 - 편의시설 설정 완료');
 
       // 6. 위치 정보 설정
       if (existingData.hospital?.location) {
         try {
             const locKey = existingData.hospital?.location;
-            console.log('위치 정보 조회 시작 key :', locKey);
+            console.log('Step1 - 위치 정보 조회 시작 key :', locKey);
             // if (locKey) {
               // key는 string -> number 변환
               const locationKey = parseInt(locKey, 10);
@@ -402,30 +400,30 @@ const Step1BasicInfo = ({
         
               if (region) {
                 setSelectedLocation(region);
-                console.log('위치 정보 설정 완료:', region);
+                console.log('Step1 - 위치 정보 설정 완료:', region);
               } else {
-                console.warn('위치 정보 해당 key에 맞는 REGION을 찾지 못했습니다.', locationKey);
+                console.warn('Step1 - 위치 정보 해당 key에 맞는 REGION을 찾지 못했습니다.', locationKey);
               }
             // }
           } catch (error) {
-            console.error('위치 정보 파싱 실패:', existingData.hospital.location, error);
+            console.error('Step1 - 위치 정보 파싱 실패:', existingData.hospital.location, error);
           }
       }
 
       // 6. 시술 정보 설정
-      console.log('시술 정보 설정 시작');
-      console.log(
-        '변환된 시술 데이터:',
+      console.log('Step1 - 시술 정보 설정 시작');
+      console.debug(
+        'Step1 - 변환된 시술 데이터:',
         formData.treatments,
       );
       setInitialTreatmentData(formData.treatments);
       console.log(
-        'initialTreatmentData 상태 업데이트 완료',
+        'Step1 - initialTreatmentData 상태 업데이트 완료',
       );
 
       // 7. 연락처 정보 설정
       if (existingData.contacts && existingData.contacts.length > 0) {
-        console.log('연락처 정보 설정 시작:', existingData.contacts);
+        console.log('Step1 - 연락처 정보 설정 시작:', existingData.contacts);
         
         // 연락처 데이터를 ContactsInfo 형태로 변환
         const contactsData: ContactsInfo = {
@@ -461,11 +459,11 @@ const Step1BasicInfo = ({
         });
 
         setContactsInfo(contactsData);
-        console.log('연락처 정보 설정 완료:', contactsData);
+        console.log('Step1 - 연락처 정보 설정 완료:', contactsData);
       }
 
-      console.log('기존 데이터 적용 완료!');
-      console.log('적용된 데이터:', {
+      console.log('Step1 - 기존 데이터 적용 완료!');
+      console.log('Step1 - 적용된 데이터:', {
         병원명: formData.hospital.name,
         의사수: formData.doctors.length,
         영업시간: Object.keys(formData.businessHours)
@@ -473,53 +471,133 @@ const Step1BasicInfo = ({
         시술정보: Object.keys(formData.treatments).length,
       });
     } catch (error) {
-      console.error('기존 데이터 적용 중 오류:', error);
+      console.error('Step1 - 기존 데이터 적용 중 오류:', error);
     }
   };
 
-  const handleModal = () => {
-    setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
-    handleOpenModal();
-  };
+  // const handleModal = () => {
+  //   setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
+  //   handleOpenModal();
+  // };
 
   // 성공 시 관리자 페이지로 이동하는 함수
-  const handleConfirm = () => {
-    if (formState?.status === 'success') {
-      router.replace('/admin');
-      router.refresh();
-    } else {
-      handleModal();
-    }
-  };
+  // const handleConfirm = () => {
+  //   if (formState?.status === 'success') {
+  //     router.replace('/admin');
+  //     router.refresh();
+  //   } else {
+  //     handleModal();
+  //   }
+  // };
 
-  const handleTreatmentSelectionChange = (data: {
-    selectedKeys: number[];
-    productOptions: any[];
-    priceExpose: boolean;
-    etc: string;
-  }) => {
-    setSelectedTreatments(data.selectedKeys);
-    setTreatmentOptions(data.productOptions);
-    setPriceExpose(data.priceExpose);
-    setTreatmentEtc(data.etc);
+  // const handleTreatmentSelectionChange = (data: {
+  //   selectedKeys: number[];
+  //   productOptions: any[];
+  //   priceExpose: boolean;
+  //   etc: string;
+  // }) => {
+  //   setSelectedTreatments(data.selectedKeys);
+  //   setTreatmentOptions(data.productOptions);
+  //   setPriceExpose(data.priceExpose);
+  //   setTreatmentEtc(data.etc);
 
-    console.log('UploadClient - 시술 데이터 업데이트:', {
-      selectedTreatments: data.selectedKeys,
-      productOptions: data.productOptions,
-      priceExpose: data.priceExpose,
-      etc: data.etc,
-    });
-  };
+  //   console.debug('Step1 - 시술 데이터 업데이트:', {
+  //     selectedTreatments: data.selectedKeys,
+  //     productOptions: data.productOptions,
+  //     priceExpose: data.priceExpose,
+  //     etc: data.etc,
+  //   });
+  // };
 
   // 부가시설 옵션 변경 처리하는 함수
-  const handleExtraOptionsChange = (
-    data: ExtraOptionState,
-  ) => {
-    console.log(
-      'UploadClient - 부가시설 옵션 업데이트:',
-      data,
-    );
-    setOptionState(data);
+  // const handleExtraOptionsChange = (
+  //   data: ExtraOptionState,
+  // ) => {
+  //   console.debug(
+  //     'Step1 - 부가시설 옵션 업데이트:',
+  //     data,
+  //   );
+  //   setOptionState(data);
+  // };
+
+  // 폼 검증 함수
+  const validateForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    // 1. 병원명 검증
+    if (!basicInfo.name?.trim()) {
+      errors.push('병원명을 입력해주세요.');
+    }
+
+    // 2. 이메일 검증
+    if (!basicInfo.email?.trim() ) {
+      errors.push('이메일을 입력해주세요.');
+    } else if (!validateEmail(basicInfo.email)) {
+        errors.push('이메일 항목에 입력된 이메일이 올바른 이메일 형식이 아닙니다.');
+    }
+
+    // 3. 병원소개(국문) 검증
+    if (!basicInfo.introduction?.trim()) {
+      errors.push('병원소개(국문)를 입력해주세요.');
+    }
+
+    // 4. 대표전화번호 검증
+    if (!basicInfo.tel?.trim()) {
+      errors.push('대표전화번호를 입력해주세요.');
+    }
+
+    if (!basicInfo.sns_content_agreement) {
+      errors.push('SNS 이용 동의에 대해 동의  혹은 미동의를 선택해 주세요.');
+    }
+
+    // 5. 기본 주소 검증 (상세주소, 찾아오는 방법 상세안내 제외)
+    if (!addressForSendForm?.address_full_jibun?.trim() || !addressForSendForm?.address_full_road?.trim()) {
+      errors.push('기본 주소를 입력해주세요.');
+    }
+
+    // 6. 지역 검증
+    if (!selectedLocation) {
+      errors.push('지역을 선택해주세요.');
+    }
+
+    // 7. 연락처 정보 검증
+    // consultationPhone 검증
+    if (!contactsInfo.consultationPhone?.trim()) {
+      errors.push('상담전화번호를 입력해주세요.');
+    }
+
+    // consultationManagerPhones 배열 검증 (1개 이상)
+    const hasConsultationManager = contactsInfo.consultationManagerPhones.some(phone => phone?.trim());
+    if (!hasConsultationManager) {
+      errors.push('상담관리자 전화번호를 1개 이상 입력해주세요.');
+    }
+
+    // smsPhone 검증
+    if (!contactsInfo.smsPhone?.trim()) {
+      errors.push('SMS 전화번호를 입력해주세요.');
+    }
+
+    // eventManagerPhone 검증
+    if (!contactsInfo.eventManagerPhone?.trim()) {
+      errors.push('이벤트관리자 전화번호를 입력해주세요.');
+    }
+
+    // marketingEmails 배열 검증 (1개 이상)
+    const hasMarketingEmail = contactsInfo.marketingEmails.some(email => email?.trim());
+    if (!hasMarketingEmail) {
+      errors.push('마케팅 이메일을 1개 이상 입력해주세요.');
+    } else {
+      // 마케팅 이메일 형식 검증 - 한 개라도 잘못된 형식이 있으면 에러 메시지 하나만 추가
+      const hasInvalidEmail = contactsInfo.marketingEmails.some(email => email?.trim() && !validateEmail(email));
+      if (hasInvalidEmail) {
+        errors.push('마케팅 이메일 중 올바른 이메일 형식이 아닌 이메일이 있습니다.');
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   };
 
   // const emptyFormDataSummary: FormDataSummary = {
@@ -1117,7 +1195,7 @@ const Step1BasicInfo = ({
   // };
 
   // 렌더링 시점 디버깅
-  console.log('UploadClient 렌더링:', {
+  console.log('Step1 - UploadClient 렌더링:', {
     isEditMode,
     hospitalName,
     address,
@@ -1149,59 +1227,79 @@ const Step1BasicInfo = ({
     return <LoadingSpinner backdrop />;
 
     const handleNext = async () => {
-        console.log('handleNext');
+        console.log('Step1 - handleNext 시작');
+        // const validateCombineData = {
+        //   basicInfo,
+        //   // selectedLocation,
+        //   addressForSendForm,
+        //   contactsInfo,
+          // currentUserUid,
+          // id_uuid_hospital,
+          // isEditMode
+        // }
+        // const validationResult = validateFormDataBySteps(1, {
+        //   validateCombineData
+        // });
+
+        // if (!validationResult.isValid) {
+        //   setFormState({
+        //     message: validationResult.messages?.join('\n') || '입력 정보를 확인해주세요. 최초입력 최소한 반드시 채워야할 입력정보입니다.',
+        //     status: 'error',
+        //     errorType: 'validation',
+        //   });
+        //   setShowFinalResult(true);
+        //   return;
+        // }
+
         const result = await handleSave();
-        console.log('handleNext result', result);
+        console.debug('Step1 - handleNext result:', result);
         if (result?.status === 'success') {
             onNext();
         }
     }
+    
  
   const handleSave = async () => {
-    console.log('handleSave 시작');
+    console.log('Step1 - handleSave 시작');
+    console.log('Step1 - 현재 상태:', {
+      basicInfo,
+      selectedLocation,
+      addressForSendForm,
+      contactsInfo,
+      currentUserUid,
+      id_uuid_hospital,
+      isEditMode
+    });
     setIsSubmitting(true);
     
     try {
       // 클라이언트 측 검증
-      const clinicName = basicInfo.name;
-      if (!clinicName.trim()) {
+      console.log('Step1 - 검증 시작');
+      const validation = validateForm();
+      
+      if (!validation.isValid) {
+        console.log('Step1 - 검증 실패:', validation.errors);
+        const formattedErrors = validation.errors.map((error, index) => `${index + 1}. ${error}`).join('\n');
         setFormState({
-          message: '병원명을 입력해주세요.',
+          message: formattedErrors,
           status: 'error',
           errorType: 'validation',
         });
         setShowFinalResult(true);
         return { status: 'error' };
       }
-
-      if (!selectedLocation) {
-        setFormState({
-          message: '지역을 선택해주세요.',
-          status: 'error',
-          errorType: 'validation',
-        });
-        setShowFinalResult(true);
-        return { status: 'error' };
-      }
-
-      if (!addressForSendForm) {
-        setFormState({
-          message: '주소를 입력해주세요.',
-          status: 'error',
-          errorType: 'validation',
-        });
-        setShowFinalResult(true);
-        return { status: 'error' };
-      }
+      
+      console.log('Step1 - 검증 통과');
 
       // FormData 구성
+      console.log('Step1 - FormData 구성 시작');
       const formData = new FormData();
       formData.append('current_user_uid', currentUserUid);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
       
       // 기본 정보
       formData.append('id_uuid', id_uuid_hospital);
-      formData.append('name', clinicName);
+      formData.append('name', basicInfo.name);
       formData.append('email', basicInfo.email);
       formData.append('tel', basicInfo.tel);
       formData.append('introduction', basicInfo.introduction);
@@ -1210,6 +1308,8 @@ const Step1BasicInfo = ({
         'sns_content_agreement',
         basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
       );
+      
+      console.log('Step1 - 기본 정보 FormData 추가 완료');
 
       const snsData = {
         kakao_talk: basicInfo.kakao_talk,
@@ -1244,16 +1344,19 @@ const Step1BasicInfo = ({
       // 연락처 정보 추가
       formData.append('contacts_info', JSON.stringify(contactsInfo));
 
-      console.log('API 호출 시작 - Step1');
+      console.log('Step1 - FormData 구성 완료');
+      console.log('Step1 - API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step1(formData);
 
-      console.log('Step1 API 응답:', result);
+      console.log('Step1 - API 응답:', result);
       
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
+        console.log('Step1 - API 응답이 성공이 아님:', result);
         const errorMessage = formatApiError(result.error);
+        console.log('Step1 - 포맷된 에러 메시지:', errorMessage);
         
         setFormState({
           message: errorMessage,
@@ -1268,7 +1371,7 @@ const Step1BasicInfo = ({
         };
       } else {
         // 성공 시 처리
-        console.log('Step1 데이터 저장 성공');
+        console.log('Step1 - 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',
@@ -1282,9 +1385,13 @@ const Step1BasicInfo = ({
       }
       
     } catch (error) {
-      console.error('Step1 API 호출 에러:', error);
+      console.error('Step1 - API 호출 에러:', error);
+      console.error('Step1 - 에러 타입:', typeof error);
+      console.error('Step1 - 에러 메시지:', (error as any)?.message);
+      console.error('Step1 - 에러 스택:', (error as any)?.stack);
 
       const errorMessage = formatApiError(error);
+      console.log('Step1 - 포맷된 에러 메시지:', errorMessage);
 
       setFormState({
         message: errorMessage,
@@ -1300,13 +1407,13 @@ const Step1BasicInfo = ({
         message: errorMessage
       };
     } finally {
+      console.log('Step1 - handleSave 완료');
       setIsSubmitting(false);
     }
   };
 
   return (
     <main>
-      {/* <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} /> */}
       <div
         className='my-8 mx-auto px-6 pb-24'
         style={{ width: '100vw', maxWidth: '1024px' }}
@@ -1369,9 +1476,9 @@ const Step1BasicInfo = ({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
             <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
-            <p className="text-sm text-gray-800 mb-4">{formState.message}</p>
+            <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
             <div className="flex justify-end gap-2">
-              <Button onClick={handleModal}>확인</Button>
+              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
             </div>
           </div>
         </div>

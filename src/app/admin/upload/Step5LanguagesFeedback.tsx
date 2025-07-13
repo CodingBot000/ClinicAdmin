@@ -23,7 +23,7 @@ import ExtraOptions, {
   ExtraOptionState,
 } from '@/components/ExtraOptions';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
+
 import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
 import type { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
@@ -675,7 +675,7 @@ const Step5LanguagesFeedback = ({
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handlePreview}>Preview</Button>
           <Button onClick={handleSave}>Save</Button>
-          <Button onClick={onComplete}>Complete</Button>
+          <Button onClick={onComplete}>홈으로 돌아가기</Button>
         </div>
       </div>
 
@@ -695,9 +695,9 @@ const Step5LanguagesFeedback = ({
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
         <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
           <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
-          <p className="text-sm text-gray-800 mb-4">{formState.message}</p>
+                      <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
           <div className="flex justify-end gap-2">
-            <Button onClick={handleConfirm}>확인</Button>
+            <Button onClick={() => setShowFinalResult(false)}>확인</Button>
           </div>
         </div>
       </div>

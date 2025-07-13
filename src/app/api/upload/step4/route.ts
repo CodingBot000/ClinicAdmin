@@ -1,43 +1,28 @@
-import { NextRequest } from 'next/server';
-import { supabase } from "@/lib/supabaseClient";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 import { 
-  createSuccessResponse, 
-  createErrorResponse, 
-  extractAndValidateUser,
-  handleApiError,
-  checkRateLimit,
-  logRequest
-} from '@/lib/api-utils';
-import {
   TABLE_HOSPITAL_TREATMENT,
   TABLE_TREATMENT
 } from '@/constants/tables';
 
+// CORS 헤더 정의
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
   try {
-    logRequest(request, { step: 'step4' });
-
     const formData = await request.formData();
     
-    // Rate limiting 체크
-    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    if (!checkRateLimit(clientIP, 5, 60000)) {
-      return createErrorResponse('너무 많은 요청입니다. 잠시 후 다시 시도해주세요.', 429);
-    }
-
-    // 사용자 인증 및 데이터 추출
-    const userValidation = await extractAndValidateUser(formData);
-    if (!userValidation.isValid) {
-      return createErrorResponse(userValidation.error || 'Unauthorized', 401);
-    }
-
-    const id_uuid_hospital = formData.get("id_uuid_hospital") as string;
-    if (!id_uuid_hospital) {
-      return createErrorResponse('병원 ID가 필요합니다.', 400);
-    }
-
-    // FormData에서 필요한 정보 추출
     const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
+    const id_uuid_hospital = formData.get("id_uuid_hospital") as string;
+    const current_user_uid = formData.get("current_user_uid") as string;
     const treatment_options = formData.get("treatment_options") as string;
     const price_expose_raw = formData.get("price_expose") as string;
     const etc = formData.get("etc") as string;
@@ -48,7 +33,7 @@ export async function POST(request: NextRequest) {
       ? selected_treatments_raw.split(",").map((treatment: string) => treatment.trim()).filter(t => t !== '')
       : [];
 
-    console.log("API - selected_treatments:", {
+    console.log("Actions - selected_treatments:", {
       raw: selected_treatments_raw,
       parsed: selected_treatments,
       length: selected_treatments.length
@@ -56,31 +41,31 @@ export async function POST(request: NextRequest) {
 
     // 가격노출 설정 파싱 (string을 boolean으로 변환)
     const price_expose = price_expose_raw === 'true';
-    console.log("API - price_expose:", {
+    console.log("Actions - price_expose:", {
       raw: price_expose_raw,
       parsed: price_expose,
       type: typeof price_expose
     });
     
-    console.log("API - etc 정보:", etc);
+    console.log("Actions - etc 정보:", etc);
     
     // 상품옵션 데이터 파싱
     let treatment_options_parsed = [];
     
-    console.log("API - treatment_options 원본:", treatment_options);
-    console.log("API - treatment_options 타입:", typeof treatment_options);
+    console.log("Actions - treatment_options 원본:", treatment_options);
+    console.log("Actions - treatment_options 타입:", typeof treatment_options);
     
     if (treatment_options) {
       try {
         treatment_options_parsed = JSON.parse(treatment_options);
-        console.log("API - treatment_options 파싱 성공:", treatment_options_parsed);
-        console.log("API - 파싱된 배열 길이:", treatment_options_parsed.length);
+        console.log("Actions - treatment_options 파싱 성공:", treatment_options_parsed);
+        console.log("Actions - 파싱된 배열 길이:", treatment_options_parsed.length);
       } catch (error) {
-        console.error("API - treatment_options 파싱 에러:", error);
+        console.error("Actions - treatment_options 파싱 에러:", error);
         treatment_options_parsed = [];
       }
     } else {
-      console.log("API - treatment_options가 없습니다.");
+      console.log("Actions - treatment_options가 없습니다.");
     }
 
     // 편집 모드인 경우 기존 데이터 삭제
@@ -94,7 +79,10 @@ export async function POST(request: NextRequest) {
       
       if (deleteError) {
         console.error("기존 hospital_treatment 데이터 삭제 실패:", deleteError);
-        return handleApiError(deleteError);
+        return NextResponse.json({
+          message: `기존 데이터 삭제 실패: ${deleteError.code || deleteError.message}`,
+          status: "error",
+        }, { status: 500 });
       }
       
       console.log("기존 hospital_treatment 데이터 삭제 완료");
@@ -110,7 +98,10 @@ export async function POST(request: NextRequest) {
       
       if (treatmentError) {
         console.error("treatment 테이블 조회 실패:", treatmentError);
-        return handleApiError(treatmentError);
+        return NextResponse.json({
+          message: `treatmentError:${treatmentError.code || treatmentError.message}`,
+          status: "error",
+        }, { status: 500 });
       }
       
       // code를 키로 하는 매핑 맵 생성
@@ -152,8 +143,11 @@ export async function POST(request: NextRequest) {
           .insert(hospitalTreatmentInserts);
         
         if (hospitalTreatmentError) {
-          console.log("API hospital_treatment error:", hospitalTreatmentError);
-          return handleApiError(hospitalTreatmentError);
+          console.log("uploadActions hospital_treatment error:", hospitalTreatmentError);
+          return NextResponse.json({
+            message: `hospitalTreatmentError:${hospitalTreatmentError.code || hospitalTreatmentError.message}`,
+            status: "error",
+          }, { status: 500 });
         }
         
         console.log("hospital_treatment 데이터 insert 완료");
@@ -178,32 +172,27 @@ export async function POST(request: NextRequest) {
           .insert([etcTreatmentData]);
         
         if (etcTreatmentError) {
-          console.log("API hospital_treatment (기타) error:", etcTreatmentError);
-          return handleApiError(etcTreatmentError);
+          console.log("uploadActions hospital_treatment (기타) error:", etcTreatmentError);
+          return NextResponse.json({
+            message: `etcTreatmentError:${etcTreatmentError.code || etcTreatmentError.message}`,
+            status: "error",
+          }, { status: 500 });
         }
         
         console.log("기타 시술 정보 저장 완료");
       }
     }
 
-    return createSuccessResponse({
-      message: '치료 옵션이 성공적으로 저장되었습니다.',
-      id_uuid_hospital
-    });
+    return NextResponse.json({
+      message: "성공적으로 등록되었습니다.",
+      status: "success",
+    }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Step4 API 에러:', error);
-    return createErrorResponse('서버 오류가 발생했습니다.', 500);
+    console.error('Step4 API 오류:', error);
+    return NextResponse.json({
+      message: "서버 오류가 발생했습니다.",
+      status: "error",
+    }, { status: 500, headers: corsHeaders });
   }
-}
-
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 } 

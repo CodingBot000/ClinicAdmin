@@ -118,7 +118,7 @@ export function handleApiError(error: any): NextResponse {
     return createErrorResponse(error.message, 500);
   }
   
-  return createErrorResponse('알 수 없는 오류가 발생했습니다.', 500);
+  return createErrorResponse('알 수 없는 오류가 발생했습니다. api-utils', 500);
 }
 
 // Rate limiting (간단한 구현)

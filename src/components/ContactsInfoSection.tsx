@@ -14,10 +14,10 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
 }) => {
   const [formData, setFormData] = useState<ContactsInfo>({
     consultationPhone: initialContacts?.consultationPhone || '',
-    consultationManagerPhones: initialContacts?.consultationManagerPhones || ['', '', ''],
+    consultationManagerPhones: initialContacts?.consultationManagerPhones || [],
     smsPhone: initialContacts?.smsPhone || '',
     eventManagerPhone: initialContacts?.eventManagerPhone || '',
-    marketingEmails: initialContacts?.marketingEmails || ['', '', ''] // 3개로 초기화
+    marketingEmails: initialContacts?.marketingEmails || []
   });
 
   // 데이터가 변경될 때마다 부모 컴포넌트에 전달
@@ -28,20 +28,28 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
   const handleInputChange = (field: string, value: string, index?: number) => {
     setFormData(prev => {
       if (field === 'consultationManagerPhone' && index !== undefined) {
-        // 상담 관리자 번호 배열 처리
+        // 상담 관리자 번호 배열 처리 - 동적 저장
         const newPhones = [...prev.consultationManagerPhones];
         newPhones[index] = value;
+        
+        // 빈 값들을 제거하고 순서대로 재배열
+        const filteredPhones = newPhones.filter(phone => phone.trim() !== '');
+        
         return {
           ...prev,
-          consultationManagerPhones: newPhones
+          consultationManagerPhones: filteredPhones
         };
       } else if (field === 'marketingEmails' && index !== undefined) {
-        // 마케팅 이메일 배열 처리
+        // 마케팅 이메일 배열 처리 - 동적 저장
         const newEmails = [...prev.marketingEmails];
         newEmails[index] = value;
+        
+        // 빈 값들을 제거하고 순서대로 재배열
+        const filteredEmails = newEmails.filter(email => email.trim() !== '');
+        
         return {
           ...prev,
-          marketingEmails: newEmails
+          marketingEmails: filteredEmails
         };
       } else {
         // 일반 필드 처리
@@ -139,34 +147,37 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
             상담 관리자 전화 번호
           </label>
           <div className="flex flex-col space-y-2">
-            <input
-              name="consultationManagerPhone-1"
-              type="tel"
-              inputMode="tel"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.consultationManagerPhones[0]}
-              onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 0)}
-              placeholder="예: 02-1234-5678 또는 010-1234-5678"
-            />
-            <input
-              name="consultationManagerPhone-2"
-              type="tel"
-              inputMode="tel"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.consultationManagerPhones[1]}
-              onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 1)}
-              placeholder="예: 02-1234-5678 또는 010-1234-5678"
-            />
-            <input
-              name="consultationManagerPhone-3"
-              type="tel"
-              inputMode="tel"
-  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.consultationManagerPhones[2]}
-              onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, 2)}
-              placeholder="예: 02-1234-5678 또는 010-1234-5678"
-            />
-            </div>
+            {/* 기존 입력된 값들 표시 (최대 3개) */}
+            {formData.consultationManagerPhones.slice(0, 3).map((phone, index) => (
+              <input
+                key={`consultationManagerPhone-${index}`}
+                name={`consultationManagerPhone-${index}`}
+                type="tel"
+                inputMode="tel"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={phone}
+                onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, index)}
+                placeholder="예: 02-1234-5678 또는 010-1234-5678"
+              />
+            ))}
+            {/* 새로운 입력 필드 추가 (3개 미만일 때만) */}
+            {formData.consultationManagerPhones.length < 3 && (
+              <input
+                name="consultationManagerPhone-new"
+                type="tel"
+                inputMode="tel"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value=""
+                onChange={(e) => {
+                  if (e.target.value.trim()) {
+                    handleInputChange('consultationManagerPhone', e.target.value, formData.consultationManagerPhones.length);
+                    e.target.value = '';
+                  }
+                }}
+                placeholder="예: 02-1234-5678 또는 010-1234-5678"
+              />
+            )}
+          </div>
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-white text-xs font-bold">i</span>
@@ -231,35 +242,37 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
             마케팅 담당자 이메일
           </label>
           <div className="flex flex-col space-y-2">
-            <input
-              name="marketingEmail-1"
-              type="email"
-              inputMode="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="이메일주소"
-              value={formData.marketingEmails[0] || ''} 
-              onChange={(e) => handleInputChange('marketingEmails', e.target.value, 0)}
-
-            />
-            <input
-            name="marketingEmail-2"
-              type="email"
-              inputMode="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="이메일주소"
-              value={formData.marketingEmails[1] || ''} 
-              onChange={(e) => handleInputChange('marketingEmails', e.target.value, 1)}
-            />
-            <input
-              name="marketingEmail-3"
-              type="email"
-              inputMode="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="이메일주소"
-              value={formData.marketingEmails[2] || ''} 
-              onChange={(e) => handleInputChange('marketingEmails', e.target.value, 2)}
-            />
-            </div>
+            {/* 기존 입력된 값들 표시 (최대 3개) */}
+            {formData.marketingEmails.slice(0, 3).map((email, index) => (
+              <input
+                key={`marketingEmail-${index}`}
+                name={`marketingEmail-${index}`}
+                type="email"
+                inputMode="email"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="이메일주소"
+                value={email} 
+                onChange={(e) => handleInputChange('marketingEmails', e.target.value, index)}
+              />
+            ))}
+            {/* 새로운 입력 필드 추가 (3개 미만일 때만) */}
+            {formData.marketingEmails.length < 3 && (
+              <input
+                name="marketingEmail-new"
+                type="email"
+                inputMode="email"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="이메일주소"
+                value=""
+                onChange={(e) => {
+                  if (e.target.value.trim()) {
+                    handleInputChange('marketingEmails', e.target.value, formData.marketingEmails.length);
+                    e.target.value = '';
+                  }
+                }}
+              />
+            )}
+          </div>
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-white text-xs font-bold">i</span>

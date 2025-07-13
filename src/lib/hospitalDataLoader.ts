@@ -380,13 +380,8 @@ export async function loadExistingHospitalData(
     }
 
     console.log('=== [loadExistingHospitalData] 로딩 요약 ===', {
-      병원정보: result.hospital ? '✅' : '⛔️',
       상세정보: result.hospitalDetail ? '✅' : '⛔️',
       영업시간: result.businessHours?.length ?? 0,
-      의사정보: result.doctors?.length ?? 0,
-      시술정보: result.treatments?.length ?? 0,
-      피드백: result.feedback ? '✅' : '⛔️',
-      연락처: result.contacts ? '✅' : '⛔️'
     });
 
     return result;

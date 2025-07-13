@@ -23,7 +23,7 @@ import ExtraOptions, {
   ExtraOptionState,
 } from '@/components/ExtraOptions';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
+
 import type { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
@@ -1166,7 +1166,7 @@ const handleNext = async () => {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
             <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
-            <p className="text-sm text-gray-800 mb-4">{formState.message}</p>
+            <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
             <div className="flex justify-end gap-2">
               <Button onClick={handleModal}>확인</Button>
             </div>

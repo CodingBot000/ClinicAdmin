@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DaumPost from "@/components/DaumPost";
 import InputField from "@/components/InputField";
 import { HospitalAddress } from "@/types/address";
+import { Card, CardContent } from "./ui/card";
 
 interface AddressSectionProps {
     onSelectAddress?: (address: HospitalAddress) => void;
@@ -229,102 +230,118 @@ export default function AddressSection({
     handleDirectionsToClinicEnChange(localDirectionsToClinicEn);
   };
 
-  return (
-    <div className="flex flex-col gap-3 w-full">
-      <div className="flex gap-2 w-full">
-        <div className="flex-1 min-w-0">
-          <input
+          return (
+            <div className="flex flex-col gap-6 w-full">
+              {/* 주소 검색 + 주소 정보 박스 */}
+              {/* <div className="flex flex-col md:flex-row gap-6 w-full"> */}
+                {/* 주소 검색 버튼 */}
+                <div className="md:w-1/2 w-full">
+                         {/* <input
             type="text"
             value={showingAddress}
             readOnly
             className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-800 outline-none mb-2"
             placeholder="주소를 검색하세요"
-          />
-          {addressForSendForm && (
-            <div className="text-sm text-gray-600 space-y-1 px-3">
-              <div><span className="font-medium">도로명:</span> {addressForSendForm.address_full_road}</div>
-              <div><span className="font-medium">지번:</span> {addressForSendForm.address_full_jibun}</div>
+          /> */}
+                  <DaumPost 
+                    setShowingAddress={handleSelectShowingAddress}
+                    setAddress={handleSelectAddress} 
+                    setCoordinates={handleSelectCoordinates}
+                  />
+                </div>
+          
+                {/* 주소 정보 박스 */}
+                <Card className="w-full bg-gray-50 rounded-xl shadow-sm">
+                  <CardContent className="py-4 px-6 space-y-4">
+                    {addressForSendForm ? (
+                      <>
+                        <div>
+                          <div className="text-base font-semibold text-gray-800">도로명</div>
+                          <div className="text-sm text-gray-600">{addressForSendForm.address_full_road}</div>
+                        </div>
+                        <div>
+                          <div className="text-base font-semibold text-gray-800">지번</div>
+                          <div className="text-sm text-gray-600">{addressForSendForm.address_full_jibun}</div>
+                        </div>
+                        {coordinates && (
+                          <div>
+                            <div className="text-base font-semibold text-gray-800">좌표</div>
+                            <div className="text-sm text-gray-600">{coordinates.latitude}, {coordinates.longitude}</div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-500">주소를 먼저 검색해주세요.</div>
+                    )}
+                  </CardContent>
+                </Card>
+              {/* </div> */}
+          
+              {/* 상세 주소 필드들 */}
+              <div className="space-y-2">
+                <InputField
+                  label="상세주소"
+                  name="address_detail"
+                  placeholder="필요시 최대한 상세한 추가 주소를 입력하세요 (선택)"
+                  value={localAddressDetail}
+                  onChange={(e) => handleLocalAddressDetailChange(e.target.value)}
+                  onBlur={handleAddressDetailBlur}
+                />
+                <InputField
+                  label="상세주소 영문"
+                  name="address_detail_en"
+                  placeholder="위에 입력한 상세주소를 영문으로 입력해주세요 (선택)"
+                  value={localAddressDetailEn}
+                  onChange={(e) => handleLocalAddressDetailEnChange(e.target.value)}
+                  onBlur={handleAddressDetailEnBlur}
+                />
+              </div>
+          
+              <div className="space-y-2">
+                <InputField
+                  label="찾아오는 방법 상세안내"
+                  name="directions_to_clinic"
+                  placeholder="예: xx지하철역 3번출구로 나와서 직진후 yy건물에서 우회전"
+                  value={localDirectionsToClinic}
+                  onChange={(e) => handleLocalDirectionsToClinicChange(e.target.value)}
+                  onBlur={handleDirectionsToClinicBlur}
+                />
+                <InputField
+                  label="찾아오는 방법 상세안내 영문"
+                  name="directions_to_clinic_en"
+                  placeholder="입력하지 않으면 국문 입력을 기반으로 자동번역됩니다."
+                  value={localDirectionsToClinicEn}
+                  onChange={(e) => handleLocalDirectionsToClinicEnChange(e.target.value)}
+                  onBlur={handleDirectionsToClinicEnBlur}
+                />
+              </div>
+          
+              {/* 최종 주소 정보 디버깅 */}
+              {addressForSendForm && (
+                <div className="mt-4 p-4 bg-blue-50 rounded border border-blue-300 text-sm">
+                  <div className="font-semibold text-blue-800 mb-2">📍 완성된 주소 정보:</div>
+                  <div className="space-y-1 text-blue-700">
+                    <div><strong>도로명:</strong> {addressForSendForm.address_full_road}</div>
+                    <div><strong>지번:</strong> {addressForSendForm.address_full_jibun}</div>
+                    {addressForSendForm.address_detail && (
+                      <div><strong>상세주소:</strong> {addressForSendForm.address_detail}</div>
+                    )}
+                    {addressForSendForm.address_detail_en && (
+                      <div><strong>상세주소(영문):</strong> {addressForSendForm.address_detail_en}</div>
+                    )}
+                    {addressForSendForm.directions_to_clinic && (
+                      <div><strong>찾아오는 방법:</strong> {addressForSendForm.directions_to_clinic}</div>
+                    )}
+                    {addressForSendForm.directions_to_clinic_en && (
+                      <div><strong>찾아오는 방법(영문):</strong> {addressForSendForm.directions_to_clinic_en}</div>
+                    )}
+                    {addressForSendForm.latitude && addressForSendForm.longitude && (
+                      <div><strong>좌표:</strong> {addressForSendForm.latitude}, {addressForSendForm.longitude}</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <DaumPost 
-          setShowingAddress={handleSelectShowingAddress}
-          setAddress={handleSelectAddress} 
-          setCoordinates={handleSelectCoordinates}
-        />
-      </div>
-      
-      {/* 좌표 정보 표시 (디버깅용, 필요시 제거) */}
-      {coordinates && (
-        <div className="text-sm text-gray-600">
-          위도: {coordinates.latitude}, 경도: {coordinates.longitude}
-        </div>
-      )}
-      
-      <div className="space-y-2">
-        <InputField
-          label="상세주소"
-          name="address_detail"
-          placeholder="필요시 최대한 상세한 추가 주소를 입력하세요 (선택)"
-          value={localAddressDetail}
-          onChange={(e) => handleLocalAddressDetailChange(e.target.value)}
-          onBlur={handleAddressDetailBlur}
-        />
-        <InputField
-          label="상세주소 영문"
-          name="address_detail_en"
-          placeholder="위에 입력한 상세주소를 영문으로 입력해주세요 (선택) 입력하지 않으면 국문 입력을 기반으로 자동번역됩니다."
-          value={localAddressDetailEn}
-          onChange={(e) => handleLocalAddressDetailEnChange(e.target.value)}
-          onBlur={handleAddressDetailEnBlur}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <InputField
-          label="찾아오는 방법 상세안내"
-          name="directions_to_clinic"
-          placeholder="찾아오는 방법을 더 쉽게 설명해주세요 예시) xx지하철역 3번출구로 나와서 직진후 yy건물에서 우회전"
-          value={localDirectionsToClinic}
-          onChange={(e) => handleLocalDirectionsToClinicChange(e.target.value)}
-          onBlur={handleDirectionsToClinicBlur}
-        />
-        <InputField
-          label="찾아오는 방법 상세안내 영문"
-          name="directions_to_clinic_en"
-          placeholder="위에 입력한 찾아오는 방법을 영문으로 입력해주세요 (선택) 입력하지 않으면 국문 입력을 기반으로 자동번역됩니다."
-          value={localDirectionsToClinicEn}
-          onChange={(e) => handleLocalDirectionsToClinicEnChange(e.target.value)}
-          onBlur={handleDirectionsToClinicEnBlur}
-        />
-      </div>
-      
-      {/* 최종 주소 정보 표시 (디버깅용) */}
-      {addressForSendForm && (
-        <div className="mt-4 p-3 bg-blue-50 rounded border text-sm">
-          <div className="font-semibold text-blue-800 mb-2">📍 완성된 주소 정보:</div>
-          <div className="space-y-1 text-blue-700">
-            <div><strong>도로명:</strong> {addressForSendForm.address_full_road}</div>
-            <div><strong>지번:</strong> {addressForSendForm.address_full_jibun}</div>
-            {addressForSendForm.address_detail && (
-              <div><strong>상세주소:</strong> {addressForSendForm.address_detail}</div>
-            )}
-            {addressForSendForm.address_detail_en && (
-              <div><strong>상세주소(영문):</strong> {addressForSendForm.address_detail_en}</div>
-            )}
-            {addressForSendForm.directions_to_clinic && (
-              <div><strong>찾아오는 방법:</strong> {addressForSendForm.directions_to_clinic}</div>
-            )}
-            {addressForSendForm.directions_to_clinic_en && (
-              <div><strong>찾아오는 방법(영문):</strong> {addressForSendForm.directions_to_clinic_en}</div>
-            )}
-            {addressForSendForm.latitude && addressForSendForm.longitude && (
-              <div><strong>좌표:</strong> {addressForSendForm.latitude}, {addressForSendForm.longitude}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+          );
+          
 }
