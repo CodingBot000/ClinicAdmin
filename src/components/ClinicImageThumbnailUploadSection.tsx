@@ -220,6 +220,7 @@ const ClinicImageThumbnailUploadSection = ({
 
         {/* 삭제 버튼 - 이미지가 있을 때만 표시 */}
         {preview && (
+          <span>
           <button
             type='button'
             onClick={handleDeleteImage}
@@ -236,6 +237,8 @@ const ClinicImageThumbnailUploadSection = ({
           >
             <Trash2 size={16} />
           </button>
+          <h2 className='text-sm text-gray-600'>이미지를 교체하시려면 삭제 후 새로 업로드 해주세요.</h2>
+          </span>
         )}
       </div>
     </div>

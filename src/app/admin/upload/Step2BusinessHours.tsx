@@ -94,6 +94,18 @@ const Step2BusinessHours = ({
     }
   }, [isEditMode, currentUserUid]);
 
+  useEffect(() => {
+    console.log('Step2 - initialBusinessHours 변경됨:', initialBusinessHours);
+    if (initialBusinessHours.length > 0) {
+      setOpeningHours(initialBusinessHours);
+      console.log('Step2 - openingHours 업데이트됨:', initialBusinessHours);
+    }
+  }, [initialBusinessHours]);
+
+  useEffect(() => {
+    console.log('Step2 - optionState 변경됨:', optionState);
+  }, [optionState]);
+
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
@@ -213,6 +225,12 @@ const handleNext = async () => {
       formData.append('extra_options', JSON.stringify(optionState));
       // 영업 시간
       formData.append('opening_hours', JSON.stringify(openingHours));
+      
+      console.log('Step2 - 전송할 데이터:');
+      console.log('openingHours:', openingHours);
+      console.log('openingHours 길이:', openingHours.length);
+      console.log('optionState:', optionState);
+      console.log('optionState JSON:', JSON.stringify(optionState));
 
       console.log('Step2 API 호출 시작');
       

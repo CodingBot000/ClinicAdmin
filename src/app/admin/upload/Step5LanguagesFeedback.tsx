@@ -668,7 +668,9 @@ const Step5LanguagesFeedback = ({
           />
         </div>
       <Divider />
-
+      <div className='w-full'>
+        <h2 className="font-semibold mb-2 text-red-500">아래 Preview 버튼을 눌러 최종결과를 재검토 부탁드립니다.</h2>
+      </div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
