@@ -103,28 +103,28 @@ const Step1BasicInfo = ({
     label: string;
     name: string;
   } | null>(null);
-  const [selectedTreatments, setSelectedTreatments] =
-    useState<number[]>([]);
-  const [treatmentOptions, setTreatmentOptions] = useState<
-    any[]
-  >([]);
-  const [priceExpose, setPriceExpose] =
-    useState<boolean>(true);
-  const [treatmentEtc, setTreatmentEtc] =
-    useState<string>('');
-  const [initialTreatmentData, setInitialTreatmentData] =
-    useState<{
-      selectedKeys: number[];
-      productOptions: any[];
-      priceExpose: boolean;
-      etc: string;
-    } | null>(null);
-  const [clinicImages, setClinicImages] = useState<File[]>(
-    [],
-  );
-  const [openingHours, setOpeningHours] = useState<
-    OpeningHour[]
-  >([]);
+  // const [selectedTreatments, setSelectedTreatments] =
+  //   useState<number[]>([]);
+  // const [treatmentOptions, setTreatmentOptions] = useState<
+  //   any[]
+  // >([]);
+  // const [priceExpose, setPriceExpose] =
+  //   useState<boolean>(true);
+  // const [treatmentEtc, setTreatmentEtc] =
+  //   useState<string>('');
+  // const [initialTreatmentData, setInitialTreatmentData] =
+  //   useState<{
+  //     selectedKeys: number[];
+  //     productOptions: any[];
+  //     priceExpose: boolean;
+  //     etc: string;
+  //   } | null>(null);
+  // const [clinicImages, setClinicImages] = useState<File[]>(
+  //   [],
+  // );
+  // const [openingHours, setOpeningHours] = useState<
+  //   OpeningHour[]
+  // >([]);
   const [optionState, setOptionState] =
     useState<ExtraOptionState>({
       has_private_recovery_room: false,
@@ -410,16 +410,16 @@ const Step1BasicInfo = ({
           }
       }
 
-      // 6. 시술 정보 설정
-      console.log('Step1 - 시술 정보 설정 시작');
-      console.debug(
-        'Step1 - 변환된 시술 데이터:',
-        formData.treatments,
-      );
-      setInitialTreatmentData(formData.treatments);
-      console.log(
-        'Step1 - initialTreatmentData 상태 업데이트 완료',
-      );
+      // // 6. 시술 정보 설정
+      // console.log('Step1 - 시술 정보 설정 시작');
+      // console.debug(
+      //   'Step1 - 변환된 시술 데이터:',
+      //   formData.treatments,
+      // );
+      // setInitialTreatmentData(formData.treatments);
+      // console.log(
+      //   'Step1 - initialTreatmentData 상태 업데이트 완료',
+      // );
 
       // 7. 연락처 정보 설정
       if (existingData.contacts && existingData.contacts.length > 0) {
