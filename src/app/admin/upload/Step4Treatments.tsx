@@ -94,8 +94,8 @@ const Step4Treatments = ({
 
   const router = useRouter();
 
-  const [selectedTreatments, setSelectedTreatments] =
-    useState<number[]>([]);
+  // 1. 상태 선언부
+  const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
   const [treatmentOptions, setTreatmentOptions] = useState<
     any[]
   >([]);
@@ -103,9 +103,10 @@ const Step4Treatments = ({
     useState<boolean>(true);
   const [treatmentEtc, setTreatmentEtc] =
     useState<string>('');
+  // 2. initialTreatmentData 등도 string[]으로 맞추기
   const [initialTreatmentData, setInitialTreatmentData] =
     useState<{
-      selectedKeys: number[];
+      selectedKeys: string[];
       productOptions: any[];
       priceExpose: boolean;
       etc: string;
@@ -342,8 +343,9 @@ const Step4Treatments = ({
 
 
 
+  // 3. handleTreatmentSelectionChange 등에서 string[]로만 처리
   const handleTreatmentSelectionChange = (data: {
-    selectedKeys: number[];
+    selectedKeys: string[];
     productOptions: any[];
     priceExpose: boolean;
     etc: string;
