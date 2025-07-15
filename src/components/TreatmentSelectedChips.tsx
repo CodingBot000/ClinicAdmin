@@ -13,16 +13,16 @@ import {
 
 interface ProductOption {
   id: string;
-  treatmentKey: number;
+  treatmentKey: string;
   value1: number;
   value2: number;
 }
 
 interface TreatmentSelectedChipsProps {
-  selectedKeys: number[];
+  selectedKeys: string[];
   productOptions: ProductOption[];
   categories: CategoryNode[];
-  onRemove?: (key: number) => void;
+  onRemove?: (key: string) => void;
   showRemoveButton?: boolean;
   className?: string;
 }
@@ -36,36 +36,33 @@ export function TreatmentSelectedChips({
   className = ""
 }: TreatmentSelectedChipsProps) {
   // 해당 시술에 연결된 상품옵션 개수 계산
-  const getOptionCountForTreatment = (treatmentKey: number): number => {
+  const getOptionCountForTreatment = (treatmentKey: string): number => {
     return productOptions.filter(option => option.treatmentKey === treatmentKey).length;
   };
 
-  // 부서별로 선택된 시술 그룹화
-  const groupByDepartment = () => {
-    const skinTreatments: number[] = [];
-    const surgeryTreatments: number[] = [];
-    const noDepartmentTreatments: number[] = [];
-
+  // 부서별로 선택된 시술 그룹화 (group_id까지)
+  const groupByDepartmentAndGroupId = () => {
+    // department → group_id → 시술
+    const result: Record<string, Record<string, string[]>> = {};
     selectedKeys.forEach(key => {
-      const department = getDepartmentByKey(key, categories);
-      if (department === 'skin') {
-        skinTreatments.push(key);
-      } else if (department === 'surgery') {
-        surgeryTreatments.push(key);
-      } else {
-        noDepartmentTreatments.push(key);
-      }
+      const department = getDepartmentByKey(key, categories) || 'noDepartment';
+      // group_id는 level1(카테고리 트리의 name)로 간주
+      let groupId = '';
+      categories.forEach(cat => {
+        if (cat.children && cat.children.some(child => child.key.toString() === key)) {
+          groupId = cat.name;
+        }
+      });
+      if (!groupId) groupId = '기타';
+      if (!result[department]) result[department] = {};
+      if (!result[department][groupId]) result[department][groupId] = [];
+      result[department][groupId].push(key);
     });
-
-    return {
-      skin: skinTreatments,
-      surgery: surgeryTreatments,
-      noDepartment: noDepartmentTreatments
-    };
+    return result;
   };
 
   // 칩 렌더링 함수
-  const renderChips = (keys: number[]) => {
+  const renderChips = (keys: string[]) => {
     return keys.map((key) => {
       const optionCount = getOptionCountForTreatment(key);
       return (
@@ -104,8 +101,9 @@ export function TreatmentSelectedChips({
     });
   };
 
-  // 부서별로 그룹화
-  const groupedTreatments = groupByDepartment();
+  // department → group_id → 시술 순서로 그룹핑
+  const grouped = groupByDepartmentAndGroupId();
+  const departmentOrder = ['skin', 'surgery', 'noDepartment'];
   const hasAnyTreatments = selectedKeys.length > 0;
 
   if (!hasAnyTreatments) {
@@ -120,47 +118,32 @@ export function TreatmentSelectedChips({
 
   return (
     <div className={`space-y-4 mb-4 ${className}`}>
-      {/* 피부과 시술 */}
-      {groupedTreatments.skin.length > 0 && (
-        <div>
-          <div className="mb-2">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDepartmentStyleClass('skin')}`}>
-              {getDepartmentDisplayName('skin')}
-            </span>
+      {departmentOrder.map(dept => (
+        grouped[dept] && (
+          <div key={dept}>
+            <div className="mb-2">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDepartmentStyleClass(dept === 'noDepartment' ? null : dept)}`}>
+                {dept === 'skin' ? '피부' : dept === 'surgery' ? '성형' : '기타'}
+              </span>
+            </div>
+            {/* group_id 알파벳순, 'other'는 마지막 */}
+            {Object.keys(grouped[dept])
+              .sort((a, b) => {
+                if (a === 'other') return 1;
+                if (b === 'other') return -1;
+                return a.localeCompare(b);
+              })
+              .map(groupId => (
+                <div key={groupId} className="mb-2 ml-2">
+                  <span className="inline-block text-xs font-semibold text-gray-600 mb-1">{groupId}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {renderChips(grouped[dept][groupId])}
+                  </div>
+                </div>
+              ))}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {renderChips(groupedTreatments.skin)}
-          </div>
-        </div>
-      )}
-
-      {/* 성형외과 시술 */}
-      {groupedTreatments.surgery.length > 0 && (
-        <div>
-          <div className="mb-2">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDepartmentStyleClass('surgery')}`}>
-              {getDepartmentDisplayName('surgery')}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {renderChips(groupedTreatments.surgery)}
-          </div>
-        </div>
-      )}
-
-      {/* 부서 미지정 시술 */}
-      {groupedTreatments.noDepartment.length > 0 && (
-        <div>
-          <div className="mb-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-700 bg-gray-100">
-              기타
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {renderChips(groupedTreatments.noDepartment)}
-          </div>
-        </div>
-      )}
+        )
+      ))}
     </div>
   );
 } 

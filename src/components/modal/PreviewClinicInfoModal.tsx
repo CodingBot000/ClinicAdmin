@@ -10,7 +10,7 @@ import {
   TABLE_HOSPITAL_DETAIL, 
   TABLE_HOSPITAL_TREATMENT, 
   TABLE_HOSPITAL_BUSINESS_HOUR, 
-  TABLE_TREATMENT,
+  TABLE_TREATMENT_INFO,
   TABLE_FEEDBACKS,
   TABLE_CONTACTS
 } from '@/constants/tables';
@@ -124,7 +124,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         
         if (treatmentUuids.length > 0) {
           const { data: treatmentData, error: treatmentDetailError } = await supabase
-            .from(TABLE_TREATMENT)
+            .from(TABLE_TREATMENT_INFO)
             .select('id_uuid, code, name')
             .in('id_uuid', treatmentUuids);
 
@@ -863,11 +863,9 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                     selectedKeys={(() => {
                       // treatmentDetails의 code를 사용하여 selectedKeys 생성
                       if (!hospitalData.treatmentDetails || !categories) return [];
-                      
                       const codes = hospitalData.treatmentDetails.map(detail => detail.code);
                       console.log('Treatment codes:', codes);
-                      
-                      return [...new Set(codes)].filter(code => code > 0);
+                      return [...new Set(codes)].filter(code => !!code);
                     })()}
                     productOptions={(() => {
                       // treatments와 treatmentDetails를 매칭하여 productOptions 생성
@@ -881,7 +879,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                         
                         return {
                           id: treatment.id_uuid,
-                          treatmentKey: treatmentDetail?.code || 0,
+                          treatmentKey: treatmentDetail?.code || '',
                           value1: treatment.option_value && treatment.option_value.trim() !== '' 
                             ? (isNaN(parseInt(treatment.option_value)) ? 0 : parseInt(treatment.option_value))
                             : 0,

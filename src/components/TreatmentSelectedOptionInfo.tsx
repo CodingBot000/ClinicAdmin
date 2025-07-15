@@ -12,13 +12,13 @@ import {
 
 interface ProductOption {
   id: string;
-  treatmentKey: number;
+  treatmentKey: string;
   value1: number;
   value2: number;
 }
 
 interface TreatmentSelectedOptionInfoProps {
-  selectedKeys: number[];
+  selectedKeys: string[];
   productOptions: ProductOption[];
   etc: string;
   categories: CategoryNode[];

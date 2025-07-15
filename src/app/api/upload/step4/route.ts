@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   TABLE_HOSPITAL_TREATMENT,
-  TABLE_TREATMENT
+  TABLE_TREATMENT_INFO
 } from '@/constants/tables';
 
 // CORS 헤더 정의
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       
       // treatment 테이블에서 code와 id_uuid 매핑 데이터 가져오기
       const { data: treatmentData, error: treatmentError } = await supabase
-        .from(TABLE_TREATMENT)
+        .from(TABLE_TREATMENT_INFO)
         .select('code, id_uuid');
       
       if (treatmentError) {
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       const hospitalTreatmentInserts = [];
       
       for (const option of treatment_options_parsed) {
-        const treatmentUuid = codeToUuidMap.get(option.treatmentKey);
+        const treatmentUuid = codeToUuidMap.get(option.treatmentKey.toString());
         
         if (!treatmentUuid) {
           console.warn(`시술 코드 ${option.treatmentKey}에 해당하는 UUID를 찾을 수 없습니다.`);

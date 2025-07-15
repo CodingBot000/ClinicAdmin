@@ -6,10 +6,10 @@ import { CategoryNode } from "@/types/category";
  * @param categories 카테고리 노드 배열
  * @returns 라벨 문자열 또는 키 값의 문자열
  */
-export const getLabelByKey = (key: number, categories: CategoryNode[]): string => {
+export const getLabelByKey = (key: string | number, categories: CategoryNode[]): string => {
   const findLabel = (nodes: CategoryNode[]): string | null => {
     for (const node of nodes) {
-      if (node.key === key) return node.label;
+      if (node.key.toString() === key.toString()) return node.label;
       if (node.children) {
         const found = findLabel(node.children);
         if (found) return found;
@@ -26,10 +26,10 @@ export const getLabelByKey = (key: number, categories: CategoryNode[]): string =
  * @param categories 카테고리 노드 배열
  * @returns 단위 문자열 또는 null
  */
-export const getUnitByKey = (key: number, categories: CategoryNode[]): string | null => {
+export const getUnitByKey = (key: string | number, categories: CategoryNode[]): string | null => {
   const findUnit = (nodes: CategoryNode[]): string | null => {
     for (const node of nodes) {
-      if (node.key === key) return node.unit || null;
+      if (node.key.toString() === key.toString()) return node.unit || null;
       if (node.children) {
         const found = findUnit(node.children);
         if (found) return found;
@@ -46,10 +46,10 @@ export const getUnitByKey = (key: number, categories: CategoryNode[]): string | 
  * @param categories 카테고리 노드 배열
  * @returns 분야 문자열 또는 null
  */
-export const getDepartmentByKey = (key: number, categories: CategoryNode[]): string | null => {
+export const getDepartmentByKey = (key: string | number, categories: CategoryNode[]): string | null => {
   const findDepartment = (nodes: CategoryNode[]): string | null => {
     for (const node of nodes) {
-      if (node.key === key) return node.department || null;
+      if (node.key.toString() === key.toString()) return node.department || null;
       if (node.children) {
         const found = findDepartment(node.children);
         if (found) return found;

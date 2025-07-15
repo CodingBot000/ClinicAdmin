@@ -24,7 +24,7 @@ const TABLE_CONTACTS = "prepare_hospital_contacts";
 
 const TABLE_ADMIN = "admin";
 const TABLE_FEEDBACKS = "feedbacks";
-const TABLE_TREATMENT = "treatment";
+const TABLE_TREATMENT_INFO = "treatment_info";
 const STORAGE_IMAGES = "images";
 const STORAGE_HOSPITAL_IMG = "hospitalimg";
 const STORAGE_DOCTOR_IMG = "doctors";
@@ -37,7 +37,7 @@ export {
   TABLE_HOSPITAL_BUSINESS_HOUR,
   TABLE_ADMIN,
   TABLE_FEEDBACKS,
-  TABLE_TREATMENT,
+  TABLE_TREATMENT_INFO,
   TABLE_CONTACTS,
   STORAGE_IMAGES,
   STORAGE_HOSPITAL_IMG,

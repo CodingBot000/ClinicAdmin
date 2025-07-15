@@ -7,7 +7,7 @@ import {
   TABLE_HOSPITAL_TREATMENT,
   TABLE_HOSPITAL_BUSINESS_HOUR,
   TABLE_ADMIN,
-  TABLE_TREATMENT,
+  TABLE_TREATMENT_INFO,
   TABLE_FEEDBACKS,
   TABLE_CONTACTS
 } from '@/constants/tables';
@@ -164,7 +164,7 @@ async function loadTreatments(hospitalUuid: string) {
   let treatments: any[] = [];
   if (treatmentUuids.length > 0) {
     const { data: treatmentData, error: treatmentError } = await supabase
-      .from(TABLE_TREATMENT)
+      .from(TABLE_TREATMENT_INFO)
       .select('id_uuid, code, name')
       .in('id_uuid', treatmentUuids);
 
