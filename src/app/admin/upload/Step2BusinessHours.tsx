@@ -16,6 +16,7 @@ import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import Divider from '@/components/Divider';
+import PageBottom from '@/components/PageBottom';
 
 interface Surgery {
   created_at: string;
@@ -314,13 +315,13 @@ const handleNext = async () => {
 
       </div>
      {/* 하단 고정 버튼 영역 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
-      </div>
-
+      </div> */}
+      <PageBottom step={2} onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

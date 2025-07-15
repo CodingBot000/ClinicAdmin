@@ -39,6 +39,7 @@ import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import PageBottom from '@/components/PageBottom';
 // 기존 Server Actions는 API Routes로 대체됨
 
 interface Step5LanguagesFeedbackProps {
@@ -672,14 +673,21 @@ const Step5LanguagesFeedback = ({
         <h2 className="font-semibold mb-2 text-red-500">아래 Preview 버튼을 눌러 최종결과를 재검토 부탁드립니다.</h2>
       </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handlePreview}>Preview</Button>
           <Button onClick={handleSave}>Save</Button>
           <Button onClick={onComplete}>홈으로 돌아가기</Button>
         </div>
-      </div>
+      </div> */}
+      <PageBottom step={5} 
+      onNext={handleSave}
+       onPrev={onPrev}
+       onPreview={handlePreview}
+       onHome={onComplete}
+       isSubmitting={isSubmitting}
+       />
 
     </div>
 

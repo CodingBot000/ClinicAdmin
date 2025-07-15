@@ -165,13 +165,13 @@ export function TreatmentSelectBox({
         </div>
       </div>
       {/* 선택 결과 칩 형태 */}
-      <TreatmentSelectedChips
+      {/* <TreatmentSelectedChips
         selectedKeys={selectedKeys}
         productOptions={productOptions}
         categories={categories}
         onRemove={handleRemove}
         showRemoveButton={true}
-      />
+      /> */}
       
       {/* 선택된 시술 정보 표시 */}
       {/* <TreatmentSelectedOptionInfo

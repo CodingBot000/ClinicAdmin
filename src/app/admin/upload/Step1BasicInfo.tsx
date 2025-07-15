@@ -43,6 +43,7 @@ import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
 import { BasicInfo, ContactsInfo } from '@/types/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
+import PageBottom from '@/components/PageBottom';
 
 interface Surgery {
   created_at: string;
@@ -1470,6 +1471,7 @@ const Step1BasicInfo = ({
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div>
+      <PageBottom step={1} onNext={handleNext} />
 
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (

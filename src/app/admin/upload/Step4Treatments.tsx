@@ -47,6 +47,7 @@ import {
   createCategoryDepartmentMap
 } from '@/utils/categoryUtils';
 import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
+import PageBottom from '@/components/PageBottom';
 
 interface Surgery {
   created_at: string;
@@ -1136,31 +1137,24 @@ const handleNext = async () => {
         />
         
 {/* 하단 고정 버튼 영역 */}
-<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
-  <div className="max-w-4xl mx-auto flex justify-between items-center">
-    {/* 왼쪽: 저장 상태 표시 */}
-    <div className="text-xs text-gray-500 whitespace-pre-line">
-      <p>
-        <span className="text-red-500 font-semibold">
-          *주의* 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다.
-        </span>
-        {'\n'}
-        나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.
-        {'\n'}
-        <span className="text-red-500 font-semibold">
-          저장버튼을 누르지 않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
-        </span>
-      </p>
-    </div>
 
-    {/* 오른쪽: 버튼 그룹 */}
-    <div className="flex gap-3">
-      <Button onClick={onPrev}>Prev</Button>
-      <Button onClick={handleNext}>Save And Next</Button>
-    </div>
+<PageBottom step={4} onNext={handleNext} onPrev={onPrev} 
+children={
+  <div className="text-xs text-gray-500 whitespace-pre-line">
+    <p>
+      <span className="text-red-500 font-semibold">
+        *주의* 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다.
+      </span>
+      {'\n'}
+      나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.
+      {'\n'}
+      <span className="text-red-500 font-semibold">
+        저장버튼을 누르지 않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
+      </span>
+    </p>
   </div>
-</div>
-
+}
+/>
       </div>
 
       {/* 기본 모달 */}
