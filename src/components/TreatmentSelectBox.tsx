@@ -18,13 +18,13 @@ import { TreatmentSelectedChips } from "./TreatmentSelectedChips";
 
 interface ProductOption {
   id: string;
-  treatmentKey: number;
+  treatmentKey: string;
   value1: number;
   value2: number;
 }
 
 interface TreatmentData {
-  selectedKeys: number[];
+  selectedKeys: string[];
   productOptions: ProductOption[];
   priceExpose: boolean;
   etc: string;
@@ -33,7 +33,7 @@ interface TreatmentData {
 
 interface TreatmentSelectBoxProps {
   onSelectionChange?: (data: TreatmentData) => void;
-  initialSelectedKeys?: number[];
+  initialSelectedKeys?: string[];
   initialProductOptions?: ProductOption[];
   initialPriceExpose?: boolean;
   initialEtc?: string;
@@ -71,7 +71,7 @@ export function TreatmentSelectBox({
     categories
   });
   
-  const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(initialSelectedKeys);
   const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
   const [priceExpose, setPriceExpose] = useState<boolean>(initialPriceExpose);
   const [etc, setEtc] = useState<string>(initialEtc);
@@ -105,7 +105,7 @@ export function TreatmentSelectBox({
     }
   }, [selectedKeys, productOptions, priceExpose, etc, selectedDepartment, onSelectionChange]);
 
-  const handleRemove = (key: number) => {
+  const handleRemove = (key: string) => {
     setSelectedKeys((prev) => prev.filter((k) => k !== key));
     // 해당 시술의 상품옵션도 함께 제거
     setProductOptions((prev) => prev.filter((option) => option.treatmentKey !== key));
@@ -122,7 +122,7 @@ export function TreatmentSelectBox({
   };
   const handleClose = () => setModalOpen(false);
 
-  const handleSave = (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string, selectedDepartment: 'skin' | 'surgery' }) => {
+  const handleSave = (data: { selectedKeys: string[], productOptions: ProductOption[], etc: string, selectedDepartment: 'skin' | 'surgery' }) => {
     setSelectedKeys(data.selectedKeys);
     setProductOptions(data.productOptions);
     setEtc(data.etc);
@@ -137,7 +137,7 @@ export function TreatmentSelectBox({
   };
 
   // 해당 시술에 연결된 상품옵션 개수 계산
-  const getOptionCountForTreatment = (treatmentKey: number): number => {
+  const getOptionCountForTreatment = (treatmentKey: string): number => {
     return productOptions.filter(option => option.treatmentKey === treatmentKey).length;
   };
 
@@ -165,13 +165,13 @@ export function TreatmentSelectBox({
         </div>
       </div>
       {/* 선택 결과 칩 형태 */}
-      <TreatmentSelectedChips
+      {/* <TreatmentSelectedChips
         selectedKeys={selectedKeys}
         productOptions={productOptions}
         categories={categories}
         onRemove={handleRemove}
         showRemoveButton={true}
-      />
+      /> */}
       
       {/* 선택된 시술 정보 표시 */}
       {/* <TreatmentSelectedOptionInfo

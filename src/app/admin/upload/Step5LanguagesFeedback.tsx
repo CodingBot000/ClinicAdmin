@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-import { AlertModal } from '@/components/modal';
+// AlertModal 제거
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import AddressSection from '@/components/AddressSection';
@@ -23,7 +23,7 @@ import ExtraOptions, {
   ExtraOptionState,
 } from '@/components/ExtraOptions';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { PreviewModal, FormDataSummary } from '@/components/modal/PreviewModal';
+
 import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
 import type { CategoryNode } from '@/types/category';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
@@ -38,8 +38,9 @@ import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
 import { validateFormData } from '@/utils/validateFormData';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadActionsStep1 } from './actions/uploadStep1';
-import { uploadActionsStep5 } from './actions/uploadStep5';
+import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import PageBottom from '@/components/PageBottom';
+// 기존 Server Actions는 API Routes로 대체됨
 
 interface Step5LanguagesFeedbackProps {
   id_uuid_hospital: string;
@@ -226,12 +227,12 @@ const Step5LanguagesFeedback = ({
 
   // 성공 시 관리자 페이지로 이동하는 함수
   const handleConfirm = () => {
-    // if (formState?.status === 'success') {
-    //   router.replace('/admin');
-    //   router.refresh();
-    // } else {
+    if (formState?.status === 'success') {
+      router.replace('/admin');
+      router.refresh();
+    } else {
       handleModal();
-    // }
+    }
   };
 
   const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
@@ -523,88 +524,89 @@ const Step5LanguagesFeedback = ({
 
  
   const handleSave = async () => {
-    console.log('handleSave');
-
-    const formData = new FormData();
-    formData.append('id_uuid_hospital', id_uuid_hospital);
+    console.log('Step5 handleSave 시작');
     
-    // 편집 모드 플래그 추가
-    formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-    
-    // 피드백
-    if (feedback.trim()) {
-        formData.append('feedback', feedback.trim());
-    }
-
-    // 가능 언어
-    formData.append('available_languages', JSON.stringify(selectedLanguages));
-
-    formData.append('current_user_uid', currentUserUid);
-    
-    console.log('Step5 - 전송할 데이터:', {
-      id_uuid_hospital,
-      isEditMode,
-      feedback: feedback.trim(),
-      selectedLanguages,
-      currentUserUid
-    });
-
     try {
-      if (!formData) {
-        setFormState({
-          message: '데이터가 준비되지 않았습니다.',
-          status: 'error',
-          errorType: 'validation',
-        });
-        setShowFinalResult(true);
-        return;
+      // FormData 구성
+      const formData = new FormData();
+      formData.append('id_uuid_hospital', id_uuid_hospital);
+      formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
+      formData.append('current_user_uid', currentUserUid);
+      
+      // 피드백
+      if (feedback.trim()) {
+        formData.append('feedback', feedback.trim());
       }
 
-      const result = await uploadActionsStep5(
-        null,
-        formData,
-      );
-
-      console.log('uploadActionsStep5 응답:', result);
-      setFormState(result);
+      // 가능 언어
+      formData.append('available_languages', JSON.stringify(selectedLanguages));
       
-      if (result?.status === 'error') {
+      console.log('Step5 - 전송할 데이터:', {
+        id_uuid_hospital,
+        isEditMode,
+        feedback: feedback.trim(),
+        selectedLanguages,
+        currentUserUid
+      });
+
+      console.log('Step5 API 호출 시작');
+      
+      // 새로운 API Route 호출
+      const result = await uploadAPI.step5(formData);
+      console.log('Step5 API 응답:', result);
+
+      if (!isApiSuccess(result)) {
+        // 에러 발생 시 처리
+        const errorMessage = formatApiError(result.error);
+        
         setFormState({
-          message: `uploadActionsStep5 처리 오류: ${result?.message}`,
+          message: errorMessage,
           status: 'error',
           errorType: 'server',
         });
         setShowFinalResult(true);
-      } else if (result?.status === 'success') {
+        
+        return {
+          status: 'error',
+          message: errorMessage
+        };
+      } else {
+        // 성공 시 처리
+        console.log('Step5 데이터 저장 성공');
         setFormState({
-          message: result.message || '저장이 완료되었습니다.',
+          message: result.message || '언어 설정과 피드백이 성공적으로 저장되었습니다.',
           status: 'success',
           errorType: 'success',
         });
         setShowFinalResult(true);
+        
+        return {
+          status: 'success',
+          message: result.message
+        };
       }
       
+    } catch (error) {
+      console.error('Step5 API 호출 에러:', error);
+
+      const errorMessage = formatApiError(error);
+
+      setFormState({
+        message: errorMessage,
+        status: 'error',
+        errorType: 'server',
+      });
+      setShowFinalResult(true);
+      setShowConfirmModal(false);
       setPreparedFormData(null);
-  } catch (error) {
-    console.error('uploadActionsStep5 호출 에러:', error);
-
-    let errorMessage = '업로드 중 오류가 발생했습니다.';
-
-    if (error instanceof Error && error.message) {
-      errorMessage = `업로드 오류: ${error.message}`;
+      
+      return {
+        status: 'error',
+        message: errorMessage
+      };
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setFormState({
-      message: errorMessage,
-      status: 'error',
-      errorType: 'server',
-    });
-    setShowFinalResult(true);
-    setShowConfirmModal(false);
-    setPreparedFormData(null);
-  } finally {
-    setIsSubmitting(false);
-  }
   };
 
   // 언어 정보 파싱 함수
@@ -667,16 +669,25 @@ const Step5LanguagesFeedback = ({
           />
         </div>
       <Divider />
-
+      <div className='w-full'>
+        <h2 className="font-semibold mb-2 text-red-500">아래 Preview 버튼을 눌러 최종결과를 재검토 부탁드립니다.</h2>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+      </div>
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handlePreview}>Preview</Button>
           <Button onClick={handleSave}>Save</Button>
-          <Button onClick={onComplete}>Complete</Button>
+          <Button onClick={onComplete}>홈으로 돌아가기</Button>
         </div>
-      </div>
+      </div> */}
+      <PageBottom step={5} 
+      onNext={handleSave}
+       onPrev={onPrev}
+       onPreview={handlePreview}
+       onHome={onComplete}
+       isSubmitting={isSubmitting}
+       />
 
     </div>
 
@@ -690,14 +701,17 @@ const Step5LanguagesFeedback = ({
     />
 
     {/* 기존 Alert 모달 */}
-    <AlertModal
-      open={open}
-      onCancel={handleModal}
-      title={formState?.status === 'success' ? '성공' : '오류'}
-      children={formState?.message || ''}
-      onConfirm={handleConfirm}
-      confirmText={formState?.status === 'success' ? '확인' : '닫기'}
-    />
+    {formState?.message && showFinalResult && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+          <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
+                      <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+          </div>
+        </div>
+      </div>
+    )}
     </main>
   );
 };

@@ -10,19 +10,19 @@ import { useTreatmentCategories } from "@/hooks/useTreatmentCategories";
 
 interface ProductOption {
   id: string;
-  treatmentKey: number;
+  treatmentKey: string;
   value1: number;
   value2: number;
 }
 
 interface TreatmentSelectModalProps {
   open: boolean;
-  initialSelectedKeys: number[];
+  initialSelectedKeys: string[];
   initialProductOptions?: ProductOption[];
   initialEtc?: string;
   initialSelectedDepartment?: 'skin' | 'surgery';
   onClose: () => void;
-  onSave: (data: { selectedKeys: number[], productOptions: ProductOption[], etc: string, selectedDepartment: 'skin' | 'surgery' }) => void;
+  onSave: (data: { selectedKeys: string[]; productOptions: ProductOption[]; etc: string; selectedDepartment: 'skin' | 'surgery' }) => void;
   categories: CategoryNode[];
 }
 
@@ -72,14 +72,14 @@ export function TreatmentSelectModal({
   onSave,
   categories,
 }: TreatmentSelectModalProps) {
-  const [selectedKeys, setSelectedKeys] = useState<number[]>(initialSelectedKeys);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(initialSelectedKeys);
   const [productOptions, setProductOptions] = useState<ProductOption[]>(initialProductOptions);
   const [etc, setEtc] = useState<string>(initialEtc);
   const [selectedDepartment, setSelectedDepartment] = useState<'skin' | 'surgery'>(initialSelectedDepartment);
   const [isAnimating, setIsAnimating] = useState(false);
   
   // 옵션없음 체크박스 상태 관리 (treatmentKey별로)
-  const [noOptionChecked, setNoOptionChecked] = useState<Record<number, boolean>>({});
+  const [noOptionChecked, setNoOptionChecked] = useState<Record<string, boolean>>({});
   // 이전값 저장용 (체크해제 시 복원용)
   const [previousValues, setPreviousValues] = useState<Record<string, number>>({});
 
@@ -125,9 +125,9 @@ export function TreatmentSelectModal({
   useEffect(() => {
     if (open && (initialSelectedKeys ?? []).length > 0) {
       const currentFlatList = flattenCategoriesWithParentDepth(categories);
-      const initialNoOptionState: Record<number, boolean> = {};
+      const initialNoOptionState: Record<string, boolean> = {};
       (initialSelectedKeys ?? []).forEach(key => {
-        const treatmentItem = currentFlatList.find(item => item.key === key);
+        const treatmentItem = currentFlatList.find(item => item.key.toString() === key.toString());
         if (treatmentItem) {
           initialNoOptionState[key] = !treatmentItem.unit; // unit이 없으면 true, 있으면 false
         }
@@ -143,7 +143,7 @@ export function TreatmentSelectModal({
   // 체크박스가 있는 depth set 구하기
   const checkboxDepthSet = new Set(flatList.filter(x => x.isLastDepth).map(x => x.depth));
 
-  const handleToggle = (key: number) => {
+  const handleToggle = (key: string) => {
     setSelectedKeys((prev) => {
       const isCurrentlySelected = prev.includes(key);
       
@@ -155,7 +155,7 @@ export function TreatmentSelectModal({
         const newSelectedKeys = [...prev, key];
         
         // 새로 선택된 시술에 대해 unit 값에 따라 "옵션없음" 기본값 설정
-        const treatmentItem = flatList.find(item => item.key === key);
+        const treatmentItem = flatList.find(item => item.key.toString() === key.toString());
         if (treatmentItem && !noOptionChecked.hasOwnProperty(key)) {
           setNoOptionChecked(prevState => ({
             ...prevState,
@@ -177,7 +177,7 @@ export function TreatmentSelectModal({
     
     if (selectedTreatmentsWithoutOptions.length > 0) {
       const treatmentNames = selectedTreatmentsWithoutOptions.map(key => {
-        const treatmentItem = flatList.find(item => item.key === key);
+        const treatmentItem = flatList.find(item => item.key.toString() === key.toString());
         return treatmentItem?.label || `시술 ${key}`;
       });
       
@@ -192,7 +192,7 @@ export function TreatmentSelectModal({
     if (zeroPriceOptions.length > 0) {
       // 가격이 0원인 시술 이름들 찾기
       const problematicTreatments = zeroPriceOptions.map(option => {
-        const treatmentItem = flatList.find(item => item.key === option.treatmentKey);
+        const treatmentItem = flatList.find(item => item.key.toString() === option.treatmentKey.toString());
         return treatmentItem?.label || `시술 ${option.treatmentKey}`;
       });
       
@@ -222,7 +222,7 @@ export function TreatmentSelectModal({
     // 아무것도 하지 않음 - 모달이 닫히지 않음
   };
 
-  const handleAddOption = (treatmentKey: number) => {
+  const handleAddOption = (treatmentKey: string) => {
     const newOption: ProductOption = {
       id: `${treatmentKey}-${Date.now()}`,
       treatmentKey,
@@ -244,7 +244,7 @@ export function TreatmentSelectModal({
     ));
   };
 
-  const getOptionsForTreatment = (treatmentKey: number) => {
+  const getOptionsForTreatment = (treatmentKey: string) => {
     // 선택된 시술의 옵션들만 반환
     if (!selectedKeys.includes(treatmentKey)) {
       return [];
@@ -253,7 +253,7 @@ export function TreatmentSelectModal({
   };
 
   // 옵션없음 체크박스 토글 함수
-  const handleNoOptionToggle = (treatmentKey: number) => {
+  const handleNoOptionToggle = (treatmentKey: string) => {
     const isCurrentlyChecked = noOptionChecked[treatmentKey] || false;
     const newCheckedState = !isCurrentlyChecked;
     
@@ -388,12 +388,12 @@ export function TreatmentSelectModal({
                           <input
                             type="checkbox"
                             className="w-4 h-4 accent-primary cursor-pointer focus-ring rounded"
-                            checked={selectedKeys.includes(item.key)}
-                            onChange={() => handleToggle(item.key)}
+                            checked={selectedKeys.includes(item.key.toString())}
+                            onChange={() => handleToggle(item.key.toString())}
                           />
                           <span 
                             className={`${fontClass} ${fontWeight} text-foreground cursor-pointer select-none flex-1`}
-                            onClick={() => handleToggle(item.key)}
+                            onClick={() => handleToggle(item.key.toString())}
                           >
                             {item.label}
                           </span>
@@ -436,7 +436,7 @@ export function TreatmentSelectModal({
                 <div className="space-y-4">
                   {selectedKeys.map((treatmentKey) => {
                     const options = getOptionsForTreatment(treatmentKey);
-                    const treatmentItem = flatList.find(item => item.key === treatmentKey);
+                    const treatmentItem = flatList.find(item => item.key.toString() === treatmentKey.toString());
                     
                     if (!treatmentItem) return null;
                     

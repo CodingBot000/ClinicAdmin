@@ -6,6 +6,7 @@ import { HelpCircle } from 'lucide-react';
 import SNSConsentButton from './modal/SNSContentModal';
 import Divider from './Divider';
 import { BasicInfo } from '@/types/basicinfo';
+import { validateEmail } from '@/utils/validate-check/validate-forms';
 
 const SNS_CHANNEL_LABELS = {
   kakao_talk: 'KakaoTalk',
@@ -165,11 +166,6 @@ const BasicInfoSection = ({
   const [emailError, setEmailError] = useState<string>('');
   const [tel, setTel] = useState(info.tel || '');
 
-  // 이메일 유효성 검사 함수
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-    return emailRegex.test(email);
-  };
 
   // 이메일 blur 핸들러
   const handleEmailBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -278,7 +274,7 @@ const BasicInfoSection = ({
           {/* 병원 소개 - 영문 */}
           <div className="flex flex-col w-1/2 gap-1">
             <label htmlFor="introduction_en" className="font-medium">
-              병원 소개 (영문입력)
+              병원 소개 (영문입력-선택사항)
             </label>
             <textarea
               id="introduction_en"

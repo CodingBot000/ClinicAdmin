@@ -7,7 +7,7 @@ import { useSupabaseSession } from '@/hooks/useSupabaseSession';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 // import { uploadHospitalImages, uploadDoctorImages } from '@/lib/clinicUploadApi';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadActionsStep3 } from './actions/uploadStep3';
+import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import Button from '@/components/Button';
 import PageHeader from '@/components/PageHeader';
@@ -23,6 +23,7 @@ import { STORAGE_IMAGES } from '@/constants/tables';
 import { supabase } from '@/lib/supabaseClient';
 import { ExistingHospitalData } from '@/types/hospital';
 import ClinicImageThumbnailUploadSection from '@/components/ClinicImageThumbnailUploadSection';
+import PageBottom from '@/components/PageBottom';
 
 interface Surgery {
   created_at: string;
@@ -93,13 +94,21 @@ const Step3ClinicImagesDoctorsInfo = ({
       `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
-      console.log('Step3 뒤로가기 감지 - 기존 데이터 다시 로드');
-      loadExistingData();
+      console.log('Step3 편집 모드 - 기존 데이터 로드');
+      loadExistingDataForEdit();
     }
   }, [isEditMode, currentUserUid]);
 
   useEffect(() => {
+    console.log('Step3 - existingData 변경됨:', existingData);
+    console.log('Step3 - hospital imageurls:', existingData?.hospital?.imageurls);
+    console.log('Step3 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
+    console.log('Step3 - doctors:', existingData?.doctors);
   }, [existingData]);
+
+  useEffect(() => {
+    console.log('Step3 - doctors 상태 변경됨:', doctors);
+  }, [doctors]);
 
   const loadExistingDataForEdit = async () => {
     try {
@@ -109,7 +118,42 @@ const Step3ClinicImagesDoctorsInfo = ({
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 3);
       if (data) {
+        console.log('Step3 - 로드된 데이터:', data);
+        console.log('Step3 - hospital 데이터:', data.hospital);
+        console.log('Step3 - doctors 데이터:', data.doctors);
+        
         setExistingData(data);
+        
+        // 썸네일 이미지 상태 초기화
+        if (data.hospital?.thumbnail_url) {
+          console.log('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
+          setClinicThumbnail(data.hospital.thumbnail_url);
+          setOriginalThumbnailUrl(data.hospital.thumbnail_url);
+        } else {
+          console.log('썸네일 이미지가 없습니다');
+          setClinicThumbnail(null);
+          setOriginalThumbnailUrl(null);
+        }
+        
+        // 의사 데이터 설정
+        if (data.doctors && data.doctors.length > 0) {
+          const existingDoctors = data.doctors.map((doctor: any) => ({
+            id: doctor.id_uuid || uuidv4(),
+            name: doctor.name,
+            bio: doctor.bio || '',
+            isChief: doctor.chief === 1,
+            useDefaultImage: doctor.image_url?.includes('/default/') || false,
+            defaultImageType: (doctor.image_url?.includes('woman') ? 'woman' : 'man') as 'man' | 'woman',
+            imageFile: undefined,
+            imagePreview: doctor.image_url,
+            isExistingImage: true,
+            originalImageUrl: doctor.image_url,
+          }));
+          
+          setDoctors(existingDoctors);
+          console.log('기존 의사 데이터 로드 완료:', existingDoctors);
+        }
+        
         populateFormWithExistingData(data);
         console.log(' 편집 모드 - 기존 데이터 로딩 완료');
       } else {
@@ -729,12 +773,18 @@ const Step3ClinicImagesDoctorsInfo = ({
 
       console.log('Step3 uploadActionStep3 before formData:', formData);
       
-      const result = await uploadActionsStep3(null, formData);
-      console.log('uploadActionsStep3 응답:', result);
+      console.log('Step3 API 호출 시작');
       
-      if (result?.status === 'error') {
+      // 새로운 API Route 호출
+      const result = await uploadAPI.step3(formData);
+      console.log('Step3 API 응답:', result);
+      
+      if (!isApiSuccess(result)) {
+        // 에러 발생 시 처리
+        const errorMessage = formatApiError(result.error);
+        
         setFormState({
-          message: `uploadActionsStep3 처리 오류: ${result?.message}`,
+          message: errorMessage,
           status: 'error',
           errorType: 'server',
         });
@@ -742,11 +792,16 @@ const Step3ClinicImagesDoctorsInfo = ({
         return { status: 'error' };
       }
 
+      console.log('Step3 데이터 저장 성공');
       return { status: 'success' };
+      
     } catch (error) {
-      console.error('handleSave Step3 오류:', error);
+      console.error('Step3 API 호출 에러:', error);
+      
+      const errorMessage = formatApiError(error);
+      
       setFormState({
-        message: `업로드 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
+        message: errorMessage,
         status: 'error',
         errorType: 'server',
       });
@@ -755,48 +810,7 @@ const Step3ClinicImagesDoctorsInfo = ({
     }
   };
 
-  const loadExistingData = async () => {
-    try {
-      console.log('기존 데이터 다시 로드 시작');
-      const data = await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 3);
-      if (data) {
-        setExistingData(data);
-        
-        // 썸네일 이미지 상태 초기화
-        if (data.hospital?.thumbnail_url) {
-          console.log('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
-          // 기존 썸네일 이미지 URL을 상태에 설정
-          setClinicThumbnail(data.hospital.thumbnail_url);
-          setOriginalThumbnailUrl(data.hospital.thumbnail_url); // 원본 URL 저장
-        } else {
-          setClinicThumbnail(null);
-          setOriginalThumbnailUrl(null);
-        }
-        
-        if (data.doctors && data.doctors.length > 0) {
-          const existingDoctors = data.doctors.map((doctor: any) => ({
-            id: doctor.id_uuid || uuidv4(),
-            name: doctor.name,
-            bio: doctor.bio || '',
-            isChief: doctor.chief === 1,
-            useDefaultImage: doctor.image_url?.includes('/default/') || false,
-            defaultImageType: (doctor.image_url?.includes('woman') ? 'woman' : 'man') as 'man' | 'woman',
-            imageFile: undefined,
-            imagePreview: doctor.image_url,
-            isExistingImage: true,
-            originalImageUrl: doctor.image_url,
-          }));
-          
-          setDoctors(existingDoctors);
-          console.log('기존 의사 데이터 로드 완료:', existingDoctors);
-        }
-        
-        console.log('기존 데이터 다시 로드 완료');
-      }
-    } catch (error) {
-      console.error('기존 데이터 로드 실패:', error);
-    }
-  };
+
 
   return (
     <main>
@@ -852,12 +866,25 @@ const Step3ClinicImagesDoctorsInfo = ({
         <Divider />
        </div>
        {/* 하단 고정 버튼 영역 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
-      </div>
+      </div> */}
+      <PageBottom step={3} onNext={handleNext} onPrev={onPrev} />
+      {/* 기본 모달 */}
+      {formState?.message && showFinalResult && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
+            <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

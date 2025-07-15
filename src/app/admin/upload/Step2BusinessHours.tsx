@@ -14,8 +14,9 @@ import ExtraOptions, {
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { uploadActionsStep2 } from './actions/uploadStep2';
+import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import Divider from '@/components/Divider';
+import PageBottom from '@/components/PageBottom';
 
 interface Surgery {
   created_at: string;
@@ -93,6 +94,18 @@ const Step2BusinessHours = ({
       loadExistingDataForEdit();
     }
   }, [isEditMode, currentUserUid]);
+
+  useEffect(() => {
+    console.log('Step2 - initialBusinessHours 변경됨:', initialBusinessHours);
+    if (initialBusinessHours.length > 0) {
+      setOpeningHours(initialBusinessHours);
+      console.log('Step2 - openingHours 업데이트됨:', initialBusinessHours);
+    }
+  }, [initialBusinessHours]);
+
+  useEffect(() => {
+    console.log('Step2 - optionState 변경됨:', optionState);
+  }, [optionState]);
 
   const loadExistingDataForEdit = async () => {
     try {
@@ -200,51 +213,36 @@ const handleNext = async () => {
 }
 
   const handleSave = async () => {
-    console.log('handleSave 시작');
-    try {
-        const formData = new FormData();
-        formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-        // 시설 정보
-        formData.append('extra_options', JSON.stringify(optionState));
-
-        // 영업 시간
-        formData.append('opening_hours', JSON.stringify(openingHours));
-        formData.append('current_user_uid', currentUserUid);
-        
-        formData.append('id_uuid_hospital', id_uuid_hospital);
-    // setPreparedFormData(formData);
-
-    // console.log('qqqqqqqqq preparedFormData', preparedFormData);
-    // console.log('qqqqqqqqq formData', formData);
+    console.log('Step2 handleSave 시작');
     
-      if (!formData) {
-        setFormState({
-          message: '데이터가 준비되지 않았습니다.',
-          status: 'error',
-          errorType: 'server',
-        });
-        setShowFinalResult(true);
-        return {
-            status: 'error',
-        }
-      }
+    try {
+      // FormData 구성
+      const formData = new FormData();
+      formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
+      formData.append('current_user_uid', currentUserUid);
+      formData.append('id_uuid_hospital', id_uuid_hospital);
+      
+      // 시설 정보
+      formData.append('extra_options', JSON.stringify(optionState));
+      // 영업 시간
+      formData.append('opening_hours', JSON.stringify(openingHours));
+      
+      console.log('Step2 - 전송할 데이터:');
+      console.log('openingHours:', openingHours);
+      console.log('openingHours 길이:', openingHours.length);
+      console.log('optionState:', optionState);
+      console.log('optionState JSON:', JSON.stringify(optionState));
 
-      const result = await uploadActionsStep2(
-        null,
-        formData,
-      );
+      console.log('Step2 API 호출 시작');
+      
+      // 새로운 API Route 호출
+      const result = await uploadAPI.step2(formData);
 
-      console.log('uploadActionsStep2 응답:', result);
+      console.log('Step2 API 응답:', result);
 
-      if (result?.status === 'error') {
-        // 에러 발생 시 상세 정보와 함께 알림 표시
-        let errorMessage = result.message || '알 수 없는 오류가 발생했습니다.';
-        
-        // 에러 상세 정보가 있으면 추가
-        if (result.errorDetails) {
-          console.error('에러 상세 정보:', result.errorDetails);
-          errorMessage += `\n\n상세 정보:\n- 작업: ${result.errorDetails.operation}\n- 코드: ${result.errorDetails.code}`;
-        }
+      if (!isApiSuccess(result)) {
+        // 에러 발생 시 처리
+        const errorMessage = formatApiError(result.error);
         
         setFormState({
           message: errorMessage,
@@ -257,9 +255,9 @@ const handleNext = async () => {
           status: 'error',
           message: errorMessage
         };
-      } else if (result?.status === 'success') {
+      } else {
         // 성공 시 처리
-        console.log('데이터 저장 성공');
+        console.log('Step2 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',
@@ -272,47 +270,23 @@ const handleNext = async () => {
         };
       }
       
-      setFormState(result);
-      if (result?.status === 'error') {
-        setFormState({
-            message: `uploadActionsStep2 처리 오류: ${result?.message}`,
-            status: 'error',
-            errorType: 'server',
-          });
-        setShowFinalResult(true);
-      }
-    //   setShowFinalResult(true); // 최종 제출 결과만 얼러트 표시
-      return {
-        status: 'success',
-      }
-    //   setShowConfirmModal(false);
-    //   setPreparedFormData(null);
-  } catch (error) {
-    console.error('handleSave Step2uploadActionsStep2 호출 에러:', error);
+    } catch (error) {
+      console.error('Step2 API 호출 에러:', error);
 
-    let errorMessage = '업로드 중 오류가 발생했습니다.';
+      const errorMessage = formatApiError(error);
 
-    if (error instanceof Error && error.message) {
-      errorMessage = `업로드 오류: ${error.message}`;
-    }
-
-    setFormState({
-      message: errorMessage,
-      status: 'error',
-      errorType: 'server',
-    });
-    setShowFinalResult(true); // 에러도 최종 결과로 표시
-    // setShowConfirmModal(false);
-    // setPreparedFormData(null);
-    return {
+      setFormState({
+        message: errorMessage,
         status: 'error',
+        errorType: 'server',
+      });
+      setShowFinalResult(true);
+      
+      return {
+        status: 'error',
+        message: errorMessage
+      };
     }
-  } finally {
-    // setIsSubmitting(false);
-  }
-  return {
-    status: 'success',
-}
   };
 
   return (
@@ -341,12 +315,25 @@ const handleNext = async () => {
 
       </div>
      {/* 하단 고정 버튼 영역 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
         <div className="max-w-4xl mx-auto flex justify-end gap-3">
           <Button onClick={onPrev}>Prev</Button>
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
-      </div>
+      </div> */}
+      <PageBottom step={2} onNext={handleNext} onPrev={onPrev} />
+      {/* 기본 모달 */}
+      {formState?.message && showFinalResult && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
+            <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

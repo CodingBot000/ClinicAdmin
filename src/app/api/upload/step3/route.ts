@@ -1,53 +1,29 @@
-"use server";
-
-import { v4 as uuidv4 } from 'uuid';
-import { supabase } from "@/lib/supabaseClient";
-import { revalidatePath } from "next/cache";
-import { getTimestamp } from '@/utils/address/getTimeStamp';
-import { makeUploadImageFileName } from '@/utils/makeUploadImageFileName';
-import {
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
+import { 
   TABLE_HOSPITAL,
   TABLE_DOCTOR,
-  
-  STORAGE_IMAGES,
-  
+  STORAGE_IMAGES
 } from '@/constants/tables';
+import { v4 as uuidv4 } from 'uuid';
 
-// 파일명 생성 함수
-const generateFileName = (originalName: string, prefix: string = '', suffix: string = '') => {
-  const timestamp = Date.now();
-  const uuid = uuidv4().split('-')[0];
-  const extension = originalName.split('.').pop() || 'jpg';
-  const sanitizedName = originalName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-  
-  return `${prefix}${sanitizedName}_${uuid}_${timestamp}.${extension}`;
+// CORS 헤더 정의
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// 병원 이미지 파일명 생성
-const generateHospitalImageFileName = (originalName: string) => {
-  return generateFileName(originalName, 'hospital_');
-};
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
 
-// 의사 이미지 파일명 생성
-const generateDoctorImageFileName = (originalName: string, doctorName: string) => {
-  const nameSlug = doctorName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  return generateFileName(originalName, `doctor_${nameSlug}_`);
-};
-
-export const uploadActionsStep3 = async (prevState: any, formData: FormData) => {
+export async function POST(request: NextRequest) {
   console.log('=== uploadStep3 START ===');
 
-  // 에러 발생 시 모든 작업을 롤백하는 함수
-  const rollbackAll = async (errorMessage: string) => {
-    console.error('롤백 실행:', errorMessage);
-    return {
-      ...prevState,
-      message: errorMessage,
-      status: "error",
-    };
-  };
-    
   try {
+    const formData = await request.formData();
+    
     // FormData에서 기본 정보 추출
     const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
     const id_uuid_hospital = formData.get("id_uuid_hospital") as string;
@@ -106,8 +82,6 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
     console.log('- doctors count:', doctors.length);
 
     // 1. 썸네일 이미지 처리 (exist vs cur 비교)
-    // exist: 기존에 로딩된 썸네일 이미지 URL
-    // cur: 현재 설정된 썸네일 이미지 URL
     const existThumbnail = existingThumbnailUrl;
     const curThumbnail = finalThumbnailUrl;
     
@@ -142,7 +116,7 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
       }
     }
 
-    // 2. 클라이언트에서 명시적으로 삭제된 썸네일 이미지 처리 (기존 로직 유지 - 중복 방지)
+    // 2. 클라이언트에서 명시적으로 삭제된 썸네일 이미지 처리
     if (deletedThumbnailUrl && deletedThumbnailUrl !== existThumbnail) {
       console.log('- 추가로 삭제할 썸네일 이미지 URL:', deletedThumbnailUrl);
       
@@ -248,7 +222,10 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
 
     if (hospitalUpdateError) {
       console.error('병원 테이블 업데이트 실패:', hospitalUpdateError);
-      return await rollbackAll(`병원 테이블 업데이트 실패: ${hospitalUpdateError.message}`);
+      return NextResponse.json({
+        message: `병원 테이블 업데이트 실패: ${hospitalUpdateError.message}`,
+        status: "error",
+      }, { status: 500 });
     }
 
     console.log('병원 테이블 업데이트 성공:', hospitalUpdateData);
@@ -297,7 +274,10 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
 
           if (insertError) {
             console.error('의사 정보 추가 실패:', insertError);
-            return await rollbackAll(`의사 정보 추가 실패: ${insertError.message}`);
+            return NextResponse.json({
+              message: `의사 정보 추가 실패: ${insertError.message}`,
+              status: "error",
+            }, { status: 500 });
           }
           
           console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
@@ -342,7 +322,10 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
 
           if (updateError) {
             console.error('의사 정보 업데이트 실패:', updateError);
-            return await rollbackAll(`의사 정보 업데이트 실패: ${updateError.message}`);
+            return NextResponse.json({
+              message: `의사 정보 업데이트 실패: ${updateError.message}`,
+              status: "error",
+            }, { status: 500 });
           }
           
           console.log(`- 의사 정보 업데이트 성공: ${doctor.name}`, updateData);
@@ -357,7 +340,10 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
 
         if (insertError) {
           console.error('의사 정보 추가 실패:', insertError);
-          return await rollbackAll(`의사 정보 추가 실패: ${insertError.message}`);
+          return NextResponse.json({
+            message: `의사 정보 추가 실패: ${insertError.message}`,
+            status: "error",
+          }, { status: 500 });
         }
         
         console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
@@ -405,7 +391,10 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
           
         if (deleteError) {
           console.error('의사 정보 삭제 실패:', deleteError);
-          return await rollbackAll(`의사 정보 삭제 실패: ${deleteError.message}`);
+          return NextResponse.json({
+            message: `의사 정보 삭제 실패: ${deleteError.message}`,
+            status: "error",
+          }, { status: 500 });
         }
         
         console.log(`- 의사 정보 삭제 성공: ${deletedId}`);
@@ -414,14 +403,16 @@ export const uploadActionsStep3 = async (prevState: any, formData: FormData) => 
 
     console.log('=== uploadStep3 성공 완료 ===');
   
-    return {
-      ...prevState,
+    return NextResponse.json({
       message: "썸네일 이미지, 병원 이미지 및 의사 정보가 성공적으로 저장되었습니다.",
       status: "success",
-    };
+    }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
     console.error('uploadStep3 전체 오류:', error);
-    return await rollbackAll(`처리 중 오류가 발생했습니다: ${error}`);
+    return NextResponse.json({
+      message: `처리 중 오류가 발생했습니다: ${error}`,
+      status: "error",
+    }, { status: 500, headers: corsHeaders });
   }
-};
+} 

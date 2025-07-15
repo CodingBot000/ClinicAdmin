@@ -202,7 +202,7 @@ export function mapTreatmentsToForm(treatments: any[] | null | undefined) {
   }
   
   // 중복되지 않는 selectedKeys 추출 (treatment code들)
-  const selectedKeysSet = new Set<number>();
+  const selectedKeysSet = new Set<string>();
   const productOptions: any[] = [];
   
   treatments.forEach((treatment, index) => {
@@ -218,12 +218,12 @@ export function mapTreatmentsToForm(treatments: any[] | null | undefined) {
     // treatment 테이블에서 가져온 code 사용
     const treatmentCode = treatment.treatment?.code;
     if (treatmentCode) {
-      selectedKeysSet.add(Number(treatmentCode));
+      selectedKeysSet.add(treatmentCode);
       
       // 상품옵션 생성
       const productOption = {
         id: `${treatment.id_uuid_treatment}_${index}`,
-        treatmentKey: Number(treatmentCode),
+        treatmentKey: treatmentCode,
         value1: treatment.option_value || '',
         value2: Number(treatment.price) || 0
       };

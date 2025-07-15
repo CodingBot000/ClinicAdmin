@@ -7,7 +7,7 @@ import {
   TABLE_HOSPITAL_TREATMENT,
   TABLE_HOSPITAL_BUSINESS_HOUR,
   TABLE_ADMIN,
-  TABLE_TREATMENT,
+  TABLE_TREATMENT_INFO,
   TABLE_FEEDBACKS,
   TABLE_CONTACTS
 } from '@/constants/tables';
@@ -164,7 +164,7 @@ async function loadTreatments(hospitalUuid: string) {
   let treatments: any[] = [];
   if (treatmentUuids.length > 0) {
     const { data: treatmentData, error: treatmentError } = await supabase
-      .from(TABLE_TREATMENT)
+      .from(TABLE_TREATMENT_INFO)
       .select('id_uuid, code, name')
       .in('id_uuid', treatmentUuids);
 
@@ -380,13 +380,8 @@ export async function loadExistingHospitalData(
     }
 
     console.log('=== [loadExistingHospitalData] 로딩 요약 ===', {
-      병원정보: result.hospital ? '✅' : '⛔️',
       상세정보: result.hospitalDetail ? '✅' : '⛔️',
       영업시간: result.businessHours?.length ?? 0,
-      의사정보: result.doctors?.length ?? 0,
-      시술정보: result.treatments?.length ?? 0,
-      피드백: result.feedback ? '✅' : '⛔️',
-      연락처: result.contacts ? '✅' : '⛔️'
     });
 
     return result;

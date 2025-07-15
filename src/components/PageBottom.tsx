@@ -1,0 +1,116 @@
+import React from 'react';
+import { Button } from './ui/button';
+
+interface PageBottomProps {
+  step: 1 | 2 | 3 | 4 | 5;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onPreview?: () => void;
+  onHome?: () => void;
+  isSubmitting?: boolean;
+  children?: React.ReactNode; // 설명 텍스트 등
+  className?: string;
+}
+
+const PageBottom: React.FC<PageBottomProps> = ({
+  step,
+  onPrev,
+  onNext,
+  onPreview,
+  onHome,
+  isSubmitting = false,
+  children,
+  className = '',
+}) => {
+  // 버튼 그룹 렌더링
+  const renderButtons = () => {
+    switch (step) {
+      case 1:
+        return (
+          <Button
+            type="button"
+            className="btn btn-primary"
+            onClick={onNext}
+            disabled={isSubmitting}
+          >
+            Save And Next
+          </Button>
+        );
+      case 2:
+      case 3:
+      case 4:
+        return (
+          <>
+            <Button
+              type="button"
+              className="btn btn-secondary bg-yellow-400"
+              onClick={onPrev}
+              disabled={isSubmitting}
+            >
+              Prev
+            </Button>
+            <Button
+              type="button"
+              className="btn btn-primary"
+              onClick={onNext}
+              disabled={isSubmitting}
+            >
+              Save And Next
+            </Button>
+          </>
+        );
+      case 5:
+        return (
+          <>
+             <Button
+              type="button"
+              className="btn btn-secondary bg-yellow-400"
+              onClick={onPrev}
+              disabled={isSubmitting}
+            >
+              Prev
+            </Button>
+            <Button
+              type="button"
+              className="btn btn-secondary bg-green-600"
+              onClick={onPreview}
+              disabled={isSubmitting}
+            >
+              Preview
+            </Button>
+            <Button
+              type="button"
+              className="btn btn-primary bg-red-400"
+              onClick={onNext}
+              disabled={isSubmitting}
+            >
+              Save
+            </Button>
+            <Button
+              type="button"
+              className="btn btn-accent"
+              onClick={onHome}
+              disabled={isSubmitting}
+            >
+              홈으로 돌아가기
+            </Button>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50 ${className}`}>
+      <div className="max-w-4xl mx-auto flex justify-between items-center">
+        {/* 왼쪽: 설명/children */}
+        <div>{children}</div>
+        {/* 오른쪽: 버튼 그룹 */}
+        <div className="flex gap-3">{renderButtons()}</div>
+      </div>
+    </div>
+  );
+};
+
+export default PageBottom;
