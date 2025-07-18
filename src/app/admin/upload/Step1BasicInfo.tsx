@@ -188,15 +188,6 @@ const Step1BasicInfo = ({
     sns_content_agreement: null,
   });
 
-  // // 연락처 정보 상태 추가
-  // const [contactsInfo, setContactsInfo] = useState<ContactsInfo>({
-  //   consultationPhone: '',
-  //   consultationManagerPhones: ['', '', ''],
-  //   smsPhone: '',
-  //   eventManagerPhone: '',
-  //   marketingEmails: ['', '', '']
-  // });
-
   const [feedback, setFeedback] = useState<string>('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
@@ -411,58 +402,6 @@ const Step1BasicInfo = ({
           }
       }
 
-      // // 6. 시술 정보 설정
-      // console.log('Step1 - 시술 정보 설정 시작');
-      // console.debug(
-      //   'Step1 - 변환된 시술 데이터:',
-      //   formData.treatments,
-      // );
-      // setInitialTreatmentData(formData.treatments);
-      // console.log(
-      //   'Step1 - initialTreatmentData 상태 업데이트 완료',
-      // );
-
-      // 7. 연락처 정보 설정
-      // if (existingData.contacts && existingData.contacts.length > 0) {
-      //   console.log('Step1 - 연락처 정보 설정 시작:', existingData.contacts);
-        
-      //   // 연락처 데이터를 ContactsInfo 형태로 변환
-      //   const contactsData: ContactsInfo = {
-      //     consultationPhone: '',
-      //     consultationManagerPhones: ['', '', ''],
-      //     smsPhone: '',
-      //     eventManagerPhone: '',
-      //     marketingEmails: ['', '', '']
-      //   };
-
-      //   existingData.contacts.forEach((contact: any) => {
-      //     switch (contact.type) {
-      //       case 'consultation_phone':
-      //         contactsData.consultationPhone = contact.value;
-      //         break;
-      //       case 'consult_manager_phone':
-      //         if (contact.sequence >= 0 && contact.sequence < 3) {
-      //           contactsData.consultationManagerPhones[contact.sequence] = contact.value;
-      //         }
-      //         break;
-      //       case 'sms_phone':
-      //         contactsData.smsPhone = contact.value;
-      //         break;
-      //       case 'event_manager_phone':
-      //         contactsData.eventManagerPhone = contact.value;
-      //         break;
-      //       case 'marketing_email':
-      //         if (contact.sequence >= 0 && contact.sequence < 3) {
-      //           contactsData.marketingEmails[contact.sequence] = contact.value;
-      //         }
-      //         break;
-      //     }
-      //   });
-
-      //   setContactsInfo(contactsData);
-      //   console.log('Step1 - 연락처 정보 설정 완료:', contactsData);
-      // }
-
       console.log('Step1 - 기존 데이터 적용 완료!');
       console.log('Step1 - 적용된 데이터:', {
         병원명: formData.hospital.name,
@@ -476,50 +415,6 @@ const Step1BasicInfo = ({
     }
   };
 
-  // const handleModal = () => {
-  //   setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
-  //   handleOpenModal();
-  // };
-
-  // 성공 시 관리자 페이지로 이동하는 함수
-  // const handleConfirm = () => {
-  //   if (formState?.status === 'success') {
-  //     router.replace('/admin');
-  //     router.refresh();
-  //   } else {
-  //     handleModal();
-  //   }
-  // };
-
-  // const handleTreatmentSelectionChange = (data: {
-  //   selectedKeys: number[];
-  //   productOptions: any[];
-  //   priceExpose: boolean;
-  //   etc: string;
-  // }) => {
-  //   setSelectedTreatments(data.selectedKeys);
-  //   setTreatmentOptions(data.productOptions);
-  //   setPriceExpose(data.priceExpose);
-  //   setTreatmentEtc(data.etc);
-
-  //   console.debug('Step1 - 시술 데이터 업데이트:', {
-  //     selectedTreatments: data.selectedKeys,
-  //     productOptions: data.productOptions,
-  //     priceExpose: data.priceExpose,
-  //     etc: data.etc,
-  //   });
-  // };
-
-  // 부가시설 옵션 변경 처리하는 함수
-  // const handleExtraOptionsChange = (
-  //   data: ExtraOptionState,
-  // ) => {
-  //   console.debug(
-  //     'Step1 - 부가시설 옵션 업데이트:',
-  //     data,
-  //   );
-  //   setOptionState(data);
-  // };
 
   // 폼 검증 함수
   const validateForm = (): { isValid: boolean; errors: string[] } => {
@@ -561,39 +456,6 @@ const Step1BasicInfo = ({
       errors.push('지역을 선택해주세요.');
     }
 
-    // 7. 연락처 정보 검증
-    // consultationPhone 검증
-    // if (!contactsInfo.consultationPhone?.trim()) {
-    //   errors.push('상담전화번호를 입력해주세요.');
-    // }
-
-    // // consultationManagerPhones 배열 검증 (1개 이상)
-    // const hasConsultationManager = contactsInfo.consultationManagerPhones.some(phone => phone?.trim());
-    // if (!hasConsultationManager) {
-    //   errors.push('상담관리자 전화번호를 1개 이상 입력해주세요.');
-    // }
-
-    // // smsPhone 검증
-    // if (!contactsInfo.smsPhone?.trim()) {
-    //   errors.push('SMS 전화번호를 입력해주세요.');
-    // }
-
-    // // eventManagerPhone 검증
-    // if (!contactsInfo.eventManagerPhone?.trim()) {
-    //   errors.push('이벤트관리자 전화번호를 입력해주세요.');
-    // }
-
-    // // marketingEmails 배열 검증 (1개 이상)
-    // const hasMarketingEmail = contactsInfo.marketingEmails.some(email => email?.trim());
-    // if (!hasMarketingEmail) {
-    //   errors.push('마케팅 이메일을 1개 이상 입력해주세요.');
-    // } else {
-    //   // 마케팅 이메일 형식 검증 - 한 개라도 잘못된 형식이 있으면 에러 메시지 하나만 추가
-    //   const hasInvalidEmail = contactsInfo.marketingEmails.some(email => email?.trim() && !validateEmail(email));
-    //   if (hasInvalidEmail) {
-    //     errors.push('마케팅 이메일 중 올바른 이메일 형식이 아닌 이메일이 있습니다.');
-    //   }
-    // }
 
     return {
       isValid: errors.length === 0,
