@@ -38,7 +38,7 @@ interface Surgery {
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
-interface Step3ClinicImagesDoctorsInfoProps {
+interface Step4ClinicImagesDoctorsInfoProps {
   id_uuid_hospital: string;
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
@@ -46,14 +46,14 @@ interface Step3ClinicImagesDoctorsInfoProps {
   onNext: () => void;
 }
 
-const Step3ClinicImagesDoctorsInfo = ({
+const Step4ClinicImagesDoctorsInfo = ({
   id_uuid_hospital,
   currentUserUid,
   isEditMode = false,
   onPrev,
   onNext,
-}: Step3ClinicImagesDoctorsInfoProps) => {
-    console.log('qqqqqqqqq Step3ClinicImagesDoctorsInfo oooㄹㄹ id_uuid_hospital', id_uuid_hospital);
+}: Step4ClinicImagesDoctorsInfoProps) => {
+    console.log('qqqqqqqqq Step4ClinicImagesDoctorsInfo oooㄹㄹ id_uuid_hospital', id_uuid_hospital);
   const router = useRouter();
   const [clinicThumbnail, setClinicThumbnail] = useState<File | string | null>(null);
   const [clinicImages, setClinicImages] = useState<File[]>(
@@ -454,8 +454,10 @@ const Step3ClinicImagesDoctorsInfo = ({
     console.log('handleNext Step3');
     const result = await handleSave();
     console.log('handleNext Step3 handlSave after result', result);
+    document.body.style.overflow = '';
     if (result?.status === 'success') {
         console.log('handleNext Step3 handlSave success');
+        
         onNext();
     } else {
         console.log('handleNext Step3 handlSave what? :', result);
@@ -776,7 +778,7 @@ const Step3ClinicImagesDoctorsInfo = ({
       console.log('Step3 API 호출 시작');
       
       // 새로운 API Route 호출
-      const result = await uploadAPI.step3(formData);
+      const result = await uploadAPI.step4(formData);
       console.log('Step3 API 응답:', result);
       
       if (!isApiSuccess(result)) {
@@ -889,4 +891,4 @@ const Step3ClinicImagesDoctorsInfo = ({
   );
 }
 
-export default Step3ClinicImagesDoctorsInfo;
+export default Step4ClinicImagesDoctorsInfo;

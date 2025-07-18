@@ -241,19 +241,8 @@ const BasicInfoSection = ({
           value={info.name}
           onChange={(e) => handleChange('name', e.target.value)}
         />
-        <InputField
-          label="이메일"
-          name="email"
-          type="email"
-          required
-          value={info.email}
-          onChange={(e) => handleChange('email', e.target.value)}
-          onBlur={handleEmailBlur}
-          isError={!!emailError}
-          errorMessage={emailError}
-        />
-        
-        <div className="flex flex-row w-full gap-6">
+
+<div className="flex flex-row w-full gap-6">
           {/* 병원 소개 - 국문 */}
           <div className="flex flex-col w-1/2 gap-1">
             <label htmlFor="introduction" className="font-medium">
@@ -291,6 +280,20 @@ const BasicInfoSection = ({
 
 
         <InputField
+          label="대표 이메일"
+          name="email"
+          type="email"
+          required
+          value={info.email}
+          onChange={(e) => handleChange('email', e.target.value)}
+          onBlur={handleEmailBlur}
+          isError={!!emailError}
+          errorMessage={emailError}
+        />
+        
+       
+
+        <InputField
           label="대표 전화번호"
           name="tel"
           type="tel"
@@ -301,6 +304,9 @@ const BasicInfoSection = ({
           placeholder="예: 02-1234-5678 또는 010-1234-5678"
         />
 
+        <div>
+          <p>* 진료문의/진료상담/마케팅담당자/SMS수신 - 전화번호, 이메일 등은 다음 스텝에 별도 입력란이 있습니다. </p>
+        </div>
         <Divider />
         <div className="space-y-2">
           <div className="flex items-center gap-2">

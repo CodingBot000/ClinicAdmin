@@ -62,7 +62,7 @@ interface Surgery {
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
-interface Step4TreatmentsProps {
+interface Step5TreatmentsProps {
   id_uuid_hospital: string;
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
@@ -70,14 +70,14 @@ interface Step4TreatmentsProps {
   onNext: () => void;
 }
 
-const Step4Treatments = ({
+const Step5Treatments = ({
   id_uuid_hospital,
   currentUserUid,
   isEditMode = false,
   onPrev,
   onNext,
-}: Step4TreatmentsProps) => {
-    console.log('qqqqqqqqq Step4Treatments id_uuid_hospital', id_uuid_hospital);
+}: Step5TreatmentsProps) => {
+    console.log('qqqqqqqqq Step5Treatments id_uuid_hospital', id_uuid_hospital);
 
   const {
     data: categories,
@@ -352,7 +352,7 @@ const Step4Treatments = ({
     etc: string;
     selectedDepartment?: 'skin' | 'surgery';
   }) => {
-    console.log('Step4Treatments - 시술 데이터 업데이트:', {
+    console.log('Step5Treatments - 시술 데이터 업데이트:', {
       selectedKeys: data.selectedKeys,
       productOptions: data.productOptions,
       priceExpose: data.priceExpose,
@@ -365,7 +365,7 @@ const Step4Treatments = ({
     setPriceExpose(data.priceExpose);
     setTreatmentEtc(data.etc);
 
-    console.log('Step4Treatments - 상태 업데이트 완료:', {
+    console.log('Step5Treatments - 상태 업데이트 완료:', {
       selectedTreatments: data.selectedKeys,
       treatmentOptions: data.productOptions,
       priceExpose: data.priceExpose,
@@ -1012,6 +1012,7 @@ const Step4Treatments = ({
 const handleNext = async () => {
     console.log('handleNext');
     const result = await handleSave();
+    document.body.style.overflow = '';
     if (result?.status === 'success') {
         console.log('handleNext Step4 handlSave success');
         onNext();
@@ -1042,7 +1043,7 @@ const handleNext = async () => {
       console.log('Step4 API 호출 시작');
       
       // 새로운 API Route 호출
-      const result = await uploadAPI.step4(formData);
+      const result = await uploadAPI.step5(formData);
       console.log('Step4 API 응답:', result);
 
       if (!isApiSuccess(result)) {
@@ -1173,4 +1174,4 @@ children={
   );
 };
 
-export default Step4Treatments;
+export default Step5Treatments;

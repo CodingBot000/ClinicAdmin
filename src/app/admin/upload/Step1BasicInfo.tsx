@@ -188,14 +188,14 @@ const Step1BasicInfo = ({
     sns_content_agreement: null,
   });
 
-  // 연락처 정보 상태 추가
-  const [contactsInfo, setContactsInfo] = useState<ContactsInfo>({
-    consultationPhone: '',
-    consultationManagerPhones: ['', '', ''],
-    smsPhone: '',
-    eventManagerPhone: '',
-    marketingEmails: ['', '', '']
-  });
+  // // 연락처 정보 상태 추가
+  // const [contactsInfo, setContactsInfo] = useState<ContactsInfo>({
+  //   consultationPhone: '',
+  //   consultationManagerPhones: ['', '', ''],
+  //   smsPhone: '',
+  //   eventManagerPhone: '',
+  //   marketingEmails: ['', '', '']
+  // });
 
   const [feedback, setFeedback] = useState<string>('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
@@ -423,45 +423,45 @@ const Step1BasicInfo = ({
       // );
 
       // 7. 연락처 정보 설정
-      if (existingData.contacts && existingData.contacts.length > 0) {
-        console.log('Step1 - 연락처 정보 설정 시작:', existingData.contacts);
+      // if (existingData.contacts && existingData.contacts.length > 0) {
+      //   console.log('Step1 - 연락처 정보 설정 시작:', existingData.contacts);
         
-        // 연락처 데이터를 ContactsInfo 형태로 변환
-        const contactsData: ContactsInfo = {
-          consultationPhone: '',
-          consultationManagerPhones: ['', '', ''],
-          smsPhone: '',
-          eventManagerPhone: '',
-          marketingEmails: ['', '', '']
-        };
+      //   // 연락처 데이터를 ContactsInfo 형태로 변환
+      //   const contactsData: ContactsInfo = {
+      //     consultationPhone: '',
+      //     consultationManagerPhones: ['', '', ''],
+      //     smsPhone: '',
+      //     eventManagerPhone: '',
+      //     marketingEmails: ['', '', '']
+      //   };
 
-        existingData.contacts.forEach((contact: any) => {
-          switch (contact.type) {
-            case 'consultation_phone':
-              contactsData.consultationPhone = contact.value;
-              break;
-            case 'consult_manager_phone':
-              if (contact.sequence >= 0 && contact.sequence < 3) {
-                contactsData.consultationManagerPhones[contact.sequence] = contact.value;
-              }
-              break;
-            case 'sms_phone':
-              contactsData.smsPhone = contact.value;
-              break;
-            case 'event_manager_phone':
-              contactsData.eventManagerPhone = contact.value;
-              break;
-            case 'marketing_email':
-              if (contact.sequence >= 0 && contact.sequence < 3) {
-                contactsData.marketingEmails[contact.sequence] = contact.value;
-              }
-              break;
-          }
-        });
+      //   existingData.contacts.forEach((contact: any) => {
+      //     switch (contact.type) {
+      //       case 'consultation_phone':
+      //         contactsData.consultationPhone = contact.value;
+      //         break;
+      //       case 'consult_manager_phone':
+      //         if (contact.sequence >= 0 && contact.sequence < 3) {
+      //           contactsData.consultationManagerPhones[contact.sequence] = contact.value;
+      //         }
+      //         break;
+      //       case 'sms_phone':
+      //         contactsData.smsPhone = contact.value;
+      //         break;
+      //       case 'event_manager_phone':
+      //         contactsData.eventManagerPhone = contact.value;
+      //         break;
+      //       case 'marketing_email':
+      //         if (contact.sequence >= 0 && contact.sequence < 3) {
+      //           contactsData.marketingEmails[contact.sequence] = contact.value;
+      //         }
+      //         break;
+      //     }
+      //   });
 
-        setContactsInfo(contactsData);
-        console.log('Step1 - 연락처 정보 설정 완료:', contactsData);
-      }
+      //   setContactsInfo(contactsData);
+      //   console.log('Step1 - 연락처 정보 설정 완료:', contactsData);
+      // }
 
       console.log('Step1 - 기존 데이터 적용 완료!');
       console.log('Step1 - 적용된 데이터:', {
@@ -563,37 +563,37 @@ const Step1BasicInfo = ({
 
     // 7. 연락처 정보 검증
     // consultationPhone 검증
-    if (!contactsInfo.consultationPhone?.trim()) {
-      errors.push('상담전화번호를 입력해주세요.');
-    }
+    // if (!contactsInfo.consultationPhone?.trim()) {
+    //   errors.push('상담전화번호를 입력해주세요.');
+    // }
 
-    // consultationManagerPhones 배열 검증 (1개 이상)
-    const hasConsultationManager = contactsInfo.consultationManagerPhones.some(phone => phone?.trim());
-    if (!hasConsultationManager) {
-      errors.push('상담관리자 전화번호를 1개 이상 입력해주세요.');
-    }
+    // // consultationManagerPhones 배열 검증 (1개 이상)
+    // const hasConsultationManager = contactsInfo.consultationManagerPhones.some(phone => phone?.trim());
+    // if (!hasConsultationManager) {
+    //   errors.push('상담관리자 전화번호를 1개 이상 입력해주세요.');
+    // }
 
-    // smsPhone 검증
-    if (!contactsInfo.smsPhone?.trim()) {
-      errors.push('SMS 전화번호를 입력해주세요.');
-    }
+    // // smsPhone 검증
+    // if (!contactsInfo.smsPhone?.trim()) {
+    //   errors.push('SMS 전화번호를 입력해주세요.');
+    // }
 
-    // eventManagerPhone 검증
-    if (!contactsInfo.eventManagerPhone?.trim()) {
-      errors.push('이벤트관리자 전화번호를 입력해주세요.');
-    }
+    // // eventManagerPhone 검증
+    // if (!contactsInfo.eventManagerPhone?.trim()) {
+    //   errors.push('이벤트관리자 전화번호를 입력해주세요.');
+    // }
 
-    // marketingEmails 배열 검증 (1개 이상)
-    const hasMarketingEmail = contactsInfo.marketingEmails.some(email => email?.trim());
-    if (!hasMarketingEmail) {
-      errors.push('마케팅 이메일을 1개 이상 입력해주세요.');
-    } else {
-      // 마케팅 이메일 형식 검증 - 한 개라도 잘못된 형식이 있으면 에러 메시지 하나만 추가
-      const hasInvalidEmail = contactsInfo.marketingEmails.some(email => email?.trim() && !validateEmail(email));
-      if (hasInvalidEmail) {
-        errors.push('마케팅 이메일 중 올바른 이메일 형식이 아닌 이메일이 있습니다.');
-      }
-    }
+    // // marketingEmails 배열 검증 (1개 이상)
+    // const hasMarketingEmail = contactsInfo.marketingEmails.some(email => email?.trim());
+    // if (!hasMarketingEmail) {
+    //   errors.push('마케팅 이메일을 1개 이상 입력해주세요.');
+    // } else {
+    //   // 마케팅 이메일 형식 검증 - 한 개라도 잘못된 형식이 있으면 에러 메시지 하나만 추가
+    //   const hasInvalidEmail = contactsInfo.marketingEmails.some(email => email?.trim() && !validateEmail(email));
+    //   if (hasInvalidEmail) {
+    //     errors.push('마케팅 이메일 중 올바른 이메일 형식이 아닌 이메일이 있습니다.');
+    //   }
+    // }
 
     return {
       isValid: errors.length === 0,
@@ -639,7 +639,9 @@ const Step1BasicInfo = ({
 
         const result = await handleSave();
         console.debug('Step1 - handleNext result:', result);
+        document.body.style.overflow = '';
         if (result?.status === 'success') {
+            
             onNext();
         }
     }
@@ -651,7 +653,7 @@ const Step1BasicInfo = ({
       basicInfo,
       selectedLocation,
       addressForSendForm,
-      contactsInfo,
+      // contactsInfo,
       currentUserUid,
       id_uuid_hospital,
       isEditMode
@@ -728,7 +730,7 @@ const Step1BasicInfo = ({
       }
 
       // 연락처 정보 추가
-      formData.append('contacts_info', JSON.stringify(contactsInfo));
+      // formData.append('contacts_info', JSON.stringify(contactsInfo));
 
       console.log('Step1 - FormData 구성 완료');
       console.log('Step1 - API 호출 시작');
@@ -840,12 +842,12 @@ const Step1BasicInfo = ({
           />
 
           
-        <Divider />
+        {/* <Divider />
      
           <ContactsInfoSection
             onContactsChange={setContactsInfo}
             initialContacts={contactsInfo}
-          />
+          /> */}
       
         </div>
       </div>

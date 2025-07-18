@@ -106,7 +106,7 @@ export const uploadAPI = {
     }
   },
 
-  // Step 2: 영업시간 및 부대시설
+  // Step 2: 연락처 정보 
   step2: async (formData: FormData): Promise<ApiResponse> => {
     console.log(`[API] Step2 호출 시작`);
     try {
@@ -119,7 +119,7 @@ export const uploadAPI = {
     }
   },
 
-  // Step 3: 이미지 및 의사 정보
+  // Step 3: 영업시간 및 부대시설
   step3: async (formData: FormData): Promise<ApiResponse> => {
     console.log(`[API] Step3 호출 시작`);
     try {
@@ -132,7 +132,7 @@ export const uploadAPI = {
     }
   },
 
-  // Step 4: 치료 정보
+  // Step 4: 이미지 및 의사 정보
   step4: async (formData: FormData): Promise<ApiResponse> => {
     console.log(`[API] Step4 호출 시작`);
     try {
@@ -145,7 +145,7 @@ export const uploadAPI = {
     }
   },
 
-  // Step 5: 언어 설정 및 피드백
+  // Step 5: 치료 정보
   step5: async (formData: FormData): Promise<ApiResponse> => {
     console.log(`[API] Step5 호출 시작`);
     try {
@@ -154,6 +154,19 @@ export const uploadAPI = {
       return result;
     } catch (error) {
       console.error(`[API] Step5 실패:`, error);
+      throw error;
+    }
+  },
+
+  // Step 6: 언어 설정 및 피드백
+  step6: async (formData: FormData): Promise<ApiResponse> => {
+    console.log(`[API] Step6 호출 시작`);
+    try {
+      const result = await apiCallWithFormData('/upload/step6', formData);
+      console.log(`[API] Step6 성공:`, result);
+      return result;
+    } catch (error) {
+      console.error(`[API] Step6 실패:`, error);
       throw error;
     }
   },
