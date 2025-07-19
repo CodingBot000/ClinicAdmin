@@ -324,16 +324,52 @@ const Step1BasicInfo = ({
         console.log('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
       }
 
+      // // 3. 주소 정보 설정
+      // if (formData.address.roadAddress) {
+      //   setAddress(formData.address.roadAddress);
+      //   setAddressForSendForm({
+      //     address_full_road: formData.address.roadAddress,
+      //     address_full_road_en: formData.address.roadAddressEnglish || '',
+      //     address_full_jibun: formData.address.jibunAddress,
+      //     address_full_jibun_en: formData.address.jibunAddressEnglish || '',
+      //     zipcode: formData.address.zonecode,
+      //     address_si: formData.address.sido,
+      //     address_si_en: formData.address.sidoEnglish || '',
+      //     address_gu: formData.address.sigungu,
+      //     address_gu_en: formData.address.sigunguEnglish || '',
+      //     address_dong: formData.address.bname,
+      //     address_dong_en: formData.address.bnameEnglish || '',
+      //     bname: formData.address.bname,
+      //     bname_en: formData.address.bnameEnglish || '',
+      //     address_detail: existingData.hospital?.address_detail,
+      //     address_detail_en: existingData.hospital?.address_detail_en,
+      //     directions_to_clinic: existingData.hospital?.directions_to_clinic,
+      //     directions_to_clinic_en: existingData.hospital?.directions_to_clinic_en,
+      //     latitude: existingData.hospital?.latitude,
+      //     longitude: existingData.hospital?.longitude,
+
+      //   });
+
+
       // 3. 주소 정보 설정
-      if (formData.address.roadAddress) {
-        setAddress(formData.address.roadAddress);
+      if (existingData.hospital?.address_full_road) {
+        setAddress(existingData.hospital?.address_full_road);
         setAddressForSendForm({
-          address_full_road: formData.address.roadAddress,
-          address_full_jibun: formData.address.jibunAddress,
-          zipcode: formData.address.zonecode,
-          address_si: formData.address.sido,
-          address_gu: formData.address.sigungu,
-          address_dong: formData.address.bname,
+          address_full_road: existingData.hospital?.address_full_road,
+          address_full_road_en: existingData.hospital?.address_full_road_en || '',
+          address_full_jibun: existingData.hospital?.address_full_jibun,
+          address_full_jibun_en: existingData.hospital?.address_full_jibun_en || '',
+          zipcode: existingData.hospital?.zipcode,
+          address_si: existingData.hospital?.address_si,
+          address_si_en: existingData.hospital?.address_si_en || '',
+          address_gu: existingData.hospital?.address_gu,
+          address_gu_en: existingData.hospital?.address_gu_en || '',
+          address_dong: existingData.hospital?.address_dong,
+          address_dong_en: existingData.hospital?.address_dong_en || '',
+          bname: existingData.hospital?.bname,
+          bname_en: existingData.hospital?.bname_en || '',
+          building_name: existingData.hospital?.building_name,
+          building_name_en: existingData.hospital?.building_name_en || '',
           address_detail: existingData.hospital?.address_detail,
           address_detail_en: existingData.hospital?.address_detail_en,
           directions_to_clinic: existingData.hospital?.directions_to_clinic,
@@ -343,23 +379,22 @@ const Step1BasicInfo = ({
 
         });
 
-
-        console.log(`Step1 - 위도경도 정보 existingData: ${existingData.hospital?.latitude}, ${existingData.hospital?.longitude}`);
-        console.log(`Step1 - 위도경도 정보 formData: ${formData.address.coordinates.latitude}, ${formData.address.coordinates.longitude}`);
-        if (existingData.hospital?.latitude && existingData.hospital?.longitude) {
-          setCoordinates({
-            latitude: existingData.hospital.latitude,
-            longitude: existingData.hospital.longitude,
-          });
-        } else if (
-          formData.address.coordinates.latitude &&
-           formData.address.coordinates.longitude
-          ) {
-          setCoordinates({
-            latitude: formData.address.coordinates.latitude,
-            longitude: formData.address.coordinates.longitude,
-          });
-        }
+        // console.log(`Step1 - 위도경도 정보 existingData: ${existingData.hospital?.latitude}, ${existingData.hospital?.longitude}`);
+        // console.log(`Step1 - 위도경도 정보 formData: ${formData.address.coordinates.latitude}, ${formData.address.coordinates.longitude}`);
+        // if (existingData.hospital?.latitude && existingData.hospital?.longitude) {
+        //   setCoordinates({
+        //     latitude: existingData.hospital.latitude,
+        //     longitude: existingData.hospital.longitude,
+        //   });
+        // } else if (
+        //   formData.address.coordinates.latitude &&
+        //    formData.address.coordinates.longitude
+        //   ) {
+        //   setCoordinates({
+        //     latitude: formData.address.coordinates.latitude,
+        //     longitude: formData.address.coordinates.longitude,
+        //   });
+        // }
         console.log('Step1 - 주소 정보 설정 완료');
       }
 
@@ -725,13 +760,7 @@ const Step1BasicInfo = ({
       
         </div>
       </div>
-      
-      {/* 하단 고정 버튼 영역 */}
-      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
-        <div className="max-w-4xl mx-auto flex justify-end gap-3">
-          <Button onClick={handleNext}>Save And Next</Button>
-        </div>
-      </div> */}
+  
       <PageBottom step={1} isSubmitting={isSubmitting} onNext={handleNext} />
 
       {/* 기본 모달 */}

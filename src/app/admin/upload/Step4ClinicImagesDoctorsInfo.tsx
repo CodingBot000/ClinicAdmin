@@ -870,13 +870,7 @@ const Step4ClinicImagesDoctorsInfo = ({
         />
         <Divider />
        </div>
-       {/* 하단 고정 버튼 영역 */}
-      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-50">
-        <div className="max-w-4xl mx-auto flex justify-end gap-3">
-          <Button onClick={onPrev}>Prev</Button>
-          <Button onClick={handleNext}>Save And Next</Button>
-        </div>
-      </div> */}
+
       <PageBottom step={4} isSubmitting={isSubmitting} onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (

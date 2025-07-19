@@ -14,14 +14,14 @@ export type DaumAddressData = {
     sigunguEnglish: string;
     bname: string;
     bnameEnglish: string;
+    buildingName: string;
+    buildingNameEnglish: string;
     zonecode: string;
   };
   
   export const mapDaumPostDataToHospitalAddress = (
     data: DaumAddressData,
     coordinates?: { latitude: number; longitude: number },
-    // address_detail?: string,
-    // address_detail_en?: string,
   ): HospitalAddress => {
     return {
       address_full_road: data.roadAddress,
@@ -34,11 +34,14 @@ export type DaumAddressData = {
       address_gu_en: data.sigunguEnglish,
       address_dong: data.bname,
       address_dong_en: data.bnameEnglish,
+      bname: data.bname,
+      bname_en: data.bnameEnglish,
+      building_name: data.buildingName,
+      building_name_en: data.buildingNameEnglish,
       zipcode: data.zonecode,
       latitude: coordinates?.latitude,
       longitude: coordinates?.longitude,
-      // address_detail: address_detail,
-      // address_detail_en: address_detail_en,
+   
     };
   }
   
