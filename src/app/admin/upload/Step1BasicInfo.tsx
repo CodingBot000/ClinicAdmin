@@ -338,15 +338,26 @@ const Step1BasicInfo = ({
           address_detail_en: existingData.hospital?.address_detail_en,
           directions_to_clinic: existingData.hospital?.directions_to_clinic,
           directions_to_clinic_en: existingData.hospital?.directions_to_clinic_en,
+          latitude: existingData.hospital?.latitude,
+          longitude: existingData.hospital?.longitude,
+
         });
 
-        if (
-          formData.address.coordinates.lat &&
-          formData.address.coordinates.lng
-        ) {
+
+        console.log(`Step1 - 위도경도 정보 existingData: ${existingData.hospital?.latitude}, ${existingData.hospital?.longitude}`);
+        console.log(`Step1 - 위도경도 정보 formData: ${formData.address.coordinates.latitude}, ${formData.address.coordinates.longitude}`);
+        if (existingData.hospital?.latitude && existingData.hospital?.longitude) {
           setCoordinates({
-            latitude: formData.address.coordinates.lat,
-            longitude: formData.address.coordinates.lng,
+            latitude: existingData.hospital.latitude,
+            longitude: existingData.hospital.longitude,
+          });
+        } else if (
+          formData.address.coordinates.latitude &&
+           formData.address.coordinates.longitude
+          ) {
+          setCoordinates({
+            latitude: formData.address.coordinates.latitude,
+            longitude: formData.address.coordinates.longitude,
           });
         }
         console.log('Step1 - 주소 정보 설정 완료');
@@ -678,12 +689,12 @@ const Step1BasicInfo = ({
           <div className='w-full'>
             <AddressSection
               onSelectAddress={setAddressForSendForm}
-              onSelectCoordinates={setCoordinates}
+              // onSelectCoordinates={setCoordinates}
               initialAddress={address}
               initialAddressForSendForm={
                 addressForSendForm ?? undefined
               }
-              initialCoordinates={coordinates ?? undefined}
+              // initialCoordinates={coordinates ?? undefined}
               initialAddressDetail={
                 addressForSendForm?.address_detail
               }

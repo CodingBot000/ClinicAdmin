@@ -322,7 +322,7 @@ const handleNext = async () => {
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div> */}
-      <PageBottom step={2} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={3} onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

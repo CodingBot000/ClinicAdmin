@@ -263,8 +263,8 @@ export function mapAddressToForm(hospital: any | null | undefined) {
       detailAddressEn: '',
       extraAddress: '',
       coordinates: {
-        lat: 0,
-        lng: 0
+        latitude: 0,
+        longitude: 0
       }
     };
   }
@@ -281,8 +281,8 @@ export function mapAddressToForm(hospital: any | null | undefined) {
     detailAddressEn: hospital.address_detail_en || '',
     extraAddress: '',
     coordinates: {
-      lat: hospital.latitude || 0,
-      lng: hospital.longitude || 0
+      latitude: hospital.latitude || 0,
+      longitude: hospital.longitude || 0
     }
   };
 }

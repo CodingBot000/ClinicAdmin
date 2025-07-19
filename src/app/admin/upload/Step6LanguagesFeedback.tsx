@@ -376,7 +376,7 @@ const Step6LanguagesFeedback = ({
       </div>
       </div>
 
-      <PageBottom step={5} 
+      <PageBottom step={6} 
       onNext={handleSave}
        onPrev={onPrev}
        onPreview={handlePreview}

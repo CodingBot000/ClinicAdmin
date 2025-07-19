@@ -455,6 +455,7 @@ const Step4ClinicImagesDoctorsInfo = ({
     const result = await handleSave();
     console.log('handleNext Step3 handlSave after result', result);
     document.body.style.overflow = '';
+    
     if (result?.status === 'success') {
         console.log('handleNext Step3 handlSave success');
         
@@ -874,7 +875,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div> */}
-      <PageBottom step={3} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={4} onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

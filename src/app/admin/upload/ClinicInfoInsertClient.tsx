@@ -99,6 +99,7 @@ export default function ClinicInfoInsertClient(
           setIdUUIDHospital={setIdUuidHospital}
           isEditMode={isEditMode}
           onNext={goNext}
+          onPrev={goBack}
           currentUserUid={currentUserUid}
         />
       )}

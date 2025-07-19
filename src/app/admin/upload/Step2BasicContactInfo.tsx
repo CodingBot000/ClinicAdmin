@@ -51,12 +51,14 @@ interface Step2BasicContactInfoProps {
   setIdUUIDHospital: (id_uuid_hospital: string) => void;
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
+  onPrev: () => void;
   onNext: () => void;
 }
 
 const Step2BasicContactInfo = ({
   id_uuid_hospital,
   setIdUUIDHospital,
+  onPrev,
   onNext,
   currentUserUid,
   isEditMode = false,
@@ -435,7 +437,7 @@ const Step2BasicContactInfo = ({
       </div>
       
    
-      <PageBottom step={1} onNext={handleNext} />
+      <PageBottom step={2} onPrev={onPrev} onNext={handleNext} />
 
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (

@@ -3,13 +3,15 @@ import DaumPost from "@/components/DaumPost";
 import InputField from "@/components/InputField";
 import { HospitalAddress } from "@/types/address";
 import { Card, CardContent } from "./ui/card";
+import { Divide } from "lucide-react";
+import Divider from "./Divider";
 
 interface AddressSectionProps {
     onSelectAddress?: (address: HospitalAddress) => void;
-    onSelectCoordinates?: (coordinates: { latitude: number; longitude: number }) => void;
+    // onSelectCoordinates?: (coordinates: { latitude: number; longitude: number }) => void;
     initialAddress?: string;
     initialAddressForSendForm?: HospitalAddress;
-    initialCoordinates?: { latitude: number; longitude: number };
+    // initialCoordinates?: { latitude: number; longitude: number }; // coordinates prop 제거
     initialAddressDetail?: string;
     initialAddressDetailEn?: string;
     initialDirections?: string;
@@ -18,10 +20,10 @@ interface AddressSectionProps {
 
 export default function AddressSection({ 
   onSelectAddress, 
-  onSelectCoordinates,
+  // onSelectCoordinates,
   initialAddress,
   initialAddressForSendForm,
-  initialCoordinates,
+  // initialCoordinates, // coordinates prop 제거
   initialAddressDetail,
   initialAddressDetailEn,
   initialDirections,
@@ -29,7 +31,7 @@ export default function AddressSection({
 } : AddressSectionProps) {
   const [showingAddress, setShowingAddress] = useState(initialAddress || "");
   const [addressForSendForm, setAddressForSendForm] = useState<HospitalAddress | null>(initialAddressForSendForm || null);
-  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(initialCoordinates || null);
+  // coordinates 상태 완전 제거
   const [addressDetail, setAddressDetail] = useState(initialAddressDetail || "");
   const [addressDetailEn, setAddressDetailEn] = useState(initialAddressDetailEn || "");
   const [directionsToClinic, setDirectionsToClinic] = useState(initialDirections || "");
@@ -44,7 +46,7 @@ export default function AddressSection({
       initialDirections,
       initialDirectionsEn,
       hasInitialAddressForSendForm: !!initialAddressForSendForm,
-      hasInitialCoordinates: !!initialCoordinates
+      // hasInitialCoordinates: !!initialCoordinates // coordinates prop 제거
     },
     현재상태: {
       showingAddress,
@@ -53,7 +55,7 @@ export default function AddressSection({
       directionsToClinic,
       directionsToClinicEn,
       hasAddressForSendForm: !!addressForSendForm,
-      hasCoordinates: !!coordinates
+      // hasCoordinates: !!coordinates // coordinates 상태 제거
     }
   });
 
@@ -63,7 +65,6 @@ export default function AddressSection({
     let hasUpdates = false;
     
     if (initialAddress !== undefined && initialAddress !== showingAddress) {
-      console.log('주소 업데이트:', initialAddress, '→', showingAddress);
       setShowingAddress(initialAddress);
       hasUpdates = true;
     }
@@ -73,13 +74,9 @@ export default function AddressSection({
       hasUpdates = true;
     }
     
-    if (initialCoordinates && JSON.stringify(initialCoordinates) !== JSON.stringify(coordinates)) {
-      setCoordinates(initialCoordinates);
-      hasUpdates = true;
-    }
+    // coordinates 관련 코드 완전 제거
     
     if (initialAddressDetail !== undefined && initialAddressDetail !== addressDetail) {
-      console.log('상세주소 업데이트:', initialAddressDetail, '→', addressDetail);
       setAddressDetail(initialAddressDetail);
       hasUpdates = true;
     }
@@ -112,74 +109,111 @@ export default function AddressSection({
   }, [
     initialAddress,
     initialAddressForSendForm,
-    initialCoordinates,
+    // initialCoordinates, // coordinates prop 제거
     initialAddressDetail,
     initialAddressDetailEn,
     initialDirections,
     initialDirectionsEn
   ]);
 
-  const handleSelectShowingAddress = (showingAddress: string) => {
-    setShowingAddress(showingAddress);
+  // 주소 검색 시 호출되는 핸들러
+  const emptyAddress: HospitalAddress = {
+    address_full_road: '',
+    address_full_road_en: '',
+    address_full_jibun: '',
+    address_full_jibun_en: '',
+    address_si: '',
+    address_si_en: '',
+    address_gu: '',
+    address_gu_en: '',
+    address_dong: '',
+    address_dong_en: '',
+    zipcode: '',
+    latitude: undefined,
+    longitude: undefined,
+    address_detail: '',
+    address_detail_en: '',
+    directions_to_clinic: '',
+    directions_to_clinic_en: '',
   };
 
-  const handleSelectAddress = (address: HospitalAddress) => {
-    // 기본 주소 정보 설정
-    const updatedAddress = {
-      ...address,
-      address_detail: addressDetail || undefined,
-      address_detail_en: addressDetailEn || undefined,
-      directions_to_clinic: directionsToClinic || undefined,
-      directions_to_clinic_en: directionsToClinicEn || undefined,
-    };
-    
-    setAddressForSendForm(updatedAddress);
-    onSelectAddress?.(updatedAddress);
-    
-    console.log(' 기본주소 설정 완료:', JSON.stringify(updatedAddress, null, 2));
+  const handleSelectAddress = (apiAddress: HospitalAddress) => {
+    setAddressForSendForm(prev => ({
+      ...emptyAddress,
+      ...(prev || {}),
+      ...apiAddress,
+      latitude: apiAddress.latitude !== undefined ? Number(apiAddress.latitude) : undefined,
+      longitude: apiAddress.longitude !== undefined ? Number(apiAddress.longitude) : undefined,
+    }));
+    setShowingAddress(apiAddress.address_full_road || '');
+    onSelectAddress?.({
+      ...emptyAddress,
+      ...(addressForSendForm || {}),
+      ...apiAddress,
+      latitude: apiAddress.latitude !== undefined ? Number(apiAddress.latitude) : undefined,
+      longitude: apiAddress.longitude !== undefined ? Number(apiAddress.longitude) : undefined,
+    });
+    console.log('주소 검색 후 addressForSendForm:', JSON.stringify({
+      ...emptyAddress,
+      ...(addressForSendForm || {}),
+      ...apiAddress,
+      latitude: apiAddress.latitude !== undefined ? Number(apiAddress.latitude) : undefined,
+      longitude: apiAddress.longitude !== undefined ? Number(apiAddress.longitude) : undefined,
+    }, null, 2));
   };
 
-  const handleSelectCoordinates = (coords: { latitude: number; longitude: number }) => {
-    setCoordinates(coords);
-    onSelectCoordinates?.(coords);
-  };
-
-  // 상세주소가 변경될 때 addressForSendForm 업데이트
-  const updateAddressDetail = (detail: string, detailEn?: string, directions?: string, directionsEn?: string) => {
-    if (addressForSendForm) {
-      const updatedAddress = {
-        ...addressForSendForm,
-        address_detail: detail || undefined,
-        address_detail_en: detailEn !== undefined ? detailEn : addressForSendForm.address_detail_en,
-        directions_to_clinic: directions !== undefined ? directions : addressForSendForm.directions_to_clinic,
-        directions_to_clinic_en: directionsEn !== undefined ? directionsEn : addressForSendForm.directions_to_clinic_en,
-      };
-      
-      setAddressForSendForm(updatedAddress);
-      onSelectAddress?.(updatedAddress);
-      
-      console.log('🏠 주소 정보 업데이트:', JSON.stringify(updatedAddress, null, 2));
-    }
-  };
-
+  // 상세주소 등 부가 정보 입력 시
   const handleAddressDetailChange = (value: string) => {
     setAddressDetail(value);
-    updateAddressDetail(value, addressDetailEn, directionsToClinic, directionsToClinicEn);
+    setAddressForSendForm(prev => ({
+      ...emptyAddress,
+      ...(prev || {}),
+      address_detail: value,
+    }));
+    onSelectAddress?.({
+      ...emptyAddress,
+      ...(addressForSendForm || {}),
+      address_detail: value,
+    });
   };
-
   const handleAddressDetailEnChange = (value: string) => {
     setAddressDetailEn(value);
-    updateAddressDetail(addressDetail, value, directionsToClinic, directionsToClinicEn);
+    setAddressForSendForm(prev => ({
+      ...emptyAddress,
+      ...(prev || {}),
+      address_detail_en: value,
+    }));
+    onSelectAddress?.({
+      ...emptyAddress,
+      ...(addressForSendForm || {}),
+      address_detail_en: value,
+    });
   };
-
   const handleDirectionsToClinicChange = (value: string) => {
     setDirectionsToClinic(value);
-    updateAddressDetail(addressDetail, addressDetailEn, value, directionsToClinicEn);
+    setAddressForSendForm(prev => ({
+      ...emptyAddress,
+      ...(prev || {}),
+      directions_to_clinic: value,
+    }));
+    onSelectAddress?.({
+      ...emptyAddress,
+      ...(addressForSendForm || {}),
+      directions_to_clinic: value,
+    });
   };
-
   const handleDirectionsToClinicEnChange = (value: string) => {
     setDirectionsToClinicEn(value);
-    updateAddressDetail(addressDetail, addressDetailEn, directionsToClinic, value);
+    setAddressForSendForm(prev => ({
+      ...emptyAddress,
+      ...(prev || {}),
+      directions_to_clinic_en: value,
+    }));
+    onSelectAddress?.({
+      ...emptyAddress,
+      ...(addressForSendForm || {}),
+      directions_to_clinic_en: value,
+    });
   };
 
   // 로컬 상태 추가
@@ -244,9 +278,9 @@ export default function AddressSection({
             placeholder="주소를 검색하세요"
           /> */}
                   <DaumPost 
-                    setShowingAddress={handleSelectShowingAddress}
+                    setShowingAddress={setShowingAddress}
                     setAddress={handleSelectAddress} 
-                    setCoordinates={handleSelectCoordinates}
+                    // setCoordinates prop 제거
                   />
                 </div>
           
@@ -260,13 +294,24 @@ export default function AddressSection({
                           <div className="text-sm text-gray-600">{addressForSendForm.address_full_road}</div>
                         </div>
                         <div>
+                          <div className="text-base font-semibold text-gray-800">도로명(영문)</div>
+                          <div className="text-sm text-gray-600">{addressForSendForm.address_full_road_en}</div>
+                        </div>
+                        <div>
                           <div className="text-base font-semibold text-gray-800">지번</div>
                           <div className="text-sm text-gray-600">{addressForSendForm.address_full_jibun}</div>
                         </div>
-                        {coordinates && (
+                        <div>
+                          <div className="text-base font-semibold text-gray-800">지번(영문)</div>
+                          <div className="text-sm text-gray-600">{addressForSendForm.address_full_jibun_en}</div>
+                        </div>
+
+                        <Divider />
+                        {/* coordinates 대신 addressForSendForm의 위도/경도만 사용 */}
+                        {addressForSendForm.latitude && addressForSendForm.longitude && (
                           <div>
                             <div className="text-base font-semibold text-gray-800">좌표</div>
-                            <div className="text-sm text-gray-600">{coordinates.latitude}, {coordinates.longitude}</div>
+                            <div className="text-sm text-gray-600">{addressForSendForm.latitude}, {addressForSendForm.longitude}</div>
                           </div>
                         )}
                       </>
