@@ -256,111 +256,111 @@ export async function POST(request: NextRequest) {
       }
     }
   
-    // 피드백이 있는 경우 저장
-    const feedback = formData.get('feedback');
-    if (feedback) {
-      const { error: feedbackError } = await supabase
-        .from(TABLE_FEEDBACKS)
-        .insert([
-          {
-            feedback_content: feedback,
-            id_uuid_hospital: id_uuid_hospital,
-          },
-        ]);
+    // // 피드백이 있는 경우 저장
+    // const feedback = formData.get('feedback');
+    // if (feedback) {
+    //   const { error: feedbackError } = await supabase
+    //     .from(TABLE_FEEDBACKS)
+    //     .insert([
+    //       {
+    //         feedback_content: feedback,
+    //         id_uuid_hospital: id_uuid_hospital,
+    //       },
+    //     ]);
     
-      if (feedbackError) {
-        console.error('피드백 저장 실패:', feedbackError);
-      }
-    }
+    //   if (feedbackError) {
+    //     console.error('피드백 저장 실패:', feedbackError);
+    //   }
+    // }
 
     // 연락처 정보 저장
-    const contactsInfoRaw = formData.get('contacts_info') as string;
-    if (contactsInfoRaw) {
-      try {
-        const contactsInfo = JSON.parse(contactsInfoRaw);
+    // const contactsInfoRaw = formData.get('contacts_info') as string;
+    // if (contactsInfoRaw) {
+    //   try {
+    //     const contactsInfo = JSON.parse(contactsInfoRaw);
 
-        // 기존 연락처 정보 삭제 (편집 모드인 경우)
-        if (isEditMode) {
-          await supabase
-            .from(TABLE_CONTACTS)
-            .delete()
-            .eq('id_uuid_hospital', id_uuid_hospital);
-        }
+    //     // 기존 연락처 정보 삭제 (편집 모드인 경우)
+    //     if (isEditMode) {
+    //       await supabase
+    //         .from(TABLE_CONTACTS)
+    //         .delete()
+    //         .eq('id_uuid_hospital', id_uuid_hospital);
+    //     }
 
-        const contactsToInsert: any[] = [];
+    //     const contactsToInsert: any[] = [];
 
-        // 진료문의 전화 번호 
-        if (contactsInfo.consultationPhone && contactsInfo.consultationPhone.trim() !== '') {
-          contactsToInsert.push({
-            id_uuid_hospital: id_uuid_hospital,
-            type: 'consultation_phone',
-            value: contactsInfo.consultationPhone.trim(),
-            sequence: 1
-          });
-        }
+    //     // 진료문의 전화 번호 
+    //     if (contactsInfo.consultationPhone && contactsInfo.consultationPhone.trim() !== '') {
+    //       contactsToInsert.push({
+    //         id_uuid_hospital: id_uuid_hospital,
+    //         type: 'consultation_phone',
+    //         value: contactsInfo.consultationPhone.trim(),
+    //         sequence: 1
+    //       });
+    //     }
 
-        // 상담 관리자 전화번호 (배열)
-        if (contactsInfo.consultationManagerPhones && Array.isArray(contactsInfo.consultationManagerPhones)) {
-          contactsInfo.consultationManagerPhones.forEach((phone: string, index: number) => {
-            if (phone && phone.trim() !== '') {
-              contactsToInsert.push({
-                id_uuid_hospital: id_uuid_hospital,
-                type: 'consult_manager_phone',
-                value: phone.trim(),
-                sequence: index
-              });
-            }
-          });
-        }
+    //     // 상담 관리자 전화번호 (배열)
+    //     if (contactsInfo.consultationManagerPhones && Array.isArray(contactsInfo.consultationManagerPhones)) {
+    //       contactsInfo.consultationManagerPhones.forEach((phone: string, index: number) => {
+    //         if (phone && phone.trim() !== '') {
+    //           contactsToInsert.push({
+    //             id_uuid_hospital: id_uuid_hospital,
+    //             type: 'consult_manager_phone',
+    //             value: phone.trim(),
+    //             sequence: index
+    //           });
+    //         }
+    //       });
+    //     }
         
-        // SMS 발신 번호
-        if (contactsInfo.smsPhone && contactsInfo.smsPhone.trim() !== '') {
-          contactsToInsert.push({
-            id_uuid_hospital: id_uuid_hospital,
-            type: 'sms_phone',
-            value: contactsInfo.smsPhone.trim(),
-            sequence: 1
-          });
-        }
+    //     // SMS 발신 번호
+    //     if (contactsInfo.smsPhone && contactsInfo.smsPhone.trim() !== '') {
+    //       contactsToInsert.push({
+    //         id_uuid_hospital: id_uuid_hospital,
+    //         type: 'sms_phone',
+    //         value: contactsInfo.smsPhone.trim(),
+    //         sequence: 1
+    //       });
+    //     }
 
-        // 이벤트 관리자 번호
-        if (contactsInfo.eventManagerPhone && contactsInfo.eventManagerPhone.trim() !== '') {
-          contactsToInsert.push({
-            id_uuid_hospital: id_uuid_hospital,
-            type: 'event_manager_phone',
-            value: contactsInfo.eventManagerPhone.trim(),
-            sequence: 1
-          });
-        }
+    //     // 이벤트 관리자 번호
+    //     if (contactsInfo.eventManagerPhone && contactsInfo.eventManagerPhone.trim() !== '') {
+    //       contactsToInsert.push({
+    //         id_uuid_hospital: id_uuid_hospital,
+    //         type: 'event_manager_phone',
+    //         value: contactsInfo.eventManagerPhone.trim(),
+    //         sequence: 1
+    //       });
+    //     }
 
-        // 마케팅 이메일 (배열)
-        if (contactsInfo.marketingEmails && Array.isArray(contactsInfo.marketingEmails)) {
-          contactsInfo.marketingEmails.forEach((email: string, index: number) => {
-            if (email && email.trim() !== '') {
-              contactsToInsert.push({
-                id_uuid_hospital: id_uuid_hospital,
-                type: 'marketing_email',
-                value: email.trim(),
-                sequence: index
-              });
-            }
-          });
-        }
+    //     // 마케팅 이메일 (배열)
+    //     if (contactsInfo.marketingEmails && Array.isArray(contactsInfo.marketingEmails)) {
+    //       contactsInfo.marketingEmails.forEach((email: string, index: number) => {
+    //         if (email && email.trim() !== '') {
+    //           contactsToInsert.push({
+    //             id_uuid_hospital: id_uuid_hospital,
+    //             type: 'marketing_email',
+    //             value: email.trim(),
+    //             sequence: index
+    //           });
+    //         }
+    //       });
+    //     }
 
-        // 연락처 정보 저장
-        if (contactsToInsert.length > 0) {
-          const { error: contactsError } = await supabase
-            .from(TABLE_CONTACTS)
-            .insert(contactsToInsert);
+    //     // 연락처 정보 저장
+    //     if (contactsToInsert.length > 0) {
+    //       const { error: contactsError } = await supabase
+    //         .from(TABLE_CONTACTS)
+    //         .insert(contactsToInsert);
 
-          if (contactsError) {
-            console.error('연락처 정보 저장 실패:', contactsError);
-          }
-        }
-      } catch (error) {
-        console.error('연락처 정보 파싱 실패:', error);
-      }
-    }
+    //       if (contactsError) {
+    //         console.error('연락처 정보 저장 실패:', contactsError);
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('연락처 정보 파싱 실패:', error);
+    //   }
+    // }
   
     return NextResponse.json({
       message: "성공적으로 등록되었습니다.",

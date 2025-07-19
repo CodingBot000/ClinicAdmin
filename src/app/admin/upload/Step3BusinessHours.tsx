@@ -28,7 +28,7 @@ interface Surgery {
   type: string;
 }
 
-interface Step2BusinessHoursProps {
+interface Step3BusinessHoursProps {
   id_uuid_hospital: string;
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
@@ -37,14 +37,14 @@ interface Step2BusinessHoursProps {
 }
 
 
-const Step2BusinessHours = ({
+const Step3BusinessHours = ({
   id_uuid_hospital,
   currentUserUid,
   isEditMode = false,
   onPrev,
   onNext,
-}: Step2BusinessHoursProps) => {
-    console.log('Step2BusinessHours id_uuid_hospital', id_uuid_hospital);
+}: Step3BusinessHoursProps) => {
+    console.log('Step3BusinessHours id_uuid_hospital', id_uuid_hospital);
 
   const [openingHours, setOpeningHours] = useState<
     OpeningHour[]
@@ -207,6 +207,7 @@ const handleNext = async () => {
     console.log('handleNext');
     const result = await handleSave();
     console.log('handleNext result', result);
+    document.body.style.overflow = '';
     if (result?.status === 'success') {
         onNext();
     }
@@ -236,7 +237,7 @@ const handleNext = async () => {
       console.log('Step2 API 호출 시작');
       
       // 새로운 API Route 호출
-      const result = await uploadAPI.step2(formData);
+      const result = await uploadAPI.step3(formData);
 
       console.log('Step2 API 응답:', result);
 
@@ -321,7 +322,7 @@ const handleNext = async () => {
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div> */}
-      <PageBottom step={2} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={3} onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -338,4 +339,4 @@ const handleNext = async () => {
   );
 };
 
-export default Step2BusinessHours;
+export default Step3BusinessHours;

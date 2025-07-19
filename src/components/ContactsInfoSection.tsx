@@ -147,36 +147,19 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
             상담 관리자 전화 번호
           </label>
           <div className="flex flex-col space-y-2">
-            {/* 기존 입력된 값들 표시 (최대 3개) */}
-            {formData.consultationManagerPhones.slice(0, 3).map((phone, index) => (
+            {/* 항상 3개의 입력 필드 표시 */}
+            {[0, 1, 2].map((index) => (
               <input
                 key={`consultationManagerPhone-${index}`}
                 name={`consultationManagerPhone-${index}`}
                 type="tel"
                 inputMode="tel"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={phone}
+                value={formData.consultationManagerPhones[index] || ''}
                 onChange={(e) => handleInputChange('consultationManagerPhone', e.target.value, index)}
                 placeholder="예: 02-1234-5678 또는 010-1234-5678"
               />
             ))}
-            {/* 새로운 입력 필드 추가 (3개 미만일 때만) */}
-            {formData.consultationManagerPhones.length < 3 && (
-              <input
-                name="consultationManagerPhone-new"
-                type="tel"
-                inputMode="tel"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value=""
-                onChange={(e) => {
-                  if (e.target.value.trim()) {
-                    handleInputChange('consultationManagerPhone', e.target.value, formData.consultationManagerPhones.length);
-                    e.target.value = '';
-                  }
-                }}
-                placeholder="예: 02-1234-5678 또는 010-1234-5678"
-              />
-            )}
           </div>
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -242,8 +225,8 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
             마케팅 담당자 이메일
           </label>
           <div className="flex flex-col space-y-2">
-            {/* 기존 입력된 값들 표시 (최대 3개) */}
-            {formData.marketingEmails.slice(0, 3).map((email, index) => (
+            {/* 항상 3개의 입력 필드 표시 */}
+            {[0, 1, 2].map((index) => (
               <input
                 key={`marketingEmail-${index}`}
                 name={`marketingEmail-${index}`}
@@ -251,27 +234,10 @@ const ContactsInfoSection: React.FC<ContactsInfoSectionProps> = ({
                 inputMode="email"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="이메일주소"
-                value={email} 
+                value={formData.marketingEmails[index] || ''} 
                 onChange={(e) => handleInputChange('marketingEmails', e.target.value, index)}
               />
             ))}
-            {/* 새로운 입력 필드 추가 (3개 미만일 때만) */}
-            {formData.marketingEmails.length < 3 && (
-              <input
-                name="marketingEmail-new"
-                type="email"
-                inputMode="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="이메일주소"
-                value=""
-                onChange={(e) => {
-                  if (e.target.value.trim()) {
-                    handleInputChange('marketingEmails', e.target.value, formData.marketingEmails.length);
-                    e.target.value = '';
-                  }
-                }}
-              />
-            )}
           </div>
           <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md flex items-start gap-3">
             <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">

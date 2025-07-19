@@ -5,12 +5,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from 'uuid';
 
 import Step1BasicInfo from "./Step1BasicInfo";
-import Step2BusinessHours from "./Step2BusinessHours";
-import Step3ClinicImagesDoctorsInfo from "./Step3ClinicImagesDoctorsInfo";
-import Step4Treatments from "./Step4Treatments";
-import Step5LanguagesFeedback from "./Step5LanguagesFeedback";
+import Step2BasicContactInfo from "./Step2BasicContactInfo";
+import Step3BusinessHours from "./Step3BusinessHours";
+import Step4ClinicImagesDoctorsInfo from "./Step4ClinicImagesDoctorsInfo";
+import Step5Treatments from "./Step5Treatments";
+import Step6LanguagesFeedback from "./Step6LanguagesFeedback";
 import PageHeader from "@/components/PageHeader";
 import { getUserHospitalUuid, loadHospitalData } from "@/lib/hospitalDataLoader";
+
 
 export default function ClinicInfoInsertClient(
   { currentUserUid, isEditMode }: { currentUserUid: string, isEditMode: boolean }
@@ -92,8 +94,9 @@ export default function ClinicInfoInsertClient(
         />
       )}
       {step === 2 && (
-        <Step2BusinessHours
+        <Step2BasicContactInfo
           id_uuid_hospital={id_uuid_hospital}
+          setIdUUIDHospital={setIdUuidHospital}
           isEditMode={isEditMode}
           onNext={goNext}
           onPrev={goBack}
@@ -101,7 +104,7 @@ export default function ClinicInfoInsertClient(
         />
       )}
       {step === 3 && (
-        <Step3ClinicImagesDoctorsInfo
+        <Step3BusinessHours
           id_uuid_hospital={id_uuid_hospital}
           isEditMode={isEditMode}
           onNext={goNext}
@@ -110,7 +113,7 @@ export default function ClinicInfoInsertClient(
         />
       )}
       {step === 4 && (
-        <Step4Treatments
+        <Step4ClinicImagesDoctorsInfo
           id_uuid_hospital={id_uuid_hospital}
           isEditMode={isEditMode}
           onNext={goNext}
@@ -119,7 +122,16 @@ export default function ClinicInfoInsertClient(
         />
       )}
       {step === 5 && (
-        <Step5LanguagesFeedback
+        <Step5Treatments
+          id_uuid_hospital={id_uuid_hospital}
+          isEditMode={isEditMode}
+          onNext={goNext}
+          onPrev={goBack}
+          currentUserUid={currentUserUid}
+        />
+      )}
+      {step === 6 && (
+        <Step6LanguagesFeedback
           id_uuid_hospital={id_uuid_hospital}
           isEditMode={isEditMode}
           onComplete={() => {

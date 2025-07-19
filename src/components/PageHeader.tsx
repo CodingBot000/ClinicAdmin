@@ -1,6 +1,7 @@
 import { PropsWithChildren } from "react";
 import { Home } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Divider from "./Divider";
 
 interface PageHeaderProps {
   name: string;
@@ -41,8 +42,8 @@ const PageHeader = ({
   return (
     <>
       {/* 상단 회색 헤더 */}
-      <div className="sticky top-0 z-50 bg-gray-200 py-3 px-6 text-[#464344]">
-        <div className="relative flex justify-center items-center">
+      <div className="sticky top-0 z-50 text-[#464344]">
+        <div className="relative flex justify-center items-center bg-gray-200 px-6 py-3">
           {/* 왼쪽 홈 아이콘 */}
           <Home
             className="absolute left-4 top-1/2 -translate-y-1/2 cursor-pointer"
@@ -56,12 +57,11 @@ const PageHeader = ({
           {/* 오른쪽 버튼 자리 (비워두기) */}
           <div className="absolute right-4 flex gap-4"></div>
         </div>
-      </div>
 
-      {/* Stepper는 헤더 밖에 */}
-      <div className="flex justify-center mt-4 mb-6">
+      
+      <div className="flex justify-center py-2 bg-gray-100">
         <div className="flex gap-4 items-center">
-          {[1, 2, 3, 4, 5].map((step) => (
+          {[1, 2, 3, 4, 5, 6].map((step) => (
             <div key={step} className="flex items-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
@@ -85,13 +85,16 @@ const PageHeader = ({
                 {step}
               </div>
               {/* 선 사이에 간격 조정 */}
-              {step !== 5 && (
+              {step !== 6 && (
                 <div className="ml-3 w-8 h-1 bg-gray-400"></div>
               )}
             </div>
           ))}
         </div>
       </div>
+      <div className="w-full h-[1px] bg-gray-300" />
+      </div>
+
     </>
   );
 

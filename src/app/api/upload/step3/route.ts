@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { 
-  TABLE_HOSPITAL,
-  TABLE_DOCTOR,
-  STORAGE_IMAGES
+  TABLE_HOSPITAL_DETAIL, 
+  TABLE_HOSPITAL_BUSINESS_HOUR
 } from '@/constants/tables';
-import { v4 as uuidv4 } from 'uuid';
 
 // CORS 헤더 정의
 const corsHeaders = {
@@ -19,399 +17,194 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('=== uploadStep3 START ===');
-
   try {
     const formData = await request.formData();
     
-    // FormData에서 기본 정보 추출
     const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
     const id_uuid_hospital = formData.get("id_uuid_hospital") as string;
     const current_user_uid = formData.get("current_user_uid") as string;
-    
-    // 기존 데이터 파싱 (편집 모드용)
-    const existingDataRaw = formData.get("existing_data")?.toString();
-    const existingData = existingDataRaw ? JSON.parse(existingDataRaw) : null;
 
-    // 썸네일 이미지 관련 데이터
-    const existingThumbnailUrl = formData.get("existing_thumbnail_url")?.toString() || null;
-    const newThumbnailUrl = formData.get("new_thumbnail_url")?.toString() || null;
-    const finalThumbnailUrl = formData.get("final_thumbnail_url")?.toString() || null;
-    const deletedThumbnailUrl = formData.get("deleted_thumbnail_url")?.toString() || null;
+    const opening_hours_raw = formData.get("opening_hours") as string;
+    const extra_options_raw = formData.get("extra_options") as string;
 
-    // 기존 병원 이미지 URL들
-    const existingClinicUrlsRaw = formData.get("existing_clinic_urls") as string;
-    const existingClinicUrls = existingClinicUrlsRaw ? JSON.parse(existingClinicUrlsRaw) : [];
-    
-    // 새로 업로드된 병원 이미지 URL들
-    const newClinicImageUrlsRaw = formData.get("new_clinic_image_urls") as string;
-    const newClinicImageUrls = newClinicImageUrlsRaw ? JSON.parse(newClinicImageUrlsRaw) : [];
-    
-    // 최종 병원 이미지 URL들 (클라이언트에서 전달받은 순서)
-    const finalClinicImageUrlsRaw = formData.get("final_clinic_image_urls") as string;
-    const finalClinicImageUrls = finalClinicImageUrlsRaw ? JSON.parse(finalClinicImageUrlsRaw) : [];
-    
-    // 삭제된 병원 이미지 URL들
-    const deletedClinicUrlsRaw = formData.get("deleted_clinic_urls") as string;
-    const deletedClinicUrls = deletedClinicUrlsRaw ? JSON.parse(deletedClinicUrlsRaw) : [];
-    
-    // 의사 정보 파싱
-    const doctorsRaw = formData.get("doctors") as string;
-    console.log('=== 의사 데이터 원본 ===');
-    console.log('doctorsRaw:', doctorsRaw);
-    console.log('doctorsRaw type:', typeof doctorsRaw);
-    console.log('doctorsRaw length:', doctorsRaw?.length || 0);
-    
-    const doctors = doctorsRaw ? JSON.parse(doctorsRaw) : [];
-    console.log('=== 파싱된 의사 데이터 ===');
-    console.log('doctors:', doctors);
-    console.log('doctors length:', doctors.length);
-    console.log('doctors type:', Array.isArray(doctors) ? 'array' : typeof doctors);
+    console.log('current_user_uid', current_user_uid);
+    console.log('id_uuid_hospital', id_uuid_hospital);
 
-    console.log('uploadStep3 디버그 정보:');
-    console.log('- isEditMode:', isEditMode);
-    console.log('- id_uuid_hospital:', id_uuid_hospital);
-    console.log('- existingThumbnailUrl:', existingThumbnailUrl);
-    console.log('- newThumbnailUrl:', newThumbnailUrl);
-    console.log('- finalThumbnailUrl:', finalThumbnailUrl);
-    console.log('- deletedThumbnailUrl:', deletedThumbnailUrl);
-    console.log('- existingClinicUrls:', existingClinicUrls);
-    console.log('- newClinicImageUrls:', newClinicImageUrls);
-    console.log('- finalClinicImageUrls:', finalClinicImageUrls);
-    console.log('- deletedClinicUrls:', deletedClinicUrls);
-    console.log('- doctors count:', doctors.length);
-
-    // 1. 썸네일 이미지 처리 (exist vs cur 비교)
-    const existThumbnail = existingThumbnailUrl;
-    const curThumbnail = finalThumbnailUrl;
-    
-    console.log('썸네일 이미지 비교:');
-    console.log('- exist (기존):', existThumbnail);
-    console.log('- cur (현재):', curThumbnail);
-    console.log('- 변경사항 있음:', existThumbnail !== curThumbnail);
-    
-    // 변경사항이 있으면 기존 썸네일 이미지 삭제
-    if (existThumbnail && existThumbnail !== curThumbnail && !existThumbnail.includes('/default/')) {
-      console.log('기존 썸네일 이미지 삭제 시작:', existThumbnail);
-      
-      try {
-        // Storage에서 파일 경로 추출
-        const urlParts = existThumbnail.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-        const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
-        
-        console.log(`썸네일 이미지 파일 삭제: ${filePath}`);
-        
-        const { error: storageError } = await supabase.storage
-          .from(STORAGE_IMAGES)
-          .remove([filePath]);
-
-        if (storageError) {
-          console.error('썸네일 이미지 파일 삭제 실패:', storageError);
-        } else {
-          console.log(`썸네일 이미지 파일 삭제 성공: ${filePath}`);
-        }
-      } catch (error) {
-        console.error('썸네일 이미지 파일 삭제 중 오류:', error);
-      }
-    }
-
-    // 2. 클라이언트에서 명시적으로 삭제된 썸네일 이미지 처리
-    if (deletedThumbnailUrl && deletedThumbnailUrl !== existThumbnail) {
-      console.log('- 추가로 삭제할 썸네일 이미지 URL:', deletedThumbnailUrl);
-      
-      try {
-        // Storage에서 파일 경로 추출
-        const urlParts = deletedThumbnailUrl.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-        const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
-        
-        console.log(`- 추가 썸네일 이미지 파일 제거: ${filePath}`);
-        
-        const { error: storageError } = await supabase.storage
-          .from(STORAGE_IMAGES)
-          .remove([filePath]);
-
-        if (storageError) {
-          console.error('추가 썸네일 이미지 파일 제거 실패:', storageError);
-        } else {
-          console.log(`- 추가 썸네일 이미지 파일 제거 성공: ${filePath}`);
-        }
-      } catch (error) {
-        console.error('추가 썸네일 이미지 파일 제거 중 오류:', error);
-      }
-    }
-
-    // 3. 클라이언트에서 명시적으로 삭제된 병원 이미지 파일들 처리
-    if (deletedClinicUrls.length > 0) {
-      console.log('- 클라이언트에서 삭제된 병원 이미지 URL들:', deletedClinicUrls);
-      
-      for (const deletedUrl of deletedClinicUrls) {
-        try {
-          // Storage에서 파일 경로 추출
-          const urlParts = deletedUrl.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-          
-          console.log(`- 삭제된 병원 이미지 파일 제거: ${filePath}`);
-          
-          const { error: storageError } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .remove([filePath]);
-
-          if (storageError) {
-            console.error('삭제된 병원 이미지 파일 제거 실패:', storageError);
-          } else {
-            console.log(`- 삭제된 병원 이미지 파일 제거 성공: ${filePath}`);
-          }
-        } catch (error) {
-          console.error('삭제된 병원 이미지 파일 제거 중 오류:', error);
-        }
-      }
-    }
-
-    // 4. 기존 이미지와 최종 이미지 비교하여 추가로 삭제할 이미지들 처리
-    if (isEditMode && existingClinicUrls.length > 0) {
-      const additionalDeletedImageUrls = existingClinicUrls.filter(
-        (url: string) => !finalClinicImageUrls.includes(url) && !deletedClinicUrls.includes(url)
-      );
-      
-      if (additionalDeletedImageUrls.length > 0) {
-        console.log('- 추가로 삭제할 병원 이미지 URL들:', additionalDeletedImageUrls);
-        
-        for (const deletedUrl of additionalDeletedImageUrls) {
-          try {
-            // Storage에서 파일 경로 추출
-            const urlParts = deletedUrl.split('/');
-            const fileName = urlParts[urlParts.length - 1];
-            const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-            
-            console.log(`- 추가 병원 이미지 파일 삭제: ${filePath}`);
-            
-            const { error: storageError } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .remove([filePath]);
-
-            if (storageError) {
-              console.error('추가 병원 이미지 파일 삭제 실패:', storageError);
-            } else {
-              console.log(`- 추가 병원 이미지 파일 삭제 성공: ${filePath}`);
-            }
-          } catch (error) {
-            console.error('추가 병원 이미지 파일 삭제 중 오류:', error);
-          }
-        }
-      }
-    }
-
-    // 5. 병원 테이블 업데이트 (썸네일 이미지 URL과 최종 이미지 URL 배열)
-    console.log('병원 테이블 업데이트 시작:', {
-      id_uuid_hospital,
-      thumbnail_url: finalThumbnailUrl,
-      imageurls: finalClinicImageUrls
-    });
-    
-    const { data: hospitalUpdateData, error: hospitalUpdateError } = await supabase
-      .from(TABLE_HOSPITAL)
-      .update({ 
-        thumbnail_url: finalThumbnailUrl,
-        imageurls: finalClinicImageUrls 
-      })
-      .eq('id_uuid', id_uuid_hospital)
-      .select();
-
-    if (hospitalUpdateError) {
-      console.error('병원 테이블 업데이트 실패:', hospitalUpdateError);
+    // opening_hours JSON 파싱
+    let opening_hours_parsed;
+    try {
+      opening_hours_parsed = JSON.parse(opening_hours_raw);
+    } catch (error) {
+      console.error("opening_hours 파싱 실패:", error);
       return NextResponse.json({
-        message: `병원 테이블 업데이트 실패: ${hospitalUpdateError.message}`,
+        message: "영업시간 데이터 파싱에 실패했습니다.",
+        status: "error",
+      }, { status: 400 });
+    }
+
+    // opening_hours_parsed가 null이거나 배열이 아닌 경우 기본값 설정
+    if (!opening_hours_parsed || !Array.isArray(opening_hours_parsed)) {
+      console.warn("opening_hours 데이터가 올바르지 않습니다:", opening_hours_parsed);
+      opening_hours_parsed = []; // 빈 배열로 초기화
+    }
+
+    console.log("파싱된 opening_hours (배열):", opening_hours_parsed);
+
+    // 각 요일별로 개별 레코드 생성 및 insert
+    const businessHourInserts = [];
+
+    for (let i = 0; i < opening_hours_parsed.length; i++) {
+      const hour = opening_hours_parsed[i];
+      
+      // from과 to를 시간 문자열로 변환 (HH:MM 형식)
+      const openTime = hour.from ? `${hour.from.hour.toString().padStart(2, '0')}:${hour.from.minute.toString().padStart(2, '0')}` : null;
+      const closeTime = hour.to ? `${hour.to.hour.toString().padStart(2, '0')}:${hour.to.minute.toString().padStart(2, '0')}` : null;
+      
+      let status = '';
+      if (hour.open) {
+        status = 'open';
+      } else if (hour.closed) {
+        status = 'closed';
+      } else if (hour.ask) {
+        status = 'ask';
+      }
+
+      const form_business_hour = {
+        id_uuid_hospital: id_uuid_hospital,
+        day_of_week: hour.day, // 영어 요일 그대로 저장
+        open_time: openTime,
+        close_time: closeTime,
+        status: status,
+      };
+      
+      businessHourInserts.push(form_business_hour);
+    }
+
+    console.log("영업시간 데이터:", businessHourInserts);
+
+    // 먼저 기존 데이터가 있는지 확인
+    const { data: existingBusinessHour, error: checkErrorBusinessHour } = await supabase
+      .from(TABLE_HOSPITAL_BUSINESS_HOUR)
+      .select('*')
+      .eq('id_uuid_hospital', id_uuid_hospital);
+    
+    console.error("hospital_business_hours 조회 중 에러:", checkErrorBusinessHour);
+
+    if (existingBusinessHour && existingBusinessHour.length > 0) {
+      console.log("hospital_business_hours 데이터가 존재");
+      for (const form_business_hour of businessHourInserts) {
+        const { day_of_week } = form_business_hour;
+      
+        const { data, error } = await supabase
+          .from(TABLE_HOSPITAL_BUSINESS_HOUR)
+          .update({
+            open_time: form_business_hour.open_time,
+            close_time: form_business_hour.close_time,
+            status: form_business_hour.status,
+          })
+          .eq('id_uuid_hospital', id_uuid_hospital)
+          .eq('day_of_week', day_of_week);
+      
+        if (error) {
+          console.error(`요일 ${day_of_week} 업데이트 실패:`, error);
+        } else {
+          console.log(`요일 ${day_of_week} 업데이트 성공:`, data);
+        }
+      }
+    } else {
+      console.log("hospital_business_hours 데이터가 존재하지 않습니다. 추가할 데이터: ", businessHourInserts);
+      let operateBusinessHour = await supabase
+        .from(TABLE_HOSPITAL_BUSINESS_HOUR)
+        .insert(businessHourInserts)
+        .select("*");
+
+      if (operateBusinessHour.error) {
+        console.log("error 3 : ", operateBusinessHour.error);
+        return NextResponse.json({
+          message: operateBusinessHour.error.code || operateBusinessHour.error.message,
+          status: "error",
+        }, { status: 500 });
+      }
+    }
+
+    // extra_options JSON 파싱 및 boolean 변환
+    let extra_options_parsed;
+    try {
+      extra_options_parsed = JSON.parse(extra_options_raw);
+    } catch (error) {
+      console.error("extra_options 파싱 실패:", error);
+      return NextResponse.json({
+        message: "추가 옵션 데이터 파싱에 실패했습니다.",
+        status: "error",
+      }, { status: 400 });
+    }
+
+    // string을 boolean으로 변환하는 헬퍼 함수
+    const stringToBoolean = (value: any): boolean => {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'string') {
+        return value.toLowerCase() === 'true' || value === '1';
+      }
+      return Boolean(value);
+    };
+
+    const extra_options = {
+      has_private_recovery_room: stringToBoolean(extra_options_parsed.has_private_recovery_room),
+      has_parking: stringToBoolean(extra_options_parsed.has_parking),
+      has_cctv: stringToBoolean(extra_options_parsed.has_cctv),
+      has_night_counseling: stringToBoolean(extra_options_parsed.has_night_counseling),
+      has_female_doctor: stringToBoolean(extra_options_parsed.has_female_doctor),
+      has_anesthesiologist: stringToBoolean(extra_options_parsed.has_anesthesiologist),
+      specialist_count: parseInt(extra_options_parsed.specialist_count) || 0,
+    };
+
+    console.log("변환된 opening_hours (배열):", opening_hours_parsed);
+    console.log("변환된 extra_options:", extra_options);
+    
+    // 먼저 기존 데이터가 있는지 확인
+    const { data: existingDetail, error: checkError } = await supabase
+      .from(TABLE_HOSPITAL_DETAIL)
+      .select('*')
+      .eq('id_uuid_hospital', id_uuid_hospital)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error("hospital_details 조회 중 에러:", checkError);
+      return NextResponse.json({
+        message: checkError.code || checkError.message,
         status: "error",
       }, { status: 500 });
     }
 
-    console.log('병원 테이블 업데이트 성공:', hospitalUpdateData);
-
-    // 각 의사 정보 처리
-    for (let i = 0; i < doctors.length; i++) {
-      const doctor = doctors[i];
-      
-      console.log(`의사 ${i + 1} 처리:`, {
-        id_uuid: doctor.id_uuid,
-        name: doctor.name,
-        image_url: doctor.image_url,
-        isExisting: !!doctor.id_uuid,
-        imageUrlLength: doctor.image_url?.length || 0
-      });
-      
-      // 의사 데이터 준비 (이미지 URL은 이미 클라이언트에서 업로드 완료)
-      const doctorData = {
-        id_uuid_hospital,
-        name: doctor.name,
-        bio: doctor.bio || '',
-        image_url: doctor.image_url || '',
-        chief: doctor.chief,
-      };
-
-      if (doctor.id_uuid) {
-        // 기존 의사 정보 업데이트
-        console.log(`- 의사 정보 업데이트: ${doctor.name} (${doctor.id_uuid})`);
-        console.log(`  업데이트할 이미지 URL: ${doctorData.image_url}`);
-
-        // 먼저 해당 의사가 존재하는지 확인
-        const { data: existingDoctor, error: checkError } = await supabase
-          .from(TABLE_DOCTOR)
-          .select('*')
-          .eq('id_uuid', doctor.id_uuid)
-          .single();
-
-        if (checkError) {
-          console.log(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재하지 않음, 새로 추가`);
-          
-          // 존재하지 않으면 새로 추가
-          const { data: insertData, error: insertError } = await supabase
-            .from(TABLE_DOCTOR)
-            .insert([{ ...doctorData, id_uuid: doctor.id_uuid }])
-            .select();
-
-          if (insertError) {
-            console.error('의사 정보 추가 실패:', insertError);
-            return NextResponse.json({
-              message: `의사 정보 추가 실패: ${insertError.message}`,
-              status: "error",
-            }, { status: 500 });
-          }
-          
-          console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
-        } else {
-          console.log(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재함, 업데이트 진행`);
-
-          // 기존 이미지 URL 확인
-          const existingImageUrl = existingDoctor.image_url;
-          const newImageUrl = doctorData.image_url;
-
-          // 이미지가 변경되었고, 기존 이미지가 기본 이미지가 아닌 경우 삭제
-          if (existingImageUrl !== newImageUrl && 
-              existingImageUrl && 
-              !existingImageUrl.includes('/default/')) {
-            try {
-              // Storage에서 파일 경로 추출
-              const urlParts = existingImageUrl.split('/');
-              const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
-              
-              console.log(`- 의사 이전 이미지 파일 삭제: ${filePath}`);
-              
-              const { error: storageError } = await supabase.storage
-                .from(STORAGE_IMAGES)
-                .remove([filePath]);
-          
-              if (storageError) {
-                console.error('의사 이전 이미지 파일 삭제 실패:', storageError);
-              } else {
-                console.log(`- 의사 이전 이미지 파일 삭제 성공: ${filePath}`);
-              }
-            } catch (error) {
-              console.error('의사 이전 이미지 파일 삭제 중 오류:', error);
-            }
-          }
-          
-          // 존재하면 업데이트
-          const { data: updateData, error: updateError } = await supabase
-            .from(TABLE_DOCTOR)
-            .update(doctorData)
-            .eq('id_uuid', doctor.id_uuid)
-            .select();
-
-          if (updateError) {
-            console.error('의사 정보 업데이트 실패:', updateError);
-            return NextResponse.json({
-              message: `의사 정보 업데이트 실패: ${updateError.message}`,
-              status: "error",
-            }, { status: 500 });
-          }
-          
-          console.log(`- 의사 정보 업데이트 성공: ${doctor.name}`, updateData);
-        }
-      } else {
-        // 새 의사 정보 추가
-        console.log(`- 새 의사 정보 추가: ${doctor.name}`);
-        const { data: insertData, error: insertError } = await supabase
-          .from(TABLE_DOCTOR)
-          .insert([{ ...doctorData, id_uuid: uuidv4() }])
-          .select();
-
-        if (insertError) {
-          console.error('의사 정보 추가 실패:', insertError);
-          return NextResponse.json({
-            message: `의사 정보 추가 실패: ${insertError.message}`,
-            status: "error",
-          }, { status: 500 });
-        }
-        
-        console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
-      }
+    if (!existingDetail) {
+      return NextResponse.json({
+        message: "병원 정보가 존재하지 않아 업데이트 할수 없습니다.(uploadActionStep2)",
+        status: "error",
+      }, { status: 400 });
     }
 
-    // 편집 모드에서 삭제된 의사들 처리
-    if (isEditMode && existingData?.doctors) {
-      const existingDoctorIds = existingData.doctors.map((d: any) => d.id_uuid);
-      const currentDoctorIds = doctors.map((d: any) => d.id_uuid).filter(Boolean);
-      const deletedDoctorIds = existingDoctorIds.filter((id: string) => !currentDoctorIds.includes(id));
-
-      for (const deletedId of deletedDoctorIds) {
-        console.log(`- 삭제된 의사 처리: ${deletedId}`);
-
-        // 삭제할 의사의 이미지 URL 찾기
-        const deletedDoctor = existingData.doctors.find((d: any) => d.id_uuid === deletedId);
-        if (deletedDoctor?.image_url && !deletedDoctor.image_url.includes('/default/')) {
-          try {
-            // Storage에서 파일 경로 추출
-            const urlParts = deletedDoctor.image_url.split('/');
-            const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
-            
-            console.log(`- 의사 이미지 파일 삭제: ${filePath}`);
-            
-            const { error: storageError } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .remove([filePath]);
-
-            if (storageError) {
-              console.error('의사 이미지 파일 삭제 실패:', storageError);
-            } else {
-              console.log(`- 의사 이미지 파일 삭제 성공: ${filePath}`);
-            }
-          } catch (error) {
-            console.error('의사 이미지 파일 삭제 중 오류:', error);
-          }
-        }
-        
-        // 의사 정보 삭제
-        const { error: deleteError } = await supabase
-          .from(TABLE_DOCTOR)
-          .delete()
-          .eq('id_uuid', deletedId);
-          
-        if (deleteError) {
-          console.error('의사 정보 삭제 실패:', deleteError);
-          return NextResponse.json({
-            message: `의사 정보 삭제 실패: ${deleteError.message}`,
-            status: "error",
-          }, { status: 500 });
-        }
-        
-        console.log(`- 의사 정보 삭제 성공: ${deletedId}`);
-      }
+    let detailOperation = await supabase
+      .from(TABLE_HOSPITAL_DETAIL)
+      .update(extra_options)
+      .eq('id_uuid_hospital', id_uuid_hospital);
+    
+    if (detailOperation.error) {
+      console.log("hospitalDetail operation error:", detailOperation.error);
+      return NextResponse.json({
+        message: detailOperation.error.code || detailOperation.error.message,
+        status: "error",
+      }, { status: 500 });
     }
 
-    console.log('=== uploadStep3 성공 완료 ===');
-  
     return NextResponse.json({
-      message: "썸네일 이미지, 병원 이미지 및 의사 정보가 성공적으로 저장되었습니다.",
+      message: "성공적으로 등록되었습니다.",
       status: "success",
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('uploadStep3 전체 오류:', error);
+    console.error('Step2 API 오류:', error);
     return NextResponse.json({
-      message: `처리 중 오류가 발생했습니다: ${error}`,
+      message: "서버 오류가 발생했습니다.",
       status: "error",
     }, { status: 500, headers: corsHeaders });
   }
