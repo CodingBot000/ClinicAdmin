@@ -2,7 +2,7 @@
 
 import { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui/button';
 
 import useModal from '@/hooks/useModal';
 // AlertModal 제거
@@ -61,6 +61,10 @@ const Step6LanguagesFeedback = ({
     useState<FormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 변경사항 감지 상태변수 추가
+  const [hasChanges, setHasChanges] = useState(false);
+  // 변경사항 확인 모달 상태 추가
+  const [showChangesConfirmModal, setShowChangesConfirmModal] = useState(false);
 
   const [feedback, setFeedback] = useState<string>('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
@@ -216,7 +220,14 @@ const Step6LanguagesFeedback = ({
 
   const handleComplete = () => {
     document.body.style.overflow = '';
-    onComplete();
+    
+    // 변경사항이 있으면 확인 모달 띄우기
+    if (hasChanges) {
+      setShowChangesConfirmModal(true);
+    } else {
+      // 변경사항이 없으면 바로 홈으로 이동
+      onComplete();
+    }
   };
 
   const handlePreview = async () => {
@@ -281,6 +292,9 @@ const Step6LanguagesFeedback = ({
           errorType: 'success',
         });
         setShowFinalResult(true);
+        
+        // 저장 성공 시 변경사항 상태를 false로 설정
+        setHasChanges(false);
         
         return {
           status: 'success',
@@ -355,6 +369,8 @@ const Step6LanguagesFeedback = ({
           onLanguagesChange={(selectedLanguages: string[]) => {
             console.log('선택된 언어:', selectedLanguages);
             setSelectedLanguages(selectedLanguages);
+            // 언어 선택 변경 시 변경사항 감지
+            setHasChanges(true);
           }}
           initialLanguages={getInitialLanguages()}
         />
@@ -366,7 +382,11 @@ const Step6LanguagesFeedback = ({
           <p className="text-sm text-gray-600 mb-4">폼 작성 관련해서 피드백 주실 내용이 있다면 자유롭게 의견 부탁드립니다. (선택)</p>
           <TextArea
             placeholder='자유롭게 피드백을 남겨주세요.'
-            onChange={setFeedback}
+            onChange={(value) => {
+              setFeedback(value);
+              // 피드백 입력 변경 시 변경사항 감지
+              setHasChanges(true);
+            }}
             value={feedback}
           />
         </div>
@@ -394,6 +414,54 @@ const Step6LanguagesFeedback = ({
       currentStep={5}
       onStepChange={onStepChange}
     />
+
+    {/* 변경사항 확인 모달 */}
+    {showChangesConfirmModal && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+          <h3 className="text-lg font-semibold mb-4">변경사항 확인</h3>
+          <p className="text-sm text-gray-800 mb-6 whitespace-pre-line">
+            변경하신사항이 있는것 같은데 저장하지않으셨습니다. 이대로 홈으로 이동하시겠습니까?{'\n'}
+            저장하시려면 창을 닫으시고 하단 저장버튼을 눌러주세요
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button 
+              type="button"
+              onClick={() => setShowChangesConfirmModal(false)}
+              className="btn btn-secondary bg-gray-500 hover:bg-gray-600"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  실행중
+                </>
+              ) : (
+                '닫기'
+              )}
+            </Button>
+            <Button 
+              type="button"
+              onClick={() => {
+                setShowChangesConfirmModal(false);
+                onComplete();
+              }}
+              className="btn btn-secondary bg-red-500 hover:bg-red-600"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  실행중
+                </>
+              ) : (
+                '변경사항을 적용하지않고 홈으로 이동'
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* 기존 Alert 모달 */}
     {formState?.message && showFinalResult && (

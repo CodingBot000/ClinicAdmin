@@ -80,6 +80,9 @@ const Step4ClinicImagesDoctorsInfo = ({
   // 현재 표시되고 있는 이미지 URL들 추적
   const [currentDisplayedUrls, setCurrentDisplayedUrls] = useState<string[]>([]);
 
+  const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const { handleOpenModal, open } = useModal();
 
@@ -200,8 +203,6 @@ const Step4ClinicImagesDoctorsInfo = ({
     handleOpenModal();
   };
 
-  const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
-
   const validateFormDataAndUpdateUI = (returnMessage = false) => {
     const clinicNameInput = document.querySelector(
       'input[name="name"]',
@@ -239,7 +240,7 @@ const Step4ClinicImagesDoctorsInfo = ({
     useState(false);
   const [preparedFormData, setPreparedFormData] =
     useState<FormData | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
 
 //   const handleFinalSubmit = async () => {
 //     if (!preparedFormData) return;
@@ -452,10 +453,11 @@ const Step4ClinicImagesDoctorsInfo = ({
 
   const handleNext = async () => {
     console.log('handleNext Step3');
+    setIsSubmitting(true);
     const result = await handleSave();
     console.log('handleNext Step3 handlSave after result', result);
     document.body.style.overflow = '';
-    
+    setIsSubmitting(false);
     if (result?.status === 'success') {
         console.log('handleNext Step3 handlSave success');
         
@@ -875,7 +877,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div> */}
-      <PageBottom step={4} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={4} isSubmitting={isSubmitting} onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

@@ -295,9 +295,10 @@ const Step2BasicContactInfo = ({
 
     const handleNext = async () => {
         console.log('Step1 - handleNext 시작');
-        
+        setIsSubmitting(true);
 
         const result = await handleSave();
+        setIsSubmitting(false);
         console.debug('Step1 - handleNext result:', result);
         if (result?.status === 'success') {
           document.body.style.overflow = '';
@@ -437,7 +438,7 @@ const Step2BasicContactInfo = ({
       </div>
       
    
-      <PageBottom step={2} onPrev={onPrev} onNext={handleNext} />
+      <PageBottom step={2} isSubmitting={isSubmitting} onPrev={onPrev} onNext={handleNext} />
 
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (

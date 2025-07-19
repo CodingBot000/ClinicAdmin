@@ -33,7 +33,14 @@ const PageBottom: React.FC<PageBottomProps> = ({
             onClick={onNext}
             disabled={isSubmitting}
           >
-            Save And Next
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                실행중
+              </>
+            ) : (
+              'Save And Next'
+            )}
           </Button>
         );
       case 2:
@@ -48,7 +55,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               onClick={onPrev}
               disabled={isSubmitting}
             >
-              Prev
+            Prev
             </Button>
             <Button
               type="button"
@@ -56,7 +63,14 @@ const PageBottom: React.FC<PageBottomProps> = ({
               onClick={onNext}
               disabled={isSubmitting}
             >
-              Save And Next
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  실행중
+                </>
+              ) : (
+                'Save And Next'
+              )}
             </Button>
           </>
         );
@@ -69,7 +83,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               onClick={onPrev}
               disabled={isSubmitting}
             >
-              Prev
+            Prev
             </Button>
             <Button
               type="button"
@@ -77,7 +91,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               onClick={onPreview}
               disabled={isSubmitting}
             >
-              Preview
+            Preview
             </Button>
             <Button
               type="button"
@@ -85,7 +99,14 @@ const PageBottom: React.FC<PageBottomProps> = ({
               onClick={onNext}
               disabled={isSubmitting}
             >
-              Save
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  실행중
+                </>
+              ) : (
+                'Save'
+              )}
             </Button>
             <Button
               type="button"
@@ -93,7 +114,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               onClick={onHome}
               disabled={isSubmitting}
             >
-              홈으로 돌아가기
+            Go to Home
             </Button>
           </>
         );

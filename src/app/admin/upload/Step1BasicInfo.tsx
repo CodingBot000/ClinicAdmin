@@ -508,9 +508,10 @@ const Step1BasicInfo = ({
 
     const handleNext = async () => {
         console.log('Step1 - handleNext 시작');
-        
+        setIsSubmitting(true);
 
         const result = await handleSave();
+        setIsSubmitting(false);
         console.debug('Step1 - handleNext result:', result);
         document.body.style.overflow = '';
         if (result?.status === 'success') {
@@ -731,7 +732,7 @@ const Step1BasicInfo = ({
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div> */}
-      <PageBottom step={1} onNext={handleNext} />
+      <PageBottom step={1} isSubmitting={isSubmitting} onNext={handleNext} />
 
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
