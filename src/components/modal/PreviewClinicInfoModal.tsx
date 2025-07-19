@@ -25,6 +25,7 @@ import { TreatmentSelectedOptionInfo } from '../TreatmentSelectedOptionInfo';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import Divider from '../Divider';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
+import { Card, CardContent } from '../ui/card';
 
 interface PreviewClinicInfoModalProps {
   isOpen: boolean;
@@ -62,6 +63,27 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
   onStepChange,
   currentStep = 5,
 }) => {
+  const addressFields = [
+    { label: '도로명', key: 'address_full_road' },
+    { label: '도로명(영문)', key: 'address_full_road_en' },
+    { label: '지번', key: 'address_full_jibun' },
+    { label: '지번(영문)', key: 'address_full_jibun_en' },
+    { label: '시도', key: 'address_si' },
+    { label: '시도(영문)', key: 'address_si_en' },
+    { label: '시군구', key: 'address_gu' },
+    { label: '시군구(영문)', key: 'address_gu_en' },
+    { label: '동명', key: 'address_dong' },
+    { label: '동명(영문)', key: 'address_dong_en' },
+    { label: '건물명', key: 'building_name' },
+    { label: '건물명(영문)', key: 'building_name_en' },
+    { label: '상세주소', key: 'address_detail' },
+    { label: '상세주소(영문)', key: 'address_detail_en' },
+    { label: '찾아오는 방법', key: 'directions_to_clinic' },
+    { label: '찾아오는 방법(영문)', key: 'directions_to_clinic_en' },
+    { label: '우편번호', key: 'zipcode' },
+
+  ];
+
   const [hospitalData, setHospitalData] = useState<CombinedHospitalData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -374,90 +396,37 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   </div>
 
                   {/* 주소 정보 */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3 text-gray-800">주소 정보</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">도로명 주소:</strong>
-                          <span className="text-sm">{hospitalData.address_full_road || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">도로명 주소 (영문):</strong>
-                          <span className="text-sm">{hospitalData.address_full_road_en || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">지번 주소:</strong>
-                          <span className="text-sm">{hospitalData.address_full_jibun || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">지번 주소 (영문):</strong>
-                          <span className="text-sm">{hospitalData.address_full_jibun_en || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">상세 주소:</strong>
-                          <span className="text-sm">{hospitalData.address_detail || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">상세 주소 (영문):</strong>
-                          <span className="text-sm">{hospitalData.address_detail_en || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">우편번호:</strong>
-                          <span className="text-sm">{hospitalData.zipcode || '입력되지 않음'}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">시/도:</strong>
-                          <span className="text-sm">{hospitalData.address_si || (hospitalData as any).sido || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">시/도 (영문):</strong>
-                          <span className="text-sm">{hospitalData.address_si_en || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">시/군/구:</strong>
-                          <span className="text-sm">{hospitalData.address_gu || (hospitalData as any).sigungu || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">시/군/구 (영문):</strong>
-                          <span className="text-sm">{hospitalData.address_gu_en || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">동/면/읍:</strong>
-                          <span className="text-sm">{hospitalData.address_dong || (hospitalData as any).dong || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">동/면/읍 (영문):</strong>
-                          <span className="text-sm">{hospitalData.address_dong_en || '입력되지 않음'}</span>
-                        </div>
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3">좌표:</strong>
-                          <span className="text-sm">
-                            {hospitalData.latitude && hospitalData.longitude 
-                              ? `위도 : ${hospitalData.latitude}, 경도 : ${hospitalData.longitude}`
-                              : '입력되지 않음'
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 찾아오는 길 */}
-                    <div className="mt-4 pt-4 border-t">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <strong className="text-sm text-gray-700 mr-3" >찾아오는 길:</strong>
-                          <span className="text-sm">{hospitalData.directions_to_clinic || '입력되지 않음'}</span>
-                        </div>
-                        
-                        <div>
-                        <strong className="text-sm text-gray-700 mr-3">찾아오는 길 (영문):</strong>
-                        <span className="text-sm">{hospitalData.directions_to_clinic_en || '입력되지 않음'}</span>
-                        </div>
-                      </div>
-                    </div>
+                  <div>
+                  <Card className="w-full bg-gray-50 rounded-xl shadow-sm">
+                      <CardContent className="py-4 px-6 space-y-4">
+                        {hospitalData ? (
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                              {addressFields.map(({ label, key }) => (
+                                <div key={key}>
+                                  <span className="flex">
+                                    <div className="text-sm font-semibold text-gray-800">{label} :</div>
+                                    <div className="text-sm text-gray-600">
+                                      {hospitalData?.[key as keyof typeof hospitalData] || '-'}
+                                    </div>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* 좌표 정보 */}
+                            {hospitalData?.latitude && hospitalData?.longitude && (
+                              <span className="flex">
+                                <div className="text-sm font-semibold text-gray-800 mr-2">좌표:</div>
+                                <div className="text-sm text-gray-600">위도: {hospitalData.latitude} / 경도: {hospitalData.longitude}</div>
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-sm text-gray-500">주소 정보를 불러올 수 없습니다.</div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
 
@@ -558,7 +527,27 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   )}
                 </div>
                 
-                {/* 연락처 정보 */}
+                <div className="bg-green-50 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 2</span>
+                      영업 등을 위한 추가 연락처 정보 
+                    </div>
+                    <button
+                      onClick={() => handleMoveStep(2)}
+                      className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        2 < currentStep
+                          ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={2 >= currentStep}
+                      title={2 < currentStep ? 'Step 2 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      편집
+                    </button>
+                  </h3>
+               
                 {hospitalData.contacts && hospitalData.contacts.length > 0 && (
                   <div className="mt-4">
                     <h4 className="font-medium mb-2 flex items-center">
@@ -630,23 +619,23 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   </div>
                 )}
               </div>
-
-              {/* Step 2: 운영 시간 및 부가 정보 */}
+              </div>
+              {/* Step 3 */}
               <div className="bg-green-50 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 2</span>
+                    <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 3</span>
                     운영 시간 및 부가 정보
                   </div>
                   <button
-                    onClick={() => handleMoveStep(2)}
+                    onClick={() => handleMoveStep(3)}
                     className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                      2 < currentStep
+                      3 < currentStep
                         ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    disabled={2 >= currentStep}
-                    title={2 < currentStep ? 'Step 2 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    disabled={3 >= currentStep}
+                    title={3 < currentStep ? 'Step 3 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     편집
@@ -751,18 +740,18 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
               <div className="bg-purple-50 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold mb-4 text-purple-800 flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 3</span>
-                    이미지 및 의사 정보
+                    <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 4</span>
+                    병원 썸네일 이미지, 병원 상세 이미지 및 의사 정보
                   </div>
                   <button
-                    onClick={() => handleMoveStep(3)}
+                    onClick={() => handleMoveStep(4)}
                     className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                      3 < currentStep
+                      4 < currentStep
                         ? 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    disabled={3 >= currentStep}
-                    title={3 < currentStep ? 'Step 3 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    disabled={4 >= currentStep}
+                    title={4 < currentStep ? 'Step 4 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     편집
@@ -835,23 +824,23 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                 )}
               </div>
 
-              {/* Step 4: 치료 정보 */}
+              {/* Step 5: 치료 정보 */}
               {hospitalData.treatments && hospitalData.treatments.length > 0 && (
                 <div className="bg-green-50 p-6 rounded-lg">
                   <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center justify-between">
                     <div className="flex items-center">
-                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 4</span>
+                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 6</span>
                       치료 정보
                     </div>
                     <button
-                      onClick={() => handleMoveStep(4)}
+                      onClick={() => handleMoveStep(5)}
                       className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        4 < currentStep
+                        5 < currentStep
                           ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
-                      disabled={4 >= currentStep}
-                      title={4 < currentStep ? 'Step 4 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                      disabled={5 >= currentStep}
+                      title={5 < currentStep ? 'Step 5 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       편집
@@ -903,18 +892,18 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
               <div className="bg-pink-50 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold mb-4 text-pink-800 flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 5</span>
+                    <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 6</span>
                     사용 가능 언어 및 피드백 정보
                   </div>
                   <button
-                    onClick={() => handleMoveStep(5)}
+                    onClick={() => handleMoveStep(6)}
                     className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                      5 < currentStep
+                      6 < currentStep
                         ? 'bg-pink-600 text-white hover:bg-pink-700 cursor-pointer'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    disabled={5 >= currentStep}
-                    title={5 < currentStep ? 'Step 5 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    disabled={6 >= currentStep}
+                    title={6 < currentStep ? 'Step 6 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     편집

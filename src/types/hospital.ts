@@ -11,6 +11,10 @@ export interface HospitalData {
   address_gu_en: string;
   address_dong: string;
   address_dong_en: string;
+  bname: string;
+  bname_en: string;
+  building_name: string;
+  building_name_en: string;
   zipcode: string;
   latitude: number;
   longitude: number;

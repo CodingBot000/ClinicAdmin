@@ -439,7 +439,6 @@ const handleNext = async () => {
           className="mt-4"
         />
         
-{/* 하단 고정 버튼 영역 */}
 
 <PageBottom step={5} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} 
 children={

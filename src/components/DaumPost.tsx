@@ -68,7 +68,10 @@ const DaumPost: React.FC<DaumPostProps> = ({ setShowingAddress, setAddress, setC
       sigunguEnglish: data.sigunguEnglish || '',
       bname: data.bname || '',
       bnameEnglish: data.bnameEnglish || '',
+      buildingName: data.buildingName || '',
+      buildingNameEnglish: data.buildingNameEnglish || '',
       zonecode: data.zonecode || '',
+      
     };
 
     // 기존 주소 설정 로직

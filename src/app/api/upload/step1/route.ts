@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
     const address_gu_en = addressData?.address_gu_en || '';
     const address_dong = addressData?.address_dong || '';
     const address_dong_en = addressData?.address_dong_en || '';
+    const bname = addressData?.bname || '';
+    const bname_en = addressData?.bname_en || '';
+    const building_name = addressData?.building_name || '';
+    const building_name_en = addressData?.building_name_en || '';
     const zipcode = addressData?.zipcode || '';
     const latitude = addressData?.latitude ? Number(addressData.latitude) : null;
     const longitude = addressData?.longitude ? Number(addressData.longitude) : null;
@@ -102,6 +106,10 @@ export async function POST(request: NextRequest) {
       address_gu_en,
       address_dong,
       address_dong_en,
+      bname,
+      bname_en,
+      building_name,
+      building_name_en,
       zipcode,
       latitude,
       longitude,
