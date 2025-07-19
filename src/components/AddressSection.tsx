@@ -381,31 +381,6 @@ export default function AddressSection({
         />
       </div>
   
-      {/* 최종 주소 정보 디버깅
-      {addressForSendForm && (
-        <div className="mt-4 p-4 bg-blue-50 rounded border border-blue-300 text-sm">
-          <div className="font-semibold text-blue-800 mb-2">📍 완성된 주소 정보:</div>
-          <div className="space-y-1 text-blue-700">
-            <div><strong>도로명:</strong> {addressForSendForm.address_full_road}</div>
-            <div><strong>지번:</strong> {addressForSendForm.address_full_jibun}</div>
-            {addressForSendForm.address_detail && (
-              <div><strong>상세주소:</strong> {addressForSendForm.address_detail}</div>
-            )}
-            {addressForSendForm.address_detail_en && (
-              <div><strong>상세주소(영문):</strong> {addressForSendForm.address_detail_en}</div>
-            )}
-            {addressForSendForm.directions_to_clinic && (
-              <div><strong>찾아오는 방법:</strong> {addressForSendForm.directions_to_clinic}</div>
-            )}
-            {addressForSendForm.directions_to_clinic_en && (
-              <div><strong>찾아오는 방법(영문):</strong> {addressForSendForm.directions_to_clinic_en}</div>
-            )}
-            {addressForSendForm.latitude && addressForSendForm.longitude && (
-              <div><strong>좌표:</strong> {addressForSendForm.latitude}, {addressForSendForm.longitude}</div>
-            )}
-          </div>
-        </div>
-      )} */}
     </div>
   );
           
