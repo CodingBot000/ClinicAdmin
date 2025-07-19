@@ -74,6 +74,7 @@ const Step3BusinessHours = ({
     useState<ExistingHospitalData | null>(null);
   const [initialBusinessHours, setInitialBusinessHours] =
     useState<OpeningHour[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   const { handleOpenModal, open } = useModal();
@@ -205,7 +206,9 @@ const Step3BusinessHours = ({
  
 const handleNext = async () => {
     console.log('handleNext');
+    setIsSubmitting(true);
     const result = await handleSave();
+    setIsSubmitting(false);
     console.log('handleNext result', result);
     document.body.style.overflow = '';
     if (result?.status === 'success') {
@@ -322,7 +325,7 @@ const handleNext = async () => {
           <Button onClick={handleNext}>Save And Next</Button>
         </div>
       </div> */}
-      <PageBottom step={3} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={3} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

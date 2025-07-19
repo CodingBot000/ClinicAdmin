@@ -131,53 +131,7 @@ const Step5Treatments = ({
 //     useState(false);
   const [preparedFormData, setPreparedFormData] =
     useState<FormData | null>(null);
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-
-//   const [basicInfo, setBasicInfo] = useState<BasicInfo>({
-//     name: hospitalName,
-//     email: '',
-//     tel: '',
-//     kakao_talk: '',
-//     line: '',
-//     we_chat: '',
-//     whats_app: '',
-//     telegram: '',
-//     facebook_messenger: '',
-//     instagram: '',
-//     tiktok: '',
-//     youtube: '',
-//     other_channel: '',
-//     sns_content_agreement: null,
-//   });
-
-//   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-
-//   const { data: surgeryList = [], isPending } = useQuery<
-//     Surgery[]
-//   >({
-//     queryKey: ['surgery_info'],
-//     queryFn: async () => {
-//       const queryStartTime = Date.now();
-//       // console.log(
-//       //   'surgeryList 쿼리 시작:',
-//       //   new Date().toISOString(),
-//       // );
-
-//       const { data, error } = await supabase
-//         .from('surgery_info')
-//         .select('*');
-
-//       const queryEndTime = Date.now();
-//       const queryTime = queryEndTime - queryStartTime;
-//       // console.log(`surgeryList 쿼리 완료: ${queryTime}ms`, {
-//       //   dataLength: data?.length || 0,
-//       //   error: error?.message || null,
-//       // });
-
-//       if (error) throw Error('surgery_info error');
-//       return data;
-//     },
-//   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { handleOpenModal, open } = useModal();
 
@@ -187,32 +141,6 @@ const Step5Treatments = ({
     }
   }, [formState, showFinalResult]);
 
-  // 페이지 로딩 완료 시간 측정
-//   useEffect(() => {
-    // if (!categoriesLoading && !isPending && categories) {
-    //   const pageEndTime = Date.now();
-    //   const totalLoadTime = pageEndTime - pageStartTime;
-      // console.log(
-      //   'UploadClient 페이지 로딩 완료:',
-      //   new Date().toISOString(),
-      // );
-      // console.log(
-      //   `총 페이지 로딩 시간: ${totalLoadTime}ms (${(totalLoadTime / 1000).toFixed(2)}초)`,
-      // );
-      // console.log('로딩 완료 상태:', {
-      //   categoriesCount: categories?.length || 0,
-      //   surgeryListCount: surgeryList?.length || 0,
-      //   categoriesLoading,
-      //   isPending,
-      // });
-    // }
-//   }, [
-//     categoriesLoading,
-//     isPending,
-//     categories,
-    // surgeryList,
-    // pageStartTime,
-//   ]);
 
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
@@ -383,7 +311,9 @@ const Step5Treatments = ({
 
 const handleNext = async () => {
     console.log('handleNext');
+    setIsSubmitting(true);
     const result = await handleSave();
+    setIsSubmitting(false);
     document.body.style.overflow = '';
     if (result?.status === 'success') {
         console.log('handleNext Step4 handlSave success');
@@ -511,7 +441,7 @@ const handleNext = async () => {
         
 {/* 하단 고정 버튼 영역 */}
 
-<PageBottom step={5} onNext={handleNext} onPrev={onPrev} 
+<PageBottom step={5} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} 
 children={
   <div className="text-xs text-gray-500 whitespace-pre-line">
     <p>

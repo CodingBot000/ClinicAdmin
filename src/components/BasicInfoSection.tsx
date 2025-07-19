@@ -305,7 +305,7 @@ const BasicInfoSection = ({
         />
 
         <div>
-          <p>* 진료문의/진료상담/마케팅담당자/SMS수신 - 전화번호, 이메일 등은 다음 스텝에 별도 입력란이 있습니다. </p>
+          <p className='text-red-500'>* 진료문의/진료상담/마케팅담당자/SMS수신 - 전화번호, 이메일 등은 다음 스텝에 별도 입력란이 있습니다. </p>
         </div>
         <Divider />
         <div className="space-y-2">
