@@ -45,27 +45,75 @@ export default function ClinicInfoInsertClient(
     router.replace(`?${params.toString()}`);
   };
 
+  // useEffect(() => {
+  //   console.log('ClinicInfoInsertClient isEditMode: ', isEditMode);
+  //   if (!isEditMode) {
+      
+  //     const id_uuid_generate = uuidv4();
+  //     setIdUuidHospital(id_uuid_generate);
+  //     console.log('ClinicInfoInsertClient id_uuid_generate: ', id_uuid_generate);
+  //   } else {
+  //     const loadHospitalUuid = async () => {
+  //       const hospitalUuid = await getUserHospitalUuid(currentUserUid);
+  //       setIdUuidHospital(hospitalUuid ?? '');
+  //       console.log('ClinicInfoInsertClient hospitalUuid: ', hospitalUuid);
+
+  //       if (!hospitalUuid) {
+  //        const hospitalName = await loadHospitalData(hospitalUuid!);
+  //        setHospitalName(hospitalName);
+  //       }
+  //     };
+  //     loadHospitalUuid();
+  //   }
+  // }, []);
+
+  /**
+   * 병원 UUID 초기화
+   * case 1  계정 로그인 후 바로 생성된 케이스  (admin에 id_uuid_hospital가 없고 hospital에도 데이터가 없는 최초생성 케이스)
+   * case 2 계정 로그인 후 admin 생성했지만 이슈가 있어서 admin의 id_uuid_hospital 컬럼에 값은있으나 hospital테이블에는 데이터가 없는 케이스
+   * case 3 계정 로그인 후 admin 생성했고 admin에 id_uuid_hospital가 있으며  hospital에도 해당 id_uuid_hospital로 데이터가 있는 케이스
+   */
   useEffect(() => {
     console.log('ClinicInfoInsertClient isEditMode: ', isEditMode);
-    if (!isEditMode) {
-      const id_uuid_generate = uuidv4();
-      setIdUuidHospital(id_uuid_generate);
-      console.log('ClinicInfoInsertClient id_uuid_generate: ', id_uuid_generate);
-    } else {
-      const loadHospitalUuid = async () => {
-        const hospitalUuid = await getUserHospitalUuid(currentUserUid);
-        setIdUuidHospital(hospitalUuid ?? '');
-        console.log('ClinicInfoInsertClient hospitalUuid: ', hospitalUuid);
-
-        if (!hospitalUuid) {
-         const hospitalName = await loadHospitalData(hospitalUuid!);
-         setHospitalName(hospitalName);
-        }
-      };
-      loadHospitalUuid();
-    }
+    
+    const initializeHospitalUuid = async () => {
+      // 시작하자마자 제일먼저 병원 UUID가 있는지 확인
+      const hospitalUuid = await getUserHospitalUuid(currentUserUid);
+      console.log('ClinicInfoInsertClient hospitalUuid: ', hospitalUuid);
+     
+      if (!isEditMode) {
+        if (hospitalUuid) {
+          // case 2
+          // hospitalUuid가 있으면 기존 것을 사용
+          setIdUuidHospital(hospitalUuid);
+          console.log('ClinicInfoInsertClient exist hospitaluuid: ', hospitalUuid);
+        } else {
+          // case 3
+          const id_uuid_generate = uuidv4();
+          setIdUuidHospital(id_uuid_generate);
+          console.log('ClinicInfoInsertClient id_uuid_generate: ', id_uuid_generate);
+        }        
+        
+      } else {
+        // case 3
+        const loadHospitalUuid = async () => {
+          const hospitalUuid = await getUserHospitalUuid(currentUserUid);
+          setIdUuidHospital(hospitalUuid ?? '');
+          console.log('ClinicInfoInsertClient hospitalUuid: ', hospitalUuid);
+  
+          if (!hospitalUuid) {
+           const hospitalName = await loadHospitalData(hospitalUuid!);
+           setHospitalName(hospitalName);
+          }
+        };
+        loadHospitalUuid();
+      }
+    };
+    
+    initializeHospitalUuid();
   }, []);
 
+  
   const handlePreview = () => {
     console.log('handlePreview');
   };
