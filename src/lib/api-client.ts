@@ -1,10 +1,13 @@
 import { ApiResponse } from './api-utils';
 
 // API 호출을 위한 기본 설정
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-domain.com' 
-  : '';
+// const API_BASE_URL = process.env.NODE_ENV === 'production' 
+//   ? 'https://your-domain.com' 
+//   : '';
+const API_BASE_URL =
+  typeof window !== 'undefined' ? window.location.origin : '';
 
+  
 // 공통 fetch 래퍼
 async function apiCall<T = any>(
   endpoint: string, 
