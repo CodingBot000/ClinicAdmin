@@ -88,7 +88,7 @@ export default function ClinicInfoInsertClient(
           setIdUuidHospital(hospitalUuid);
           console.log('ClinicInfoInsertClient exist hospitaluuid: ', hospitalUuid);
         } else {
-          // case 3
+          // case 1
           const id_uuid_generate = uuidv4();
           setIdUuidHospital(id_uuid_generate);
           console.log('ClinicInfoInsertClient id_uuid_generate: ', id_uuid_generate);
