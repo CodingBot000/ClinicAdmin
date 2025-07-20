@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { 
-  TABLE_HOSPITAL, 
-  TABLE_HOSPITAL_DETAIL, 
-  TABLE_ADMIN,
   TABLE_CONTACTS,
-  TABLE_FEEDBACKS
 } from '@/constants/tables';
 
 // CORS 헤더 정의

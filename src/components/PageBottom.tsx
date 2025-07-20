@@ -36,7 +36,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                실행중
+                저장 중
               </>
             ) : (
               'Save And Next'
@@ -66,7 +66,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  실행중
+                  저장 중
                 </>
               ) : (
                 'Save And Next'
@@ -102,7 +102,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  실행중
+                  저장 중
                 </>
               ) : (
                 'Save'

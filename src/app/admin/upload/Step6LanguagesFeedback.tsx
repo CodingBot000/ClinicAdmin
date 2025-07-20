@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 import useModal from '@/hooks/useModal';
-// AlertModal 제거
-import { useRouter } from 'next/navigation';
 
 import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
@@ -38,8 +36,6 @@ const Step6LanguagesFeedback = ({
   onStepChange,
 }: Step6LanguagesFeedbackProps) => {
     console.log(' Step6LanguagesFeedback id_uuid_hospital', id_uuid_hospital);
-
-  const router = useRouter();
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -201,22 +197,6 @@ const Step6LanguagesFeedback = ({
     }
   };
 
-  const handleModal = () => {
-    setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
-    handleOpenModal();
-  };
-
-  // 성공 시 관리자 페이지로 이동하는 함수
-  const handleConfirm = () => {
-    if (formState?.status === 'success') {
-      router.replace('/admin');
-      router.refresh();
-    } else {
-      handleModal();
-    }
-  };
-
-  const [previewValidationMessages, setPreviewValidationMessages] = useState<string[]>([]);
 
   const handleComplete = () => {
     document.body.style.overflow = '';
@@ -434,7 +414,7 @@ const Step6LanguagesFeedback = ({
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  실행중
+                  저장 중
                 </>
               ) : (
                 '닫기'
@@ -452,7 +432,7 @@ const Step6LanguagesFeedback = ({
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  실행중
+                  저장 중
                 </>
               ) : (
                 '변경사항을 적용하지않고 홈으로 이동'
