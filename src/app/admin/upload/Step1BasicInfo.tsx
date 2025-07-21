@@ -449,7 +449,6 @@ const Step1BasicInfo = ({
     doctorsCount: doctors.length,
     hasExistingData: !!existingData,
     isLoadingExistingData,
-    optionState,
     전달할주소props: {
       initialAddress: address,
       initialAddressDetail:
