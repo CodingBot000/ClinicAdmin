@@ -1,7 +1,5 @@
 'use client';
 
-import PageHeader from '@/components/PageHeader';
-import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
 
@@ -10,38 +8,22 @@ import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-// AlertModal 제거
-import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import AddressSection from '@/components/AddressSection';
 import LocationSelect from '@/components/LocationSelect';
-import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
-import ClinicImageUploadSection from '@/components/ClinicImageUploadSection';
-import OpeningHoursForm, {
-  OpeningHour,
-} from '@/components/OpeningHoursForm';
-import ExtraOptions, {
-  ExtraOptionState,
-} from '@/components/ExtraOptions';
+
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import type { CategoryNode } from '@/types/category';
-import DoctorInfoSection from '@/components/DoctorInfoSection';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import { HospitalAddress } from '@/types/address';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { STORAGE_IMAGES } from '@/constants/tables';
+
 import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
-import AvailableLanguageSection from '@/components/AvailableLanguageSection';
-import ContactsInfoSection from '../../../components/ContactsInfoSection';
-import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
-import { validateFormData } from '@/utils/validateFormData';
-import { prepareFormData } from '@/lib/formDataHelper';
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
-import { BasicInfo, ContactsInfo } from '@/types/basicinfo';
+import { BasicInfo } from '@/types/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
 import PageBottom from '@/components/PageBottom';
 
@@ -71,74 +53,24 @@ const Step1BasicInfo = ({
   currentUserUid,
   isEditMode = false,
 }: Step1BasicInfoProps) => {
-  const pageStartTime = Date.now();
-  // console.log(
-  //   'UploadClient 페이지 시작:',
-  //   new Date().toISOString(),
-  // );
-
+  
   const {
     data: categories,
     isLoading: categoriesLoading,
     error: categoriesError,
   } = useTreatmentCategories();
 
-  // categories 디버깅
-  // console.log('UploadClient - categories 상태:', {
-  //   categoriesLoading,
-  //   categoriesError,
-  //   categoriesLength: categories?.length || 0,
-  //   categories,
-  // });
-
-  const router = useRouter();
+  
   const [address, setAddress] = useState('');
   const [addressForSendForm, setAddressForSendForm] =
     useState<HospitalAddress | null>(null);
-  const [coordinates, setCoordinates] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<{
+    const [selectedLocation, setSelectedLocation] = useState<{
     key: number;
     label: string;
     name: string;
   } | null>(null);
-  // const [selectedTreatments, setSelectedTreatments] =
-  //   useState<number[]>([]);
-  // const [treatmentOptions, setTreatmentOptions] = useState<
-  //   any[]
-  // >([]);
-  // const [priceExpose, setPriceExpose] =
-  //   useState<boolean>(true);
-  // const [treatmentEtc, setTreatmentEtc] =
-  //   useState<string>('');
-  // const [initialTreatmentData, setInitialTreatmentData] =
-  //   useState<{
-  //     selectedKeys: number[];
-  //     productOptions: any[];
-  //     priceExpose: boolean;
-  //     etc: string;
-  //   } | null>(null);
-  // const [clinicImages, setClinicImages] = useState<File[]>(
-  //   [],
-  // );
-  // const [openingHours, setOpeningHours] = useState<
-  //   OpeningHour[]
-  // >([]);
-  const [optionState, setOptionState] =
-    useState<ExtraOptionState>({
-      has_private_recovery_room: false,
-      has_parking: false,
-      has_cctv: false,
-      has_night_counseling: false,
-      has_female_doctor: false,
-      has_anesthesiologist: false,
-      specialist_count: 1,
-    });
-  const [searchkey, setSearchKey] = useState<string>('');
-  const [search_key, setSearch_Key] = useState<string>('');
-  // const supabase = createClient();
+  
+
   const [formState, setFormState] = useState<{
     message?: string;
     status?: string;
@@ -151,8 +83,6 @@ const Step1BasicInfo = ({
     useState(false);
   const [existingData, setExistingData] =
     useState<ExistingHospitalData | null>(null);
-  const [initialBusinessHours, setInitialBusinessHours] =
-    useState<OpeningHour[]>([]);
 
   // 편집 모드를 위한 폼 초기값 상태들
   const [hospitalName, setHospitalName] =
@@ -399,32 +329,32 @@ const Step1BasicInfo = ({
       }
 
       // 4. 영업시간 설정
-      console.log('Step1 - 영업시간 설정 시작');
-      console.debug(
-        'Step1 - 변환된 영업시간 데이터:',
-        formData.businessHours,
-      );
-      setInitialBusinessHours(formData.businessHours);
-      console.log(
-        'Step1 - initialBusinessHours 상태 업데이트 완료',
-      );
+      // console.log('Step1 - 영업시간 설정 시작');
+      // console.debug(
+      //   'Step1 - 변환된 영업시간 데이터:',
+      //   formData.businessHours,
+      // );
+      // setInitialBusinessHours(formData.businessHours);
+      // console.log(
+      //   'Step1 - initialBusinessHours 상태 업데이트 완료',
+      // );
 
-      // 5. 편의시설 설정
-      setOptionState({
-        has_private_recovery_room:
-          formData.facilities.has_private_recovery_room,
-        has_parking: formData.facilities.has_parking,
-        has_cctv: formData.facilities.has_cctv,
-        has_night_counseling:
-          formData.facilities.has_night_counseling,
-        has_female_doctor:
-          formData.facilities.has_female_doctor,
-        has_anesthesiologist:
-          formData.facilities.has_anesthesiologist,
-          specialist_count:
-          formData.facilities.specialist_count,
-      });
-      console.log('Step1 - 편의시설 설정 완료');
+      // // 5. 편의시설 설정
+      // setOptionState({
+      //   has_private_recovery_room:
+      //     formData.facilities.has_private_recovery_room,
+      //   has_parking: formData.facilities.has_parking,
+      //   has_cctv: formData.facilities.has_cctv,
+      //   has_night_counseling:
+      //     formData.facilities.has_night_counseling,
+      //   has_female_doctor:
+      //     formData.facilities.has_female_doctor,
+      //   has_anesthesiologist:
+      //     formData.facilities.has_anesthesiologist,
+      //     specialist_count:
+      //     formData.facilities.specialist_count,
+      // });
+      // console.log('Step1 - 편의시설 설정 완료');
 
       // 6. 위치 정보 설정
       if (existingData.hospital?.location) {
@@ -515,12 +445,10 @@ const Step1BasicInfo = ({
     hospitalName,
     address,
     addressForSendForm,
-    coordinates,
     selectedLocation,
     doctorsCount: doctors.length,
     hasExistingData: !!existingData,
     isLoadingExistingData,
-    optionState,
     전달할주소props: {
       initialAddress: address,
       initialAddressDetail:

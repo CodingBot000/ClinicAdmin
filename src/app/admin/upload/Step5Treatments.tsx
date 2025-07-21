@@ -1,67 +1,21 @@
 'use client';
 
-import PageHeader from '@/components/PageHeader';
-import InputField, { TextArea } from '@/components/InputField';
 import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
-
-import { supabase } from '@/lib/supabaseClient';
-import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-// AlertModal 제거
-import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
-import AddressSection from '@/components/AddressSection';
-import LocationSelect from '@/components/LocationSelect';
-import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
-import ClinicImageUploadSection from '@/components/ClinicImageUploadSection';
-import OpeningHoursForm, {
-  OpeningHour,
-} from '@/components/OpeningHoursForm';
-import ExtraOptions, {
-  ExtraOptionState,
-} from '@/components/ExtraOptions';
-import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 
-import type { CategoryNode } from '@/types/category';
-import DoctorInfoSection from '@/components/DoctorInfoSection';
-import { DoctorInfo } from '@/components/DoctorInfoForm';
-import { HospitalAddress } from '@/types/address';
+import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
+import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { STORAGE_IMAGES } from '@/constants/tables';
-import { validateFormData } from '@/utils/validateFormData';
-import { prepareFormData } from '@/lib/formDataHelper';
 
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 
-import { 
-  getLabelByKey, 
-  getUnitByKey, 
-  getDepartmentByKey,
-  getDepartmentDisplayName,
-  getDepartmentStyleClass,
-  createCategoryLabelMap,
-  createCategoryDepartmentMap
-} from '@/utils/categoryUtils';
 import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
 import PageBottom from '@/components/PageBottom';
-
-interface Surgery {
-  created_at: string;
-  description: string;
-  id: number;
-  id_unique: number;
-  imageurls: string[];
-  name: string;
-  type: string;
-}
-
-const doctorImageUploadLength = 3;
-const clinicImageUploadLength = 7;
-
+import { toast } from "sonner";
 interface Step5TreatmentsProps {
   id_uuid_hospital: string;
   currentUserUid: string;
@@ -85,15 +39,6 @@ const Step5Treatments = ({
     error: categoriesError,
   } = useTreatmentCategories();
 
-  // categories 디버깅
-  // console.log('UploadClient - categories 상태:', {
-  //   categoriesLoading,
-  //   categoriesError,
-  //   categoriesLength: categories?.length || 0,
-  //   categories,
-  // });
-
-  const router = useRouter();
 
   // 1. 상태 선언부
   const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
@@ -126,11 +71,7 @@ const Step5Treatments = ({
   const [existingData, setExistingData] =
     useState<ExistingHospitalData | null>(null);
 
-//   // 확인 모달 상태 추가
-//   const [showConfirmModal, setShowConfirmModal] =
-//     useState(false);
-  const [preparedFormData, setPreparedFormData] =
-    useState<FormData | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { handleOpenModal, open } = useModal();
@@ -151,55 +92,6 @@ const Step5Treatments = ({
       loadExistingDataForEdit();
     }
   }, [isEditMode, currentUserUid]);
-
-  // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
-//   useEffect(() => {
-//     if (existingData && !basicInfo.name) {
-//       // 한 번만 실행되도록 조건 추가
-//       console.log('기존 데이터 상태 반영 시작');
-//       console.log('sns_content_agreement 값:', existingData.hospitalDetail?.sns_content_agreement);
-//       const formData = mapExistingDataToFormValues(existingData);
-
-//       // SNS 채널 정보와 기본 정보 설정
-//       if (existingData.hospitalDetail) {
-//         setBasicInfo({
-//           name: formData.hospital.name || '',
-//           email: existingData.hospitalDetail.email || '',
-//           tel: existingData.hospitalDetail.tel || '',
-//           kakao_talk: existingData.hospitalDetail.kakao_talk || '',
-//           line: existingData.hospitalDetail.line || '',
-//           we_chat: existingData.hospitalDetail.we_chat || '',
-//           whats_app: existingData.hospitalDetail.whats_app || '',
-//           telegram: existingData.hospitalDetail.telegram || '',
-//           facebook_messenger: existingData.hospitalDetail.facebook_messenger || '',
-//           instagram: existingData.hospitalDetail.instagram || '',
-//           tiktok: existingData.hospitalDetail.tiktok || '',
-//           youtube: existingData.hospitalDetail.youtube || '',
-//           other_channel: existingData.hospitalDetail.other_channel || '',
-//           sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
-//         });
-//         console.log('기본 정보 및 SNS 채널 정보 설정 완료');
-//       }
-
-//       console.log('UploadClient 상태 업데이트 완료:', {
-//         hospitalName: formData.hospital.name,
-//         hasAddress: !!formData.address.roadAddress,
-//         doctorsCount: formData.doctors.length,
-//         sns_content_agreement: existingData.hospitalDetail?.sns_content_agreement
-//       });
-
-//       // 피드백 정보 설정
-//       if (existingData.feedback) {
-//         setFeedback(existingData.feedback);
-//         console.log('피드백 정보 설정 완료:', existingData.feedback);
-//       }
-//     }
-//   }, [existingData]);
-
-//   // hospitalName 상태를 basicInfo.name과 동기화
-//   useEffect(() => {
-//     setHospitalName(basicInfo.name);
-//   }, [basicInfo.name]);
 
   const loadExistingDataForEdit = async () => {
     try {
@@ -371,7 +263,7 @@ const handleNext = async () => {
           status: 'success',
           errorType: undefined,
         });
-        
+        toast.success(result.message);
         return {
           status: 'success',
           message: result.message
@@ -440,23 +332,21 @@ const handleNext = async () => {
         />
         
 
-<PageBottom step={5} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} 
-children={
-  <div className="text-xs text-gray-500 whitespace-pre-line">
-    <p>
-      <span className="text-red-500 font-semibold">
-        *주의* 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다.
-      </span>
-      {'\n'}
-      나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.
-      {'\n'}
-      <span className="text-red-500 font-semibold">
-        저장버튼을 누르지 않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
-      </span>
-    </p>
-  </div>
-}
-/>
+      <PageBottom step={5} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} onDraftSave={handleSave}>
+        <div className="text-xs text-gray-500 whitespace-pre-line">
+          <p>
+            <span className="text-red-500 font-semibold">
+              *주의* 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다.
+            </span>
+            {'\n'}
+            나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.
+            {'\n'}
+            <span className="text-red-500 font-semibold">
+              저장버튼을 누르지 않고 새로고침하거나 뒤로가거나 창을 나가면 입력/편집한 정보가 소실됩니다.
+            </span>
+          </p>
+        </div>
+      </PageBottom>
       </div>
 
       {/* 기본 모달 */}

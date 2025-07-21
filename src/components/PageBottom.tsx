@@ -5,6 +5,7 @@ interface PageBottomProps {
   step: 1 | 2 | 3 | 4 | 5 | 6;
   onPrev?: () => void;
   onNext?: () => void;
+  onDraftSave?: () => void;
   onPreview?: () => void;
   onHome?: () => void;
   isSubmitting?: boolean;
@@ -16,6 +17,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
   step,
   onPrev,
   onNext,
+  onDraftSave,
   onPreview,
   onHome,
   isSubmitting = false,
@@ -46,6 +48,33 @@ const PageBottom: React.FC<PageBottomProps> = ({
       case 2:
       case 3:
       case 4:
+        return (
+          <>
+            <Button
+              type="button"
+              className="btn btn-secondary bg-yellow-400"
+              onClick={onPrev}
+              disabled={isSubmitting}
+            >
+            Prev
+            </Button>
+            <Button
+              type="button"
+              className="btn btn-primary"
+              onClick={onNext}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  저장 중
+                </>
+              ) : (
+                'Save And Next'
+              )}
+            </Button>
+          </>
+        );
       case 5:
         return (
           <>
@@ -56,6 +85,21 @@ const PageBottom: React.FC<PageBottomProps> = ({
               disabled={isSubmitting}
             >
             Prev
+            </Button>
+            <Button
+              type="button"
+              className="btn btn-primary bg-red-400"
+              onClick={onDraftSave}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  저장 중
+                </>
+              ) : (
+                'Draft Save'
+              )}
             </Button>
             <Button
               type="button"
@@ -96,7 +140,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
             <Button
               type="button"
               className="btn btn-primary bg-red-400"
-              onClick={onNext}
+              onClick={onDraftSave}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -105,7 +149,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
                   저장 중
                 </>
               ) : (
-                'Save'
+                'Draft Save'
               )}
             </Button>
             <Button
