@@ -15,7 +15,7 @@ import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import PageBottom from '@/components/PageBottom';
-// 기존 Server Actions는 API Routes로 대체됨
+import { toast } from "sonner";
 
 interface Step6LanguagesFeedbackProps {
   id_uuid_hospital: string;
@@ -275,7 +275,7 @@ const Step6LanguagesFeedback = ({
         
         // 저장 성공 시 변경사항 상태를 false로 설정
         setHasChanges(false);
-        
+        toast.success(result.message);
         return {
           status: 'success',
           message: result.message
@@ -377,7 +377,7 @@ const Step6LanguagesFeedback = ({
       </div>
 
       <PageBottom step={6} 
-      onNext={handleSave}
+      onDraftSave={handleSave}
        onPrev={onPrev}
        onPreview={handlePreview}
        onHome={handleComplete}

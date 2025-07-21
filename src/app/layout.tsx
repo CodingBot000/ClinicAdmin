@@ -5,7 +5,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import Providers from "@/provider/QueryProvider";
-
+import { TurborepoAccessTraceResult } from "next/dist/build/turborepo-access-trace";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
       >
         <Providers>
         {children}
+        <Toaster richColors position="top-center" duration={1500}/>
         </Providers>
       </body>
     </html>

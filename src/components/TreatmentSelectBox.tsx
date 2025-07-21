@@ -2,19 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { TreatmentSelectModal } from "./modal/TreatmentSelectModal";
-import { X } from "lucide-react";
+// import { X } from "lucide-react";
 // import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
 import { CategoryNode } from "@/types/category";
 import { Button } from "@/components/ui/button";
-import { 
-  getLabelByKey, 
-  getUnitByKey, 
-  getDepartmentByKey,
-  getDepartmentDisplayName,
-  getDepartmentStyleClass
-} from "@/utils/categoryUtils";
-import { TreatmentSelectedOptionInfo } from "./TreatmentSelectedOptionInfo";
-import { TreatmentSelectedChips } from "./TreatmentSelectedChips";
+
 
 interface ProductOption {
   id: string;
@@ -147,7 +139,9 @@ export function TreatmentSelectBox({
         <Button size="sm" type="button" onClick={handleOpen} className="bg-primary hover:bg-primary/90 focus-ring font-medium">
           가능시술 선택하기
         </Button>
-        
+        <p className="text-sm text-foreground">
+          입력할 시술이 많다면 하단의 임시 저장 버튼을 자주 이용해주세요.
+        </p>
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
