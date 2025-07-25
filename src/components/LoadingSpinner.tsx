@@ -17,7 +17,7 @@ const LoadingSpinner = ({
     "fixed inset-0 z-50 flex items-center justify-center";
 
   const backdropClass =
-    "bg-black/30 backdrop-blur-sm";
+    "bg-black/10 backdrop-blur";
 
   const extraClass = backdrop
     ? `${baseClass} ${backdropClass}`
@@ -25,7 +25,8 @@ const LoadingSpinner = ({
 
   return (
     <div className={extraClass}>
-      <CircleLoader color="#e09ddf" />
+      {/* <CircleLoader color="#e09ddf" /> */}
+      <CircleLoader color="#000" />
     </div>
   );
 };
