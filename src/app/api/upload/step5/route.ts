@@ -4,6 +4,7 @@ import {
   TABLE_HOSPITAL_TREATMENT,
   TABLE_TREATMENT_INFO
 } from '@/constants/tables';
+import "@/utils/logger"; 
 
 // CORS 헤더 정의
 const corsHeaders = {

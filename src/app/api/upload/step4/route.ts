@@ -6,6 +6,7 @@ import {
   STORAGE_IMAGES
 } from '@/constants/tables';
 import { v4 as uuidv4 } from 'uuid';
+import "@/utils/logger"; 
 
 // CORS 헤더 정의
 const corsHeaders = {
