@@ -238,7 +238,11 @@ export function mapTreatmentsToForm(treatments: any[] | null | undefined) {
   const result = {
     selectedKeys: Array.from(selectedKeysSet),
     productOptions: productOptions,
-    priceExpose: treatments.length > 0 ? Boolean(treatments[0].price_expose) : true,
+    priceExpose: treatments.length > 0
+      ? (treatments[0].price_expose === undefined || treatments[0].price_expose === null
+          ? true
+          : Boolean(treatments[0].price_expose))
+      : true,
     etc: treatments.find(t => t.etc)?.etc || ''
   };
   

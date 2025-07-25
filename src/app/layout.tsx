@@ -8,6 +8,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import Providers from "@/provider/QueryProvider";
 import { TurborepoAccessTraceResult } from "next/dist/build/turborepo-access-trace";
 import { Toaster } from "sonner";
+import OverflowFixer from "@/components/utils/OverflowFixer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +37,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-        {children}
-        <Toaster richColors position="top-center" duration={1500}/>
+          <OverflowFixer />
+          {children}
+          <Toaster richColors position="top-center" duration={1500}/>
         </Providers>
       </body>
     </html>
