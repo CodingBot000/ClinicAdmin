@@ -23,6 +23,7 @@ export type DaumAddressData = {
     data: DaumAddressData,
     coordinates?: { latitude: number; longitude: number },
   ): HospitalAddress => {
+    log.info('mapDaumPostDataToHospitalAddress data: ', data);
     return {
       address_full_road: data.roadAddress,
       address_full_road_en: data.roadAddressEnglish,

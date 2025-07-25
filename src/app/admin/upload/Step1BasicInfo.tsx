@@ -423,7 +423,7 @@ const Step1BasicInfo = ({
     }
 
     // 5. 기본 주소 검증 (상세주소, 찾아오는 방법 상세안내 제외)
-    if (!addressForSendForm?.address_full_jibun?.trim() || !addressForSendForm?.address_full_road?.trim()) {
+    if (!addressForSendForm?.address_full_jibun?.trim() && !addressForSendForm?.address_full_road?.trim()) {
       errors.push('기본 주소를 입력해주세요.');
     }
 
