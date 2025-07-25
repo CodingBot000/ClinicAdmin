@@ -7,6 +7,7 @@ import {
   TABLE_CONTACTS,
   TABLE_FEEDBACKS
 } from '@/constants/tables';
+import "@/utils/logger"; 
 
 // CORS 헤더 정의
 const corsHeaders = {

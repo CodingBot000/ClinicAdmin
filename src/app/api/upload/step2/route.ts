@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { 
   TABLE_CONTACTS,
 } from '@/constants/tables';
+import "@/utils/logger"; 
 
 // CORS 헤더 정의
 const corsHeaders = {

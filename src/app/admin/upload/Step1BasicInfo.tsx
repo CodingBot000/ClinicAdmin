@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import AddressSection from '@/components/AddressSection';
 import LocationSelect from '@/components/LocationSelect';
 
-import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
+// import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import { HospitalAddress } from '@/types/address';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
@@ -54,11 +54,11 @@ const Step1BasicInfo = ({
   isEditMode = false,
 }: Step1BasicInfoProps) => {
   
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-    error: categoriesError,
-  } = useTreatmentCategories();
+  // const {
+  //   data: categories,
+  //   isLoading: categoriesLoading,
+  //   error: categoriesError,
+  // } = useTreatmentCategories();
 
   
   const [address, setAddress] = useState('');
@@ -464,7 +464,7 @@ const Step1BasicInfo = ({
 
   if (
     isPending ||
-    categoriesLoading ||
+    // categoriesLoading ||
     isLoadingExistingData
   )
     return <LoadingSpinner backdrop />;
