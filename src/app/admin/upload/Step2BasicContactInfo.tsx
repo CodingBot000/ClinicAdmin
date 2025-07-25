@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-// AlertModal 제거
+
 import { useRouter } from 'next/navigation';
 
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';

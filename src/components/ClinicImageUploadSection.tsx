@@ -279,15 +279,19 @@ const ClinicImageUploadSection = ({
     
     // existingData의 이미지 URL 클리어
     if (onExistingDataChange) {
-      onExistingDataChange((prevData: any) => ({
-        ...prevData,
-        hospital: prevData.hospital ? {
-          ...prevData.hospital,
-          imageurls: []
-        } : null
-      }));
+      onExistingDataChange((prevData: any) => {
+        if (!prevData || !prevData.hospital) {
+          return prevData; // 또는 { hospital: { imageurls: [] } } 등 원하는 기본값
+        }
+        return {
+          ...prevData,
+          hospital: {
+            ...prevData.hospital,
+            imageurls: []
+          }
+        };
+      });
     }
-
     if (type === 'Avatar') {
       setAvatarCount(1);
     }
