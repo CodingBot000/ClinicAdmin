@@ -462,6 +462,17 @@ const Step1BasicInfo = ({
     },
   });
 
+  useEffect(() => {
+    if (isLoadingExistingData || isPending) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isLoadingExistingData, isPending]);
+
   if (
     isPending ||
     // categoriesLoading ||

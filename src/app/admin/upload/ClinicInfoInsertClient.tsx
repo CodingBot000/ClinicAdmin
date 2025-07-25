@@ -46,25 +46,10 @@ export default function ClinicInfoInsertClient(
   };
 
   // useEffect(() => {
-  //   log.info('ClinicInfoInsertClient isEditMode: ', isEditMode);
-  //   if (!isEditMode) {
-      
-  //     const id_uuid_generate = uuidv4();
-  //     setIdUuidHospital(id_uuid_generate);
-  //     log.info('ClinicInfoInsertClient id_uuid_generate: ', id_uuid_generate);
-  //   } else {
-  //     const loadHospitalUuid = async () => {
-  //       const hospitalUuid = await getUserHospitalUuid(currentUserUid);
-  //       setIdUuidHospital(hospitalUuid ?? '');
-  //       log.info('ClinicInfoInsertClient hospitalUuid: ', hospitalUuid);
-
-  //       if (!hospitalUuid) {
-  //        const hospitalName = await loadHospitalData(hospitalUuid!);
-  //        setHospitalName(hospitalName);
-  //       }
-  //     };
-  //     loadHospitalUuid();
-  //   }
+  //   document.body.style.overflow = '';
+  //   return () => {
+  //     document.body.style.overflow = '';
+  //   };
   // }, []);
 
   /**
