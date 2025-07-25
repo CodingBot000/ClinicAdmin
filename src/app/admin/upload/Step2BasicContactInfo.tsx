@@ -12,36 +12,18 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
 // AlertModal 제거
 import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
-import AddressSection from '@/components/AddressSection';
-import LocationSelect from '@/components/LocationSelect';
-import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
-import ClinicImageUploadSection from '@/components/ClinicImageUploadSection';
-import OpeningHoursForm, {
-  OpeningHour,
-} from '@/components/OpeningHoursForm';
-import ExtraOptions, {
-  ExtraOptionState,
-} from '@/components/ExtraOptions';
-import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import type { CategoryNode } from '@/types/category';
-import DoctorInfoSection from '@/components/DoctorInfoSection';
-import { DoctorInfo } from '@/components/DoctorInfoForm';
-import { HospitalAddress } from '@/types/address';
+
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { STORAGE_IMAGES } from '@/constants/tables';
-import BasicInfoSection from '@/components/BasicInfoSection';
+
 import Divider from '@/components/Divider';
-import AvailableLanguageSection from '@/components/AvailableLanguageSection';
+
 import ContactsInfoSection from '../../../components/ContactsInfoSection';
-import { HAS_ANESTHESIOLOGIST, HAS_CCTV, HAS_FEMALE_DOCTOR, HAS_NIGHT_COUNSELING, HAS_PARKING, HAS_PRIVATE_RECOVERY_ROOM } from '@/constants/extraoptions';
-import { validateFormData } from '@/utils/validateFormData';
-import { prepareFormData } from '@/lib/formDataHelper';
+
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
-import { findRegionByKey, REGIONS } from '@/app/contents/location';
-import { BasicInfo, ContactsInfo } from '@/types/basicinfo';
+
+import { ContactsInfo } from '@/types/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
 import PageBottom from '@/components/PageBottom';
 
