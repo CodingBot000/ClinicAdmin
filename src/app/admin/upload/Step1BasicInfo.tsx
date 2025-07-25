@@ -127,7 +127,7 @@ const Step1BasicInfo = ({
     queryKey: ['surgery_info'],
     queryFn: async () => {
       const queryStartTime = Date.now();
-      // console.log(
+      // log.info(
       //   'surgeryList 쿼리 시작:',
       //   new Date().toISOString(),
       // );
@@ -154,7 +154,7 @@ const Step1BasicInfo = ({
 
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
-    console.log(
+    log.info(
       `Step1 - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
@@ -170,16 +170,16 @@ const Step1BasicInfo = ({
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      console.log('Step1 - 편집 모드 - 기존 데이터 로딩 시작');
+      log.info('Step1 - 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
-        console.log('Step1 - 편집 모드 - 기존 데이터 로딩 완료');
+        log.info('Step1 - 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        console.log('Step1 - 편집 모드 - 기존 데이터가 없습니다');
+        log.info('Step1 - 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
@@ -200,12 +200,12 @@ const Step1BasicInfo = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    console.log('Step1 - 폼에 기존 데이터 적용 시작');
+    log.info('Step1 - 폼에 기존 데이터 적용 시작');
 
     try {
       // 1. 데이터를 폼 형식으로 변환
       const formData = mapExistingDataToFormValues(existingData);
-      console.log('Step1 - 변환된 폼 데이터:', formData);
+      log.info('Step1 - 변환된 폼 데이터:', formData);
 
       // 2. 병원 기본 정보 설정
       setHospitalName(formData.hospital.name);
@@ -232,17 +232,17 @@ const Step1BasicInfo = ({
           other_channel: existingData.hospitalDetail.other_channel || '',
           sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
         });
-        console.log('Step1 - 기본 정보 및 SNS 채널 정보 설정 완료');
+        log.info('Step1 - 기본 정보 및 SNS 채널 정보 설정 완료');
       }
 
-      console.log(
+      log.info(
         'Step1 - 병원 기본 정보 설정 완료:',
         formData.hospital.name,
       );
 
       // 3. 의사 정보 설정
       setDoctors(formData.doctors);
-      console.log(
+      log.info(
         'Step1 - 의사 정보 설정 완료:',
         formData.doctors.length,
         '명',
@@ -251,7 +251,7 @@ const Step1BasicInfo = ({
       // 피드백 정보 설정
       if (existingData.feedback) {
         setFeedback(existingData.feedback);
-        console.log('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
+        log.info('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
       }
 
       // // 3. 주소 정보 설정
@@ -309,8 +309,8 @@ const Step1BasicInfo = ({
 
         });
 
-        // console.log(`Step1 - 위도경도 정보 existingData: ${existingData.hospital?.latitude}, ${existingData.hospital?.longitude}`);
-        // console.log(`Step1 - 위도경도 정보 formData: ${formData.address.coordinates.latitude}, ${formData.address.coordinates.longitude}`);
+        // log.info(`Step1 - 위도경도 정보 existingData: ${existingData.hospital?.latitude}, ${existingData.hospital?.longitude}`);
+        // log.info(`Step1 - 위도경도 정보 formData: ${formData.address.coordinates.latitude}, ${formData.address.coordinates.longitude}`);
         // if (existingData.hospital?.latitude && existingData.hospital?.longitude) {
         //   setCoordinates({
         //     latitude: existingData.hospital.latitude,
@@ -325,17 +325,17 @@ const Step1BasicInfo = ({
         //     longitude: formData.address.coordinates.longitude,
         //   });
         // }
-        console.log('Step1 - 주소 정보 설정 완료');
+        log.info('Step1 - 주소 정보 설정 완료');
       }
 
       // 4. 영업시간 설정
-      // console.log('Step1 - 영업시간 설정 시작');
+      // log.info('Step1 - 영업시간 설정 시작');
       // console.debug(
       //   'Step1 - 변환된 영업시간 데이터:',
       //   formData.businessHours,
       // );
       // setInitialBusinessHours(formData.businessHours);
-      // console.log(
+      // log.info(
       //   'Step1 - initialBusinessHours 상태 업데이트 완료',
       // );
 
@@ -354,13 +354,13 @@ const Step1BasicInfo = ({
       //     specialist_count:
       //     formData.facilities.specialist_count,
       // });
-      // console.log('Step1 - 편의시설 설정 완료');
+      // log.info('Step1 - 편의시설 설정 완료');
 
       // 6. 위치 정보 설정
       if (existingData.hospital?.location) {
         try {
             const locKey = existingData.hospital?.location;
-            console.log('Step1 - 위치 정보 조회 시작 key :', locKey);
+            log.info('Step1 - 위치 정보 조회 시작 key :', locKey);
             // if (locKey) {
               // key는 string -> number 변환
               const locationKey = parseInt(locKey, 10);
@@ -368,7 +368,7 @@ const Step1BasicInfo = ({
         
               if (region) {
                 setSelectedLocation(region);
-                console.log('Step1 - 위치 정보 설정 완료:', region);
+                log.info('Step1 - 위치 정보 설정 완료:', region);
               } else {
                 console.warn('Step1 - 위치 정보 해당 key에 맞는 REGION을 찾지 못했습니다.', locationKey);
               }
@@ -378,8 +378,8 @@ const Step1BasicInfo = ({
           }
       }
 
-      console.log('Step1 - 기존 데이터 적용 완료!');
-      console.log('Step1 - 적용된 데이터:', {
+      log.info('Step1 - 기존 데이터 적용 완료!');
+      log.info('Step1 - 적용된 데이터:', {
         병원명: formData.hospital.name,
         의사수: formData.doctors.length,
         영업시간: Object.keys(formData.businessHours)
@@ -440,7 +440,7 @@ const Step1BasicInfo = ({
   };
 
   // 렌더링 시점 디버깅
-  console.log('Step1 - UploadClient 렌더링:', {
+  log.info('Step1 - UploadClient 렌더링:', {
     isEditMode,
     hospitalName,
     address,
@@ -470,7 +470,7 @@ const Step1BasicInfo = ({
     return <LoadingSpinner backdrop />;
 
     const handleNext = async () => {
-        console.log('Step1 - handleNext 시작');
+        log.info('Step1 - handleNext 시작');
         setIsSubmitting(true);
 
         const result = await handleSave();
@@ -485,8 +485,8 @@ const Step1BasicInfo = ({
     
  
   const handleSave = async () => {
-    console.log('Step1 - handleSave 시작');
-    console.log('Step1 - 현재 상태:', {
+    log.info('Step1 - handleSave 시작');
+    log.info('Step1 - 현재 상태:', {
       basicInfo,
       selectedLocation,
       addressForSendForm,
@@ -499,11 +499,11 @@ const Step1BasicInfo = ({
     
     try {
       // 클라이언트 측 검증
-      console.log('Step1 - 검증 시작');
+      log.info('Step1 - 검증 시작');
       const validation = validateForm();
       
       if (!validation.isValid) {
-        console.log('Step1 - 검증 실패:', validation.errors);
+        log.info('Step1 - 검증 실패:', validation.errors);
         const formattedErrors = validation.errors.map((error, index) => `${index + 1}. ${error}`).join('\n');
         setFormState({
           message: formattedErrors,
@@ -514,10 +514,10 @@ const Step1BasicInfo = ({
         return { status: 'error' };
       }
       
-      console.log('Step1 - 검증 통과');
+      log.info('Step1 - 검증 통과');
 
       // FormData 구성
-      console.log('Step1 - FormData 구성 시작');
+      log.info('Step1 - FormData 구성 시작');
       const formData = new FormData();
       formData.append('current_user_uid', currentUserUid);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
@@ -534,7 +534,7 @@ const Step1BasicInfo = ({
         basicInfo.sns_content_agreement !== null ? String(basicInfo.sns_content_agreement) : ''
       );
       
-      console.log('Step1 - 기본 정보 FormData 추가 완료');
+      log.info('Step1 - 기본 정보 FormData 추가 완료');
 
       const snsData = {
         kakao_talk: basicInfo.kakao_talk,
@@ -569,19 +569,19 @@ const Step1BasicInfo = ({
       // 연락처 정보 추가
       // formData.append('contacts_info', JSON.stringify(contactsInfo));
 
-      console.log('Step1 - FormData 구성 완료');
-      console.log('Step1 - API 호출 시작');
+      log.info('Step1 - FormData 구성 완료');
+      log.info('Step1 - API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step1(formData);
 
-      console.log('Step1 - API 응답:', result);
+      log.info('Step1 - API 응답:', result);
       
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
-        console.log('Step1 - API 응답이 성공이 아님:', result);
+        log.info('Step1 - API 응답이 성공이 아님:', result);
         const errorMessage = formatApiError(result.error);
-        console.log('Step1 - 포맷된 에러 메시지:', errorMessage);
+        log.info('Step1 - 포맷된 에러 메시지:', errorMessage);
         
         setFormState({
           message: errorMessage,
@@ -596,7 +596,7 @@ const Step1BasicInfo = ({
         };
       } else {
         // 성공 시 처리
-        console.log('Step1 - 데이터 저장 성공');
+        log.info('Step1 - 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',
@@ -616,7 +616,7 @@ const Step1BasicInfo = ({
       console.error('Step1 - 에러 스택:', (error as any)?.stack);
 
       const errorMessage = formatApiError(error);
-      console.log('Step1 - 포맷된 에러 메시지:', errorMessage);
+      log.info('Step1 - 포맷된 에러 메시지:', errorMessage);
 
       setFormState({
         message: errorMessage,
@@ -632,7 +632,7 @@ const Step1BasicInfo = ({
         message: errorMessage
       };
     } finally {
-      console.log('Step1 - handleSave 완료');
+      log.info('Step1 - handleSave 완료');
       setIsSubmitting(false);
     }
   };

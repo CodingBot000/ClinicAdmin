@@ -53,7 +53,7 @@ const Step4ClinicImagesDoctorsInfo = ({
   onPrev,
   onNext,
 }: Step4ClinicImagesDoctorsInfoProps) => {
-    console.log('qqqqqqqqq Step4ClinicImagesDoctorsInfo oooㄹㄹ id_uuid_hospital', id_uuid_hospital);
+    log.info('qqqqqqqqq Step4ClinicImagesDoctorsInfo oooㄹㄹ id_uuid_hospital', id_uuid_hospital);
   const router = useRouter();
   const [clinicThumbnail, setClinicThumbnail] = useState<File | string | null>(null);
   const [clinicImages, setClinicImages] = useState<File[]>(
@@ -93,47 +93,47 @@ const Step4ClinicImagesDoctorsInfo = ({
   }, [formState, showFinalResult]);
 
   useEffect(() => {
-    console.log(
+    log.info(
       `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
-      console.log('Step3 편집 모드 - 기존 데이터 로드');
+      log.info('Step3 편집 모드 - 기존 데이터 로드');
       loadExistingDataForEdit();
     }
   }, [isEditMode, currentUserUid]);
 
   useEffect(() => {
-    console.log('Step3 - existingData 변경됨:', existingData);
-    console.log('Step3 - hospital imageurls:', existingData?.hospital?.imageurls);
-    console.log('Step3 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
-    console.log('Step3 - doctors:', existingData?.doctors);
+    log.info('Step3 - existingData 변경됨:', existingData);
+    log.info('Step3 - hospital imageurls:', existingData?.hospital?.imageurls);
+    log.info('Step3 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
+    log.info('Step3 - doctors:', existingData?.doctors);
   }, [existingData]);
 
   useEffect(() => {
-    console.log('Step3 - doctors 상태 변경됨:', doctors);
+    log.info('Step3 - doctors 상태 변경됨:', doctors);
   }, [doctors]);
 
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      console.log(' 편집 모드 - 기존 데이터 로딩 시작');
+      log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 3);
       if (data) {
-        console.log('Step3 - 로드된 데이터:', data);
-        console.log('Step3 - hospital 데이터:', data.hospital);
-        console.log('Step3 - doctors 데이터:', data.doctors);
+        log.info('Step3 - 로드된 데이터:', data);
+        log.info('Step3 - hospital 데이터:', data.hospital);
+        log.info('Step3 - doctors 데이터:', data.doctors);
         
         setExistingData(data);
         
         // 썸네일 이미지 상태 초기화
         if (data.hospital?.thumbnail_url) {
-          console.log('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
+          log.info('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
           setClinicThumbnail(data.hospital.thumbnail_url);
           setOriginalThumbnailUrl(data.hospital.thumbnail_url);
         } else {
-          console.log('썸네일 이미지가 없습니다');
+          log.info('썸네일 이미지가 없습니다');
           setClinicThumbnail(null);
           setOriginalThumbnailUrl(null);
         }
@@ -154,13 +154,13 @@ const Step4ClinicImagesDoctorsInfo = ({
           }));
           
           setDoctors(existingDoctors);
-          console.log('기존 의사 데이터 로드 완료:', existingDoctors);
+          log.info('기존 의사 데이터 로드 완료:', existingDoctors);
         }
         
         populateFormWithExistingData(data);
-        console.log(' 편집 모드 - 기존 데이터 로딩 완료');
+        log.info(' 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        console.log(' 편집 모드 - 기존 데이터가 없습니다');
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
@@ -181,14 +181,14 @@ const Step4ClinicImagesDoctorsInfo = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    console.log('폼에 기존 데이터 적용 시작');
+    log.info('폼에 기존 데이터 적용 시작');
 
     try {
       const formData = mapExistingDataToFormValues(existingData);
-      console.log('변환된 폼 데이터:', formData);
+      log.info('변환된 폼 데이터:', formData);
 
       setDoctors(formData.doctors);
-      console.log(
+      log.info(
         '의사 정보 설정 완료:',
         formData.doctors.length,
         '명',
@@ -214,7 +214,7 @@ const Step4ClinicImagesDoctorsInfo = ({
 
   // const handlePreview = async () => {
   //   try {
-  //     console.log('handlePreview 3');
+  //     log.info('handlePreview 3');
 
   //     const validationResult = validateFormDataAndUpdateUI(true);
   //     if (!validationResult.isValid) {
@@ -248,7 +248,7 @@ const Step4ClinicImagesDoctorsInfo = ({
 //     setIsSubmitting(true);
 
 //     try {
-//       console.log('최종 제출 시작...');
+//       log.info('최종 제출 시작...');
 
 //       preparedFormData.append('is_edit_mode', isEditMode ? 'true' : 'false');
 //       if (isEditMode && existingData) {
@@ -320,23 +320,23 @@ const Step4ClinicImagesDoctorsInfo = ({
 //         preparedFormData,
 //       );
 
-//       console.log(
+//       log.info(
 //         '===== FormData 크기 분석 (개선된 구조) =====',
 //       );
-//       console.log(
+//       log.info(
 //         `전체 크기 (Server Actions로 전송): ${sizeInfo.totalSizeMB} MB (${sizeInfo.totalSizeKB} KB)`,
 //       );
-//       console.log(
+//       log.info(
 //         `텍스트 데이터 크기: ${sizeInfo.textDataSizeKB} KB (이미지 URL 포함)`,
 //       );
-//       console.log('');
-//       console.log(
+//       log.info('');
+//       log.info(
 //         '이미지 파일은 이미 Supabase Storage에 업로드 완료!',
 //       );
-//       console.log(
+//       log.info(
 //         'Server Actions에는 이미지 URL만 전송되므로 크기 제한 해결!',
 //       );
-//       console.log('상세 내역:');
+//       log.info('상세 내역:');
 
 //       const groupedByCategory = sizeInfo.details.reduce(
 //         (acc: any, item) => {
@@ -350,9 +350,9 @@ const Step4ClinicImagesDoctorsInfo = ({
 
 //       Object.entries(groupedByCategory).forEach(
 //         ([category, items]: [string, any]) => {
-//           console.log(`\n  ${category}:`);
+//           log.info(`\n  ${category}:`);
 //           items.forEach((item: any) => {
-//             console.log(
+//             log.info(
 //               `    ${item.key}: ${item.sizeKB} KB - "${item.value}"`,
 //             );
 //           });
@@ -381,22 +381,22 @@ const Step4ClinicImagesDoctorsInfo = ({
 //         setPreparedFormData(null);
 //         return;
 //       } else {
-//         console.log(
+//         log.info(
 //           `Server Actions 크기 제한 통과: ${sizeInfo.totalSizeMB} MB < ${limitMB} MB`,
 //         );
-//         console.log(
+//         log.info(
 //           `모든 데이터가 텍스트: ${sizeInfo.textDataSizeKB} KB`,
 //         );
 //       }
 
-//       console.log('FormData 내용 확인:');
+//       log.info('FormData 내용 확인:');
 
 //       for (const [
 //         key,
 //         value,
 //       ] of preparedFormData.entries()) {
 //         if (value instanceof File) {
-//           console.log(
+//           log.info(
 //             `  - ${key}: [File] ${value.name} (${(value.size / 1024).toFixed(2)} KB)`,
 //           );
 //         } else {
@@ -404,7 +404,7 @@ const Step4ClinicImagesDoctorsInfo = ({
 //             value.toString().length > 50
 //               ? value.toString().substring(0, 50) + '...'
 //               : value.toString();
-//           console.log(`  - ${key}: "${preview}"`);
+//           log.info(`  - ${key}: "${preview}"`);
 //         }
 //       }
 
@@ -413,7 +413,7 @@ const Step4ClinicImagesDoctorsInfo = ({
 //         preparedFormData,
 //       );
 
-//       console.log('uploadActions 응답:', result);
+//       log.info('uploadActions 응답:', result);
 //       setFormState(result);
 //       setShowFinalResult(true);
 
@@ -452,18 +452,18 @@ const Step4ClinicImagesDoctorsInfo = ({
     return <LoadingSpinner backdrop />;
 
   const handleNext = async () => {
-    console.log('handleNext Step3');
+    log.info('handleNext Step3');
     setIsSubmitting(true);
     const result = await handleSave();
-    console.log('handleNext Step3 handlSave after result', result);
+    log.info('handleNext Step3 handlSave after result', result);
     document.body.style.overflow = '';
     setIsSubmitting(false);
     if (result?.status === 'success') {
-        console.log('handleNext Step3 handlSave success');
+        log.info('handleNext Step3 handlSave success');
         
         onNext();
     } else {
-        console.log('handleNext Step3 handlSave what? :', result);
+        log.info('handleNext Step3 handlSave what? :', result);
     }
   };
  
@@ -505,19 +505,19 @@ const Step4ClinicImagesDoctorsInfo = ({
   };
 
   const handleSave = async () => {
-    console.log('handleSave Step3');
+    log.info('handleSave Step3');
     
     try {
       // 기존 병원 썸네일 이미지 (원본 데이터에서 가져옴)
       const existingClinicThumbnailUrl = originalThumbnailUrl;
-      console.log('기존 병원 썸네일 이미지 (원본):', existingClinicThumbnailUrl);
+      log.info('기존 병원 썸네일 이미지 (원본):', existingClinicThumbnailUrl);
 
       // 새로 업로드된 썸네일 이미지 URL
       let newThumbnailImageUrl: string | null = null;
       
       // 1. 썸네일 이미지 업로드
       if (clinicThumbnail && clinicThumbnail instanceof File) {
-        console.log('썸네일 이미지 업로드 시작:', clinicThumbnail.name);
+        log.info('썸네일 이미지 업로드 시작:', clinicThumbnail.name);
         
         try {
           // 고유한 파일명 생성
@@ -542,7 +542,7 @@ const Step4ClinicImagesDoctorsInfo = ({
             .getPublicUrl(filePath);
 
           newThumbnailImageUrl = urlData.publicUrl;
-          console.log('썸네일 이미지 업로드 성공:', fileName);
+          log.info('썸네일 이미지 업로드 성공:', fileName);
         } catch (error) {
           console.error('썸네일 이미지 업로드 실패:', error);
           throw error;
@@ -556,16 +556,16 @@ const Step4ClinicImagesDoctorsInfo = ({
       const curThumbnail = newThumbnailImageUrl || 
         (clinicThumbnail && typeof clinicThumbnail === 'string' ? clinicThumbnail : null);
       
-      console.log('썸네일 이미지 상태 비교:');
-      console.log('- exist (기존):', existThumbnail);
-      console.log('- cur (현재):', curThumbnail);
-      console.log('- 변경사항 있음:', existThumbnail !== curThumbnail);
+      log.info('썸네일 이미지 상태 비교:');
+      log.info('- exist (기존):', existThumbnail);
+      log.info('- cur (현재):', curThumbnail);
+      log.info('- 변경사항 있음:', existThumbnail !== curThumbnail);
       
       // 3. 변경사항이 있으면 기존 이미지 삭제 예약
       let shouldDeleteExistingThumbnail = false;
       if (existThumbnail && existThumbnail !== curThumbnail && !existThumbnail.includes('/default/')) {
         shouldDeleteExistingThumbnail = true;
-        console.log('기존 썸네일 이미지 삭제 예약:', existThumbnail);
+        log.info('기존 썸네일 이미지 삭제 예약:', existThumbnail);
       }
       
       // 4. 최종 썸네일 URL 결정
@@ -573,18 +573,18 @@ const Step4ClinicImagesDoctorsInfo = ({
 
       // 기존 이미지 URL 배열
       const existingClinicUrls = existingData?.hospital?.imageurls || [];
-      console.log('기존 이미지 URLs:', existingClinicUrls);
+      log.info('기존 이미지 URLs:', existingClinicUrls);
       
       // 새로 업로드할 이미지들 (File 객체만 필터링)
       const newClinicImages = clinicImages.filter(img => img instanceof File);
-      console.log('새로 업로드할 이미지 개수:', newClinicImages.length);
+      log.info('새로 업로드할 이미지 개수:', newClinicImages.length);
       
       // 새로 업로드된 이미지 URL 배열
       const newClinicImageUrls: string[] = [];
       
       // 4. 새 이미지 업로드
       if (newClinicImages.length > 0) {
-        console.log('병원 이미지 업로드 시작:', newClinicImages.length, '개');
+        log.info('병원 이미지 업로드 시작:', newClinicImages.length, '개');
         
         for (const file of newClinicImages) {
           try {
@@ -611,7 +611,7 @@ const Step4ClinicImagesDoctorsInfo = ({
               .getPublicUrl(filePath);
 
             newClinicImageUrls.push(urlData.publicUrl);
-            console.log('병원 이미지 업로드 성공:', fileName);
+            log.info('병원 이미지 업로드 성공:', fileName);
           } catch (error) {
             console.error('병원 이미지 업로드 실패:', error);
             throw error;
@@ -624,17 +624,17 @@ const Step4ClinicImagesDoctorsInfo = ({
       // 최종 이미지 URL 배열 (기존 URL + 새로 업로드된 URL)
       const finalClinicImageUrls = [...currentDisplayedUrls, ...newClinicImageUrls];
       
-      console.log('현재 표시된 이미지 URLs:', currentDisplayedUrls);
-      console.log('새로 업로드된 이미지 URLs:', newClinicImageUrls);
-      console.log('최종 이미지 URLs:', finalClinicImageUrls);
+      log.info('현재 표시된 이미지 URLs:', currentDisplayedUrls);
+      log.info('새로 업로드된 이미지 URLs:', newClinicImageUrls);
+      log.info('최종 이미지 URLs:', finalClinicImageUrls);
       
       const toDelete = existingClinicUrls.filter((url: string) => !finalClinicImageUrls.includes(url));
       
-      console.log('삭제할 이미지 URLs:', toDelete);
+      log.info('삭제할 이미지 URLs:', toDelete);
       
       // 6. 스토리지에서 삭제할 이미지들 제거
       if (toDelete.length > 0) {
-        console.log('스토리지에서 이미지 삭제 시작:', toDelete.length, '개');
+        log.info('스토리지에서 이미지 삭제 시작:', toDelete.length, '개');
         
         for (const url of toDelete) {
           try {
@@ -650,7 +650,7 @@ const Step4ClinicImagesDoctorsInfo = ({
             if (error) {
               console.error('스토리지 이미지 삭제 실패:', error);
             } else {
-              console.log('스토리지 이미지 삭제 성공:', fileName);
+              log.info('스토리지 이미지 삭제 성공:', fileName);
             }
           } catch (error) {
             console.error('스토리지 이미지 삭제 중 오류:', error);
@@ -664,7 +664,7 @@ const Step4ClinicImagesDoctorsInfo = ({
         doctor.imageFile && doctor.imageFile instanceof File
       );
 
-      console.log('의사 이미지 업로드 시작:', doctorsWithImages.length, '개');
+      log.info('의사 이미지 업로드 시작:', doctorsWithImages.length, '개');
       
       for (const doctor of doctorsWithImages) {
         try {
@@ -691,7 +691,7 @@ const Step4ClinicImagesDoctorsInfo = ({
             .getPublicUrl(filePath);
 
           doctorImageUrls.push(urlData.publicUrl);
-          console.log('의사 이미지 업로드 성공:', fileName);
+          log.info('의사 이미지 업로드 성공:', fileName);
         } catch (error) {
           console.error('의사 이미지 업로드 실패:', error);
           throw error;
@@ -716,7 +716,7 @@ const Step4ClinicImagesDoctorsInfo = ({
       // 삭제된 썸네일 이미지 URL 전달
       // if (deletedImageUrlThumbnail) { // 이 부분은 사용하지 않음
       //   formData.append('deleted_thumbnail_url', deletedImageUrlThumbnail);
-      //   console.log('삭제된 썸네일 이미지 URL 전달:', deletedImageUrlThumbnail);
+      //   log.info('삭제된 썸네일 이미지 URL 전달:', deletedImageUrlThumbnail);
       // }
 
       // 기존 이미지 URL과 새 이미지 URL 모두 전달
@@ -727,17 +727,17 @@ const Step4ClinicImagesDoctorsInfo = ({
       // 삭제된 이미지 URL 전달
       if (deletedImageUrls.length > 0) {
         formData.append('deleted_clinic_urls', JSON.stringify(deletedImageUrls));
-        console.log('삭제된 이미지 URLs 전달:', deletedImageUrls);
+        log.info('삭제된 이미지 URLs 전달:', deletedImageUrls);
       }
 
       // 9. 의사 데이터 처리 (기존 로직 유지)
       if (doctors.length > 0) {
-        console.log('=== 의사 데이터 준비 시작 ===');
-        console.log('doctors 배열:', doctors);
-        console.log('doctors 배열 길이:', doctors.length);
+        log.info('=== 의사 데이터 준비 시작 ===');
+        log.info('doctors 배열:', doctors);
+        log.info('doctors 배열 길이:', doctors.length);
         
         const doctorsData = doctors.map((doctor, index) => {
-          console.log(`의사 ${index + 1} 처리:`, doctor);
+          log.info(`의사 ${index + 1} 처리:`, doctor);
           
           let imageUrl = '';
           
@@ -762,27 +762,27 @@ const Step4ClinicImagesDoctorsInfo = ({
             defaultImageType: doctor.defaultImageType,
           };
           
-          console.log(`의사 ${index + 1} 최종 데이터:`, doctorData);
+          log.info(`의사 ${index + 1} 최종 데이터:`, doctorData);
           return doctorData;
         });
 
-        console.log('=== 최종 의사 데이터 ===');
-        console.log('doctorsData:', doctorsData);
-        console.log('doctorsData JSON:', JSON.stringify(doctorsData));
+        log.info('=== 최종 의사 데이터 ===');
+        log.info('doctorsData:', doctorsData);
+        log.info('doctorsData JSON:', JSON.stringify(doctorsData));
         
         formData.append('doctors', JSON.stringify(doctorsData));
-        console.log('FormData에 의사 데이터 추가 완료');
+        log.info('FormData에 의사 데이터 추가 완료');
       } else {
-        console.log('의사 데이터가 없습니다.');
+        log.info('의사 데이터가 없습니다.');
       }
 
-      console.log('Step3 uploadActionStep3 before formData:', formData);
+      log.info('Step3 uploadActionStep3 before formData:', formData);
       
-      console.log('Step3 API 호출 시작');
+      log.info('Step3 API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step4(formData);
-      console.log('Step3 API 응답:', result);
+      log.info('Step3 API 응답:', result);
       
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
@@ -797,7 +797,7 @@ const Step4ClinicImagesDoctorsInfo = ({
         return { status: 'error' };
       }
 
-      console.log('Step3 데이터 저장 성공');
+      log.info('Step3 데이터 저장 성공');
       return { status: 'success' };
       
     } catch (error) {
@@ -836,7 +836,7 @@ const Step4ClinicImagesDoctorsInfo = ({
             name='clinic_images'
             initialImage={clinicThumbnail && typeof clinicThumbnail === 'string' ? clinicThumbnail : null}
             onCurrentImageChange={(currentUrl) => {
-              console.log('현재 썸네일 이미지:', currentUrl);
+              log.info('현재 썸네일 이미지:', currentUrl);
             }}
           />
         

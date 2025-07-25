@@ -35,7 +35,7 @@ const Step6LanguagesFeedback = ({
   onComplete,
   onStepChange,
 }: Step6LanguagesFeedbackProps) => {
-    console.log(' Step6LanguagesFeedback id_uuid_hospital', id_uuid_hospital);
+    log.info(' Step6LanguagesFeedback id_uuid_hospital', id_uuid_hospital);
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -80,7 +80,7 @@ const Step6LanguagesFeedback = ({
 
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
-    console.log(
+    log.info(
       `Step5 - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
@@ -91,17 +91,17 @@ const Step6LanguagesFeedback = ({
   // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
   useEffect(() => {
     if (existingData) {
-      console.log('Step5 - existingData 변경 감지:', existingData);
+      log.info('Step5 - existingData 변경 감지:', existingData);
       
       // 피드백 정보 설정
       if (existingData.feedback && !feedback) {
         setFeedback(existingData.feedback);
-        console.log('Step5 - 피드백 정보 설정 완료:', existingData.feedback);
+        log.info('Step5 - 피드백 정보 설정 완료:', existingData.feedback);
       }
 
       // 가능 언어 정보 설정
       if (existingData.hospitalDetail?.available_languages && selectedLanguages.length === 0) {
-        console.log('Step5 - 언어 정보 원본:', existingData.hospitalDetail.available_languages);
+        log.info('Step5 - 언어 정보 원본:', existingData.hospitalDetail.available_languages);
         
         let languages: string[] = [];
         
@@ -109,7 +109,7 @@ const Step6LanguagesFeedback = ({
         if (typeof existingData.hospitalDetail.available_languages === 'string') {
           try {
             languages = JSON.parse(existingData.hospitalDetail.available_languages);
-            console.log('Step5 - JSON 파싱된 언어 정보:', languages);
+            log.info('Step5 - JSON 파싱된 언어 정보:', languages);
           } catch (error) {
             console.error('Step5 - JSON 파싱 실패:', error);
             // 파싱 실패 시 원본 문자열을 배열로 처리
@@ -119,11 +119,11 @@ const Step6LanguagesFeedback = ({
           // 이미 배열인 경우
           languages = existingData.hospitalDetail.available_languages;
         } else {
-          console.log('Step5 - 지원되지 않는 언어 정보 타입:', typeof existingData.hospitalDetail.available_languages);
+          log.info('Step5 - 지원되지 않는 언어 정보 타입:', typeof existingData.hospitalDetail.available_languages);
         }
         
         setSelectedLanguages(languages);
-        console.log('Step5 - 가능 언어 정보 설정 완료:', languages);
+        log.info('Step5 - 가능 언어 정보 설정 완료:', languages);
       }
     }
   }, [existingData, feedback, selectedLanguages.length]);
@@ -132,21 +132,21 @@ const Step6LanguagesFeedback = ({
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      console.log('Step5 - 편집 모드 - 기존 데이터 로딩 시작');
+      log.info('Step5 - 편집 모드 - 기존 데이터 로딩 시작');
 
       // 마지막 단계로 모든 데이터를 다 불러온다 
       // preview 화면에서 보여주기 위해서이다 
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
       
-      console.log('Step5 - 로딩된 데이터:', data);
+      log.info('Step5 - 로딩된 데이터:', data);
       
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
-        console.log('Step5 - 편집 모드 - 기존 데이터 로딩 완료');
+        log.info('Step5 - 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        console.log('Step5 - 편집 모드 - 기존 데이터가 없습니다');
+        log.info('Step5 - 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
@@ -167,8 +167,8 @@ const Step6LanguagesFeedback = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    console.log('Step5 - 폼에 기존 데이터 적용 시작');
-    console.log('Step5 - 받은 데이터:', {
+    log.info('Step5 - 폼에 기존 데이터 적용 시작');
+    log.info('Step5 - 받은 데이터:', {
       hospitalDetail: existingData.hospitalDetail,
       feedback: existingData.feedback,
       availableLanguages: existingData.hospitalDetail?.available_languages
@@ -177,17 +177,17 @@ const Step6LanguagesFeedback = ({
     try {
       // 1. 데이터를 폼 형식으로 변환
       const formData = mapExistingDataToFormValues(existingData);
-      console.log('Step5 - 변환된 폼 데이터:', formData);
+      log.info('Step5 - 변환된 폼 데이터:', formData);
 
       // 피드백 정보 설정
       if (existingData.feedback) {
         setFeedback(existingData.feedback);
-        console.log('Step5 - 피드백 정보 설정 완료:', existingData.feedback);
+        log.info('Step5 - 피드백 정보 설정 완료:', existingData.feedback);
       } else {
-        console.log('Step5 - 피드백 정보가 없습니다');
+        log.info('Step5 - 피드백 정보가 없습니다');
       }
 
-      console.log('Step5 - 폼 상태 업데이트 완료:', {
+      log.info('Step5 - 폼 상태 업데이트 완료:', {
         feedback: existingData.feedback,
         selectedLanguages: existingData.hospitalDetail?.available_languages
       });
@@ -211,13 +211,13 @@ const Step6LanguagesFeedback = ({
   };
 
   const handlePreview = async () => {
-    console.log('Preview 버튼 클릭 - 모달 열기');
+    log.info('Preview 버튼 클릭 - 모달 열기');
     setShowPreviewModal(true);
   };
 
  
   const handleSave = async () => {
-    console.log('Step5 handleSave 시작');
+    log.info('Step5 handleSave 시작');
     
     try {
       // FormData 구성
@@ -234,7 +234,7 @@ const Step6LanguagesFeedback = ({
       // 가능 언어
       formData.append('available_languages', JSON.stringify(selectedLanguages));
       
-      console.log('Step5 - 전송할 데이터:', {
+      log.info('Step5 - 전송할 데이터:', {
         id_uuid_hospital,
         isEditMode,
         feedback: feedback.trim(),
@@ -242,11 +242,11 @@ const Step6LanguagesFeedback = ({
         currentUserUid
       });
 
-      console.log('Step5 API 호출 시작');
+      log.info('Step5 API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step6(formData);
-      console.log('Step5 API 응답:', result);
+      log.info('Step5 API 응답:', result);
 
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
@@ -265,7 +265,7 @@ const Step6LanguagesFeedback = ({
         };
       } else {
         // 성공 시 처리
-        console.log('Step5 데이터 저장 성공');
+        log.info('Step5 데이터 저장 성공');
         setFormState({
           message: result.message || '언어 설정과 피드백이 성공적으로 저장되었습니다.',
           status: 'success',
@@ -322,7 +322,7 @@ const Step6LanguagesFeedback = ({
       // 이미 배열인 경우
       return languagesData;
     } else {
-      console.log('Step5 - 지원되지 않는 언어 정보 타입:', typeof languagesData);
+      log.info('Step5 - 지원되지 않는 언어 정보 타입:', typeof languagesData);
       return [];
     }
   };
@@ -347,7 +347,7 @@ const Step6LanguagesFeedback = ({
         { /* 가능언어 선택  */ }
         <AvailableLanguageSection
           onLanguagesChange={(selectedLanguages: string[]) => {
-            console.log('선택된 언어:', selectedLanguages);
+            log.info('선택된 언어:', selectedLanguages);
             setSelectedLanguages(selectedLanguages);
             // 언어 선택 변경 시 변경사항 감지
             setHasChanges(true);

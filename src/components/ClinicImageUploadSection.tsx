@@ -122,7 +122,7 @@ const ClinicImageUploadSection = ({
   // 초기 이미지 설정
   useEffect(() => {
     if (initialImages.length > 0 && preview.length === 0) {
-      console.log(
+      log.info(
         'ClinicImageUploadSection 초기 이미지 설정:',
         initialImages,
       );
@@ -236,7 +236,7 @@ const ClinicImageUploadSection = ({
     // 기존 이미지가 삭제되는 경우 URL 추적
     if (isExistingImage[i] && preview[i]) {
       setDeletedImageUrls(prev => [...prev, preview[i] as string]);
-      console.log('기존 이미지 삭제됨:', preview[i]);
+      log.info('기존 이미지 삭제됨:', preview[i]);
     }
 
     setPreview((prev) =>
@@ -268,7 +268,7 @@ const ClinicImageUploadSection = ({
       .filter((url): url is string => typeof url === 'string');
     if (existingImageUrls.length > 0) {
       setDeletedImageUrls(prev => [...prev, ...existingImageUrls]);
-      console.log('전체 삭제 - 기존 이미지들:', existingImageUrls);
+      log.info('전체 삭제 - 기존 이미지들:', existingImageUrls);
     }
 
     setPreview([]);

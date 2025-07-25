@@ -206,9 +206,9 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         ...hospitalDetails,
       };
 
-// console.log('combinedData START ==================================');
-//       console.log('combinedData', combinedData);
-//       console.log('combinedData END ==================================');
+// log.info('combinedData START ==================================');
+//       log.info('combinedData', combinedData);
+//       log.info('combinedData END ==================================');
 
       setHospitalData(combinedData);
     } catch (err) {
@@ -267,19 +267,19 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
 
   const handleMoveStep = (step: number) => {
     // PageHeader의 handleStepClick과 동일한 로직
-    console.log(`handleMoveStep  step:${step}, currentStep:${currentStep}`);
+    log.info(`handleMoveStep  step:${step}, currentStep:${currentStep}`);
     if (step < currentStep) {
-      console.log('handleMoveStep step:', step);
+      log.info('handleMoveStep step:', step);
       if (onStepChange) {
         onStepChange(step);
         onClose(); // 모달을 닫고 해당 스텝으로 이동
       } else {
-        console.log('onStepChange가 전달되지 않았습니다. Step으로 이동할 수 없습니다.');
+        log.info('onStepChange가 전달되지 않았습니다. Step으로 이동할 수 없습니다.');
         // onStepChange가 없을 때는 모달만 닫기
         onClose();
       }
     } else {
-      console.log('현재 단계이거나 진행되지 않은 단계입니다.');
+      log.info('현재 단계이거나 진행되지 않은 단계입니다.');
     }
   };
 
@@ -647,19 +647,19 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   <h4 className="font-medium mb-3 text-gray-800">운영 시간</h4>
                   <div className="space-y-1">
                     {(() => {
-                      console.log('=== 운영시간 정렬 디버깅 START ===');
-                      console.log('원본 business_hours:', hospitalData.business_hours);
+                      log.info('=== 운영시간 정렬 디버깅 START ===');
+                      log.info('원본 business_hours:', hospitalData.business_hours);
                       
                       const sorted = hospitalData.business_hours
                         ?.sort((a, b) => {
                           const orderA = getDayOrder(a.day_of_week);
                           const orderB = getDayOrder(b.day_of_week);
-                          console.log(`${a.day_of_week} (${orderA}) vs ${b.day_of_week} (${orderB})`);
+                          log.info(`${a.day_of_week} (${orderA}) vs ${b.day_of_week} (${orderB})`);
                           return orderA - orderB;
                         });
                       
-                      console.log('정렬된 business_hours:', sorted);
-                      console.log('=== 운영시간 정렬 디버깅 END ===');
+                      log.info('정렬된 business_hours:', sorted);
+                      log.info('=== 운영시간 정렬 디버깅 END ===');
                       
                       return sorted?.map((hour, index) => (
                         <div key={index} className="flex items-center p-2 bg-white rounded border">
@@ -853,7 +853,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                       // treatmentDetails의 code를 사용하여 selectedKeys 생성
                       if (!hospitalData.treatmentDetails || !categories) return [];
                       const codes = hospitalData.treatmentDetails.map(detail => detail.code);
-                      console.log('Treatment codes:', codes);
+                      log.info('Treatment codes:', codes);
                       return [...new Set(codes)].filter(code => !!code);
                     })()}
                     productOptions={(() => {

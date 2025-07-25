@@ -7,17 +7,17 @@ const url = '/api/treatment-categories';  // 상대 경로 사용
 
 function fetchCategories() {
   const fetchStartTime = Date.now();
-  console.log(" fetchCategories 시작:", new Date().toISOString());
-  console.log(" API URL:", url);
-  console.log(" NEXT_PUBLIC_API_ROUTE:", process.env.NEXT_PUBLIC_API_ROUTE);
+  log.info(" fetchCategories 시작:", new Date().toISOString());
+  log.info(" API URL:", url);
+  log.info(" NEXT_PUBLIC_API_ROUTE:", process.env.NEXT_PUBLIC_API_ROUTE);
   
   return fetchUtils<CategoryNode[]>({ url })
     .then(data => {
       const fetchEndTime = Date.now();
       const fetchTime = fetchEndTime - fetchStartTime;
-      console.log(" fetchCategories 성공:", new Date().toISOString());
-      console.log(` Categories fetch 시간: ${fetchTime}ms (${(fetchTime / 1000).toFixed(2)}초)`);
-      console.log(" categories 개수:", data?.length || 0);
+      log.info(" fetchCategories 성공:", new Date().toISOString());
+      log.info(` Categories fetch 시간: ${fetchTime}ms (${(fetchTime / 1000).toFixed(2)}초)`);
+      log.info(" categories 개수:", data?.length || 0);
       return data;
     })
     .catch(error => {
@@ -42,7 +42,7 @@ export function useTreatmentCategories() {
     refetchOnWindowFocus: false,
   });
 
-  console.log(" useCategories 상태 변화:", {
+  log.info(" useCategories 상태 변화:", {
     isLoading: result.isLoading,
     isError: result.isError,
     error: result.error?.message || null,

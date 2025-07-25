@@ -19,7 +19,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('=== uploadStep3 START ===');
+  log.info('=== uploadStep3 START ===');
 
   try {
     const formData = await request.formData();
@@ -57,42 +57,42 @@ export async function POST(request: NextRequest) {
     
     // 의사 정보 파싱
     const doctorsRaw = formData.get("doctors") as string;
-    console.log('=== 의사 데이터 원본 ===');
-    console.log('doctorsRaw:', doctorsRaw);
-    console.log('doctorsRaw type:', typeof doctorsRaw);
-    console.log('doctorsRaw length:', doctorsRaw?.length || 0);
+    log.info('=== 의사 데이터 원본 ===');
+    log.info('doctorsRaw:', doctorsRaw);
+    log.info('doctorsRaw type:', typeof doctorsRaw);
+    log.info('doctorsRaw length:', doctorsRaw?.length || 0);
     
     const doctors = doctorsRaw ? JSON.parse(doctorsRaw) : [];
-    console.log('=== 파싱된 의사 데이터 ===');
-    console.log('doctors:', doctors);
-    console.log('doctors length:', doctors.length);
-    console.log('doctors type:', Array.isArray(doctors) ? 'array' : typeof doctors);
+    log.info('=== 파싱된 의사 데이터 ===');
+    log.info('doctors:', doctors);
+    log.info('doctors length:', doctors.length);
+    log.info('doctors type:', Array.isArray(doctors) ? 'array' : typeof doctors);
 
-    console.log('uploadStep3 디버그 정보:');
-    console.log('- isEditMode:', isEditMode);
-    console.log('- id_uuid_hospital:', id_uuid_hospital);
-    console.log('- existingThumbnailUrl:', existingThumbnailUrl);
-    console.log('- newThumbnailUrl:', newThumbnailUrl);
-    console.log('- finalThumbnailUrl:', finalThumbnailUrl);
-    console.log('- deletedThumbnailUrl:', deletedThumbnailUrl);
-    console.log('- existingClinicUrls:', existingClinicUrls);
-    console.log('- newClinicImageUrls:', newClinicImageUrls);
-    console.log('- finalClinicImageUrls:', finalClinicImageUrls);
-    console.log('- deletedClinicUrls:', deletedClinicUrls);
-    console.log('- doctors count:', doctors.length);
+    log.info('uploadStep3 디버그 정보:');
+    log.info('- isEditMode:', isEditMode);
+    log.info('- id_uuid_hospital:', id_uuid_hospital);
+    log.info('- existingThumbnailUrl:', existingThumbnailUrl);
+    log.info('- newThumbnailUrl:', newThumbnailUrl);
+    log.info('- finalThumbnailUrl:', finalThumbnailUrl);
+    log.info('- deletedThumbnailUrl:', deletedThumbnailUrl);
+    log.info('- existingClinicUrls:', existingClinicUrls);
+    log.info('- newClinicImageUrls:', newClinicImageUrls);
+    log.info('- finalClinicImageUrls:', finalClinicImageUrls);
+    log.info('- deletedClinicUrls:', deletedClinicUrls);
+    log.info('- doctors count:', doctors.length);
 
     // 1. 썸네일 이미지 처리 (exist vs cur 비교)
     const existThumbnail = existingThumbnailUrl;
     const curThumbnail = finalThumbnailUrl;
     
-    console.log('썸네일 이미지 비교:');
-    console.log('- exist (기존):', existThumbnail);
-    console.log('- cur (현재):', curThumbnail);
-    console.log('- 변경사항 있음:', existThumbnail !== curThumbnail);
+    log.info('썸네일 이미지 비교:');
+    log.info('- exist (기존):', existThumbnail);
+    log.info('- cur (현재):', curThumbnail);
+    log.info('- 변경사항 있음:', existThumbnail !== curThumbnail);
     
     // 변경사항이 있으면 기존 썸네일 이미지 삭제
     if (existThumbnail && existThumbnail !== curThumbnail && !existThumbnail.includes('/default/')) {
-      console.log('기존 썸네일 이미지 삭제 시작:', existThumbnail);
+      log.info('기존 썸네일 이미지 삭제 시작:', existThumbnail);
       
       try {
         // Storage에서 파일 경로 추출
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         const fileName = urlParts[urlParts.length - 1];
         const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
         
-        console.log(`썸네일 이미지 파일 삭제: ${filePath}`);
+        log.info(`썸네일 이미지 파일 삭제: ${filePath}`);
         
         const { error: storageError } = await supabase.storage
           .from(STORAGE_IMAGES)
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         if (storageError) {
           console.error('썸네일 이미지 파일 삭제 실패:', storageError);
         } else {
-          console.log(`썸네일 이미지 파일 삭제 성공: ${filePath}`);
+          log.info(`썸네일 이미지 파일 삭제 성공: ${filePath}`);
         }
       } catch (error) {
         console.error('썸네일 이미지 파일 삭제 중 오류:', error);
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 클라이언트에서 명시적으로 삭제된 썸네일 이미지 처리
     if (deletedThumbnailUrl && deletedThumbnailUrl !== existThumbnail) {
-      console.log('- 추가로 삭제할 썸네일 이미지 URL:', deletedThumbnailUrl);
+      log.info('- 추가로 삭제할 썸네일 이미지 URL:', deletedThumbnailUrl);
       
       try {
         // Storage에서 파일 경로 추출
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         const fileName = urlParts[urlParts.length - 1];
         const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
         
-        console.log(`- 추가 썸네일 이미지 파일 제거: ${filePath}`);
+        log.info(`- 추가 썸네일 이미지 파일 제거: ${filePath}`);
         
         const { error: storageError } = await supabase.storage
           .from(STORAGE_IMAGES)
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         if (storageError) {
           console.error('추가 썸네일 이미지 파일 제거 실패:', storageError);
         } else {
-          console.log(`- 추가 썸네일 이미지 파일 제거 성공: ${filePath}`);
+          log.info(`- 추가 썸네일 이미지 파일 제거 성공: ${filePath}`);
         }
       } catch (error) {
         console.error('추가 썸네일 이미지 파일 제거 중 오류:', error);
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // 3. 클라이언트에서 명시적으로 삭제된 병원 이미지 파일들 처리
     if (deletedClinicUrls.length > 0) {
-      console.log('- 클라이언트에서 삭제된 병원 이미지 URL들:', deletedClinicUrls);
+      log.info('- 클라이언트에서 삭제된 병원 이미지 URL들:', deletedClinicUrls);
       
       for (const deletedUrl of deletedClinicUrls) {
         try {
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
           const fileName = urlParts[urlParts.length - 1];
           const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
           
-          console.log(`- 삭제된 병원 이미지 파일 제거: ${filePath}`);
+          log.info(`- 삭제된 병원 이미지 파일 제거: ${filePath}`);
           
           const { error: storageError } = await supabase.storage
             .from(STORAGE_IMAGES)
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
           if (storageError) {
             console.error('삭제된 병원 이미지 파일 제거 실패:', storageError);
           } else {
-            console.log(`- 삭제된 병원 이미지 파일 제거 성공: ${filePath}`);
+            log.info(`- 삭제된 병원 이미지 파일 제거 성공: ${filePath}`);
           }
         } catch (error) {
           console.error('삭제된 병원 이미지 파일 제거 중 오류:', error);
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
       );
       
       if (additionalDeletedImageUrls.length > 0) {
-        console.log('- 추가로 삭제할 병원 이미지 URL들:', additionalDeletedImageUrls);
+        log.info('- 추가로 삭제할 병원 이미지 URL들:', additionalDeletedImageUrls);
         
         for (const deletedUrl of additionalDeletedImageUrls) {
           try {
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
             const fileName = urlParts[urlParts.length - 1];
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
             
-            console.log(`- 추가 병원 이미지 파일 삭제: ${filePath}`);
+            log.info(`- 추가 병원 이미지 파일 삭제: ${filePath}`);
             
             const { error: storageError } = await supabase.storage
               .from(STORAGE_IMAGES)
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
             if (storageError) {
               console.error('추가 병원 이미지 파일 삭제 실패:', storageError);
             } else {
-              console.log(`- 추가 병원 이미지 파일 삭제 성공: ${filePath}`);
+              log.info(`- 추가 병원 이미지 파일 삭제 성공: ${filePath}`);
             }
           } catch (error) {
             console.error('추가 병원 이미지 파일 삭제 중 오류:', error);
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 병원 테이블 업데이트 (썸네일 이미지 URL과 최종 이미지 URL 배열)
-    console.log('병원 테이블 업데이트 시작:', {
+    log.info('병원 테이블 업데이트 시작:', {
       id_uuid_hospital,
       thumbnail_url: finalThumbnailUrl,
       imageurls: finalClinicImageUrls
@@ -228,13 +228,13 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('병원 테이블 업데이트 성공:', hospitalUpdateData);
+    log.info('병원 테이블 업데이트 성공:', hospitalUpdateData);
 
     // 각 의사 정보 처리
     for (let i = 0; i < doctors.length; i++) {
       const doctor = doctors[i];
       
-      console.log(`의사 ${i + 1} 처리:`, {
+      log.info(`의사 ${i + 1} 처리:`, {
         id_uuid: doctor.id_uuid,
         name: doctor.name,
         image_url: doctor.image_url,
@@ -253,8 +253,8 @@ export async function POST(request: NextRequest) {
 
       if (doctor.id_uuid) {
         // 기존 의사 정보 업데이트
-        console.log(`- 의사 정보 업데이트: ${doctor.name} (${doctor.id_uuid})`);
-        console.log(`  업데이트할 이미지 URL: ${doctorData.image_url}`);
+        log.info(`- 의사 정보 업데이트: ${doctor.name} (${doctor.id_uuid})`);
+        log.info(`  업데이트할 이미지 URL: ${doctorData.image_url}`);
 
         // 먼저 해당 의사가 존재하는지 확인
         const { data: existingDoctor, error: checkError } = await supabase
@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (checkError) {
-          console.log(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재하지 않음, 새로 추가`);
+          log.info(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재하지 않음, 새로 추가`);
           
           // 존재하지 않으면 새로 추가
           const { data: insertData, error: insertError } = await supabase
@@ -280,9 +280,9 @@ export async function POST(request: NextRequest) {
             }, { status: 500 });
           }
           
-          console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
+          log.info(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
         } else {
-          console.log(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재함, 업데이트 진행`);
+          log.info(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재함, 업데이트 진행`);
 
           // 기존 이미지 URL 확인
           const existingImageUrl = existingDoctor.image_url;
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
               const urlParts = existingImageUrl.split('/');
               const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
               
-              console.log(`- 의사 이전 이미지 파일 삭제: ${filePath}`);
+              log.info(`- 의사 이전 이미지 파일 삭제: ${filePath}`);
               
               const { error: storageError } = await supabase.storage
                 .from(STORAGE_IMAGES)
@@ -306,7 +306,7 @@ export async function POST(request: NextRequest) {
               if (storageError) {
                 console.error('의사 이전 이미지 파일 삭제 실패:', storageError);
               } else {
-                console.log(`- 의사 이전 이미지 파일 삭제 성공: ${filePath}`);
+                log.info(`- 의사 이전 이미지 파일 삭제 성공: ${filePath}`);
               }
             } catch (error) {
               console.error('의사 이전 이미지 파일 삭제 중 오류:', error);
@@ -328,11 +328,11 @@ export async function POST(request: NextRequest) {
             }, { status: 500 });
           }
           
-          console.log(`- 의사 정보 업데이트 성공: ${doctor.name}`, updateData);
+          log.info(`- 의사 정보 업데이트 성공: ${doctor.name}`, updateData);
         }
       } else {
         // 새 의사 정보 추가
-        console.log(`- 새 의사 정보 추가: ${doctor.name}`);
+        log.info(`- 새 의사 정보 추가: ${doctor.name}`);
         const { data: insertData, error: insertError } = await supabase
           .from(TABLE_DOCTOR)
           .insert([{ ...doctorData, id_uuid: uuidv4() }])
@@ -346,7 +346,7 @@ export async function POST(request: NextRequest) {
           }, { status: 500 });
         }
         
-        console.log(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
+        log.info(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
       }
     }
 
@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
       const deletedDoctorIds = existingDoctorIds.filter((id: string) => !currentDoctorIds.includes(id));
 
       for (const deletedId of deletedDoctorIds) {
-        console.log(`- 삭제된 의사 처리: ${deletedId}`);
+        log.info(`- 삭제된 의사 처리: ${deletedId}`);
 
         // 삭제할 의사의 이미지 URL 찾기
         const deletedDoctor = existingData.doctors.find((d: any) => d.id_uuid === deletedId);
@@ -367,7 +367,7 @@ export async function POST(request: NextRequest) {
             const urlParts = deletedDoctor.image_url.split('/');
             const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
             
-            console.log(`- 의사 이미지 파일 삭제: ${filePath}`);
+            log.info(`- 의사 이미지 파일 삭제: ${filePath}`);
             
             const { error: storageError } = await supabase.storage
               .from(STORAGE_IMAGES)
@@ -376,7 +376,7 @@ export async function POST(request: NextRequest) {
             if (storageError) {
               console.error('의사 이미지 파일 삭제 실패:', storageError);
             } else {
-              console.log(`- 의사 이미지 파일 삭제 성공: ${filePath}`);
+              log.info(`- 의사 이미지 파일 삭제 성공: ${filePath}`);
             }
           } catch (error) {
             console.error('의사 이미지 파일 삭제 중 오류:', error);
@@ -397,11 +397,11 @@ export async function POST(request: NextRequest) {
           }, { status: 500 });
         }
         
-        console.log(`- 의사 정보 삭제 성공: ${deletedId}`);
+        log.info(`- 의사 정보 삭제 성공: ${deletedId}`);
       }
     }
 
-    console.log('=== uploadStep3 성공 완료 ===');
+    log.info('=== uploadStep3 성공 완료 ===');
   
     return NextResponse.json({
       message: "썸네일 이미지, 병원 이미지 및 의사 정보가 성공적으로 저장되었습니다.",

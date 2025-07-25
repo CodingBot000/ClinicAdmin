@@ -44,7 +44,7 @@ const Step3BusinessHours = ({
   onPrev,
   onNext,
 }: Step3BusinessHoursProps) => {
-    console.log('Step3BusinessHours id_uuid_hospital', id_uuid_hospital);
+    log.info('Step3BusinessHours id_uuid_hospital', id_uuid_hospital);
 
   const [openingHours, setOpeningHours] = useState<
     OpeningHour[]
@@ -88,7 +88,7 @@ const Step3BusinessHours = ({
 
 //   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
-    console.log(
+    log.info(
       `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
@@ -97,32 +97,32 @@ const Step3BusinessHours = ({
   }, [isEditMode, currentUserUid]);
 
   useEffect(() => {
-    console.log('Step2 - initialBusinessHours 변경됨:', initialBusinessHours);
+    log.info('Step2 - initialBusinessHours 변경됨:', initialBusinessHours);
     if (initialBusinessHours.length > 0) {
       setOpeningHours(initialBusinessHours);
-      console.log('Step2 - openingHours 업데이트됨:', initialBusinessHours);
+      log.info('Step2 - openingHours 업데이트됨:', initialBusinessHours);
     }
   }, [initialBusinessHours]);
 
   useEffect(() => {
-    console.log('Step2 - optionState 변경됨:', optionState);
+    log.info('Step2 - optionState 변경됨:', optionState);
   }, [optionState]);
 
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      console.log(' 편집 모드 - 기존 데이터 로딩 시작');
+      log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 2);
       if (data) {
-        console.log('steep2 BusinessHours data data.businessHours?.length: ', data.businessHours?.length);
-        console.log('steep2 BusinessHours data data.hospital: ', data.hospital);
+        log.info('steep2 BusinessHours data data.businessHours?.length: ', data.businessHours?.length);
+        log.info('steep2 BusinessHours data data.hospital: ', data.hospital);
         setExistingData(data);
         populateFormWithExistingData(data);
-        console.log(' 편집 모드 - 기존 데이터 로딩 완료');
+        log.info(' 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        console.log(' 편집 모드 - 기존 데이터가 없습니다');
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
@@ -145,21 +145,21 @@ const Step3BusinessHours = ({
   ) => {
     
     try {
-        console.log('폼에 기존 데이터 적용 시작');
+        log.info('폼에 기존 데이터 적용 시작');
 
-        console.log('폼에 기존데이터  적용 전 기존데이터 화인 :', existingData);
+        log.info('폼에 기존데이터  적용 전 기존데이터 화인 :', existingData);
       // 1. 데이터를 폼 형식으로 변환
       const formData = mapExistingDataToFormValues(existingData);
-      console.log('변환된 폼 데이터 적용 종료 결과 formData:', formData);
+      log.info('변환된 폼 데이터 적용 종료 결과 formData:', formData);
 
       // 4. 영업시간 설정
-      console.log('영업시간 설정 시작');
-      console.log(
+      log.info('영업시간 설정 시작');
+      log.info(
         '변환된 영업시간 데이터:',
         formData.businessHours,
       );
       setInitialBusinessHours(formData.businessHours);
-      console.log(
+      log.info(
         'initialBusinessHours 상태 업데이트 완료',
       );
 
@@ -178,7 +178,7 @@ const Step3BusinessHours = ({
         specialist_count:
           formData.facilities.specialist_count,
       });
-      console.log('편의시설 설정 완료');
+      log.info('편의시설 설정 완료');
 
     } catch (error) {
       console.error('기존 데이터 적용 중 오류:', error);
@@ -189,7 +189,7 @@ const Step3BusinessHours = ({
   const handleExtraOptionsChange = (
     data: ExtraOptionState,
   ) => {
-    console.log(
+    log.info(
       'UploadClient - 부가시설 옵션 업데이트:',
       data,
     );
@@ -205,11 +205,11 @@ const Step3BusinessHours = ({
 
  
 const handleNext = async () => {
-    console.log('handleNext');
+    log.info('handleNext');
     setIsSubmitting(true);
     const result = await handleSave();
     setIsSubmitting(false);
-    console.log('handleNext result', result);
+    log.info('handleNext result', result);
     document.body.style.overflow = '';
     if (result?.status === 'success') {
         onNext();
@@ -217,7 +217,7 @@ const handleNext = async () => {
 }
 
   const handleSave = async () => {
-    console.log('Step2 handleSave 시작');
+    log.info('Step2 handleSave 시작');
     
     try {
       // FormData 구성
@@ -231,18 +231,18 @@ const handleNext = async () => {
       // 영업 시간
       formData.append('opening_hours', JSON.stringify(openingHours));
       
-      console.log('Step2 - 전송할 데이터:');
-      console.log('openingHours:', openingHours);
-      console.log('openingHours 길이:', openingHours.length);
-      console.log('optionState:', optionState);
-      console.log('optionState JSON:', JSON.stringify(optionState));
+      log.info('Step2 - 전송할 데이터:');
+      log.info('openingHours:', openingHours);
+      log.info('openingHours 길이:', openingHours.length);
+      log.info('optionState:', optionState);
+      log.info('optionState JSON:', JSON.stringify(optionState));
 
-      console.log('Step2 API 호출 시작');
+      log.info('Step2 API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step3(formData);
 
-      console.log('Step2 API 응답:', result);
+      log.info('Step2 API 응답:', result);
 
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
@@ -261,7 +261,7 @@ const handleNext = async () => {
         };
       } else {
         // 성공 시 처리
-        console.log('Step2 데이터 저장 성공');
+        log.info('Step2 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',

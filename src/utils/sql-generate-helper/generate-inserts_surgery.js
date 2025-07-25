@@ -113,5 +113,5 @@ const categories = [
     }
   });
   
-  console.log(queries.join('\n'));
+  log.info(queries.join('\n'));
   

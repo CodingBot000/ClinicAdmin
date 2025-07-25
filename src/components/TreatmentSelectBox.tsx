@@ -55,7 +55,7 @@ export function TreatmentSelectBox({
   initialSelectedDepartment = 'skin',
   categories 
 }: TreatmentSelectBoxProps) {
-  console.log("TreatmentSelectBox 초기값:", {
+  log.info("TreatmentSelectBox 초기값:", {
     initialSelectedKeys,
     initialProductOptions,
     initialPriceExpose,
@@ -72,7 +72,7 @@ export function TreatmentSelectBox({
 
   // 초기값이 변경될 때 상태 업데이트
   useEffect(() => {
-    console.log('TreatmentSelectBox - 초기값 변경됨:', {
+    log.info('TreatmentSelectBox - 초기값 변경됨:', {
       initialSelectedKeys,
       initialProductOptions,
       initialPriceExpose,
@@ -81,7 +81,7 @@ export function TreatmentSelectBox({
     });
     
     if (initialSelectedKeys.length > 0 || initialProductOptions.length > 0 || initialEtc || initialPriceExpose !== true || initialSelectedDepartment !== 'skin') {
-      console.log('TreatmentSelectBox - 초기값으로 상태 업데이트');
+      log.info('TreatmentSelectBox - 초기값으로 상태 업데이트');
       setSelectedKeys(initialSelectedKeys);
       setProductOptions(initialProductOptions);
       setPriceExpose(initialPriceExpose);
@@ -104,7 +104,7 @@ export function TreatmentSelectBox({
   };
 
   const handleOpen = () => {
-    console.log(' TreatmentSelectBox - 모달 열기:', {
+    log.info(' TreatmentSelectBox - 모달 열기:', {
       selectedKeys: selectedKeys,
       selectedKeysLength: selectedKeys.length,
       productOptions: productOptions,
@@ -120,7 +120,7 @@ export function TreatmentSelectBox({
     setEtc(data.etc);
     setSelectedDepartment(data.selectedDepartment);
     
-    console.log(" TreatmentSelectBox - 저장된 데이터:", {
+    log.info(" TreatmentSelectBox - 저장된 데이터:", {
       selectedKeys: data.selectedKeys,
       productOptions: data.productOptions,
       etc: data.etc,

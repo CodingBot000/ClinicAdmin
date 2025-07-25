@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       ? selected_treatments_raw.split(",").map((treatment: string) => treatment.trim()).filter(t => t !== '')
       : [];
 
-    console.log("Actions - selected_treatments:", {
+    log.info("Actions - selected_treatments:", {
       raw: selected_treatments_raw,
       parsed: selected_treatments,
       length: selected_treatments.length
@@ -41,36 +41,36 @@ export async function POST(request: NextRequest) {
 
     // 가격노출 설정 파싱 (string을 boolean으로 변환)
     const price_expose = price_expose_raw === 'true';
-    console.log("Actions - price_expose:", {
+    log.info("Actions - price_expose:", {
       raw: price_expose_raw,
       parsed: price_expose,
       type: typeof price_expose
     });
     
-    console.log("Actions - etc 정보:", etc);
+    log.info("Actions - etc 정보:", etc);
     
     // 상품옵션 데이터 파싱
     let treatment_options_parsed = [];
     
-    console.log("Actions - treatment_options 원본:", treatment_options);
-    console.log("Actions - treatment_options 타입:", typeof treatment_options);
+    log.info("Actions - treatment_options 원본:", treatment_options);
+    log.info("Actions - treatment_options 타입:", typeof treatment_options);
     
     if (treatment_options) {
       try {
         treatment_options_parsed = JSON.parse(treatment_options);
-        console.log("Actions - treatment_options 파싱 성공:", treatment_options_parsed);
-        console.log("Actions - 파싱된 배열 길이:", treatment_options_parsed.length);
+        log.info("Actions - treatment_options 파싱 성공:", treatment_options_parsed);
+        log.info("Actions - 파싱된 배열 길이:", treatment_options_parsed.length);
       } catch (error) {
         console.error("Actions - treatment_options 파싱 에러:", error);
         treatment_options_parsed = [];
       }
     } else {
-      console.log("Actions - treatment_options가 없습니다.");
+      log.info("Actions - treatment_options가 없습니다.");
     }
 
     // 편집 모드인 경우 기존 데이터 삭제
     if (isEditMode) {
-      console.log("편집 모드: 기존 hospital_treatment 데이터 삭제 중...");
+      log.info("편집 모드: 기존 hospital_treatment 데이터 삭제 중...");
       
       const { error: deleteError } = await supabase
         .from(TABLE_HOSPITAL_TREATMENT)
@@ -85,11 +85,11 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
       
-      console.log("기존 hospital_treatment 데이터 삭제 완료");
+      log.info("기존 hospital_treatment 데이터 삭제 완료");
     }
 
     if (treatment_options_parsed.length > 0) {
-      console.log("시술 상품옵션 데이터 처리 시작");
+      log.info("시술 상품옵션 데이터 처리 시작");
       
       // treatment 테이블에서 code와 id_uuid 매핑 데이터 가져오기
       const { data: treatmentData, error: treatmentError } = await supabase
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         codeToUuidMap.set(treatment.code, treatment.id_uuid);
       });
       
-      console.log("시술 코드 매핑 맵:", Object.fromEntries(codeToUuidMap));
+      log.info("시술 코드 매핑 맵:", Object.fromEntries(codeToUuidMap));
       
       // hospital_treatment 테이블에 insert할 데이터 준비
       const hospitalTreatmentInserts = [];
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         hospitalTreatmentInserts.push(hospitalTreatmentData);
       }
       
-      console.log("hospital_treatment insert 데이터:", hospitalTreatmentInserts);
+      log.info("hospital_treatment insert 데이터:", hospitalTreatmentInserts);
       
       if (hospitalTreatmentInserts.length > 0) {
         const { error: hospitalTreatmentError } = await supabase
@@ -143,19 +143,19 @@ export async function POST(request: NextRequest) {
           .insert(hospitalTreatmentInserts);
         
         if (hospitalTreatmentError) {
-          console.log("uploadActions hospital_treatment error:", hospitalTreatmentError);
+          log.info("uploadActions hospital_treatment error:", hospitalTreatmentError);
           return NextResponse.json({
             message: `hospitalTreatmentError:${hospitalTreatmentError.code || hospitalTreatmentError.message}`,
             status: "error",
           }, { status: 500 });
         }
         
-        console.log("hospital_treatment 데이터 insert 완료");
+        log.info("hospital_treatment 데이터 insert 완료");
       }
       
       // 기타 시술 정보가 있는 경우 별도 레코드로 저장
       if (etc && etc.trim() !== "") {
-        console.log("기타 시술 정보 저장 중:", etc);
+        log.info("기타 시술 정보 저장 중:", etc);
         
         const etcTreatmentData = {
           id_uuid_hospital: id_uuid_hospital,
@@ -172,14 +172,14 @@ export async function POST(request: NextRequest) {
           .insert([etcTreatmentData]);
         
         if (etcTreatmentError) {
-          console.log("uploadActions hospital_treatment (기타) error:", etcTreatmentError);
+          log.info("uploadActions hospital_treatment (기타) error:", etcTreatmentError);
           return NextResponse.json({
             message: `etcTreatmentError:${etcTreatmentError.code || etcTreatmentError.message}`,
             status: "error",
           }, { status: 500 });
         }
         
-        console.log("기타 시술 정보 저장 완료");
+        log.info("기타 시술 정보 저장 완료");
       }
     }
 

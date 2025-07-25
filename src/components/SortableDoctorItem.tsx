@@ -62,7 +62,7 @@ export default function SortableDoctorItem({ doctor, isDragOverlay = false }: So
   const imageUrl = getImageUrl();
   const imageType = getImageType();
 
-  console.log('[SortableDoctorItem]', {
+  log.info('[SortableDoctorItem]', {
     doctorId: doctor.id,
     doctorName: doctor.name,
     imageUrl: imageUrl.substring(0, 50) + (imageUrl.length > 50 ? '...' : ''),

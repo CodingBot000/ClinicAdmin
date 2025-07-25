@@ -51,7 +51,7 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
   useEffect(() => {
     // 마운트 시에 initialHours가 없거나 빈 배열이면 디폴트값 설정
     if (!initialHours || initialHours.length === 0) {
-      console.log('OpeningHoursForm - 마운트 시 디폴트값 설정');
+      log.info('OpeningHoursForm - 마운트 시 디폴트값 설정');
       const defaultHours = days.map((d) => ({
         day: d,
         from: { hour: defaultOpenings[d].from[0], minute: defaultOpenings[d].from[1] },
@@ -66,13 +66,13 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
 
   // 초기값이 변경될 때 상태 업데이트
   useEffect(() => {
-    console.log('OpeningHoursForm - initialHours 변경됨:', initialHours);
+    log.info('OpeningHoursForm - initialHours 변경됨:', initialHours);
     if (initialHours && initialHours.length > 0) {
-      console.log('OpeningHoursForm - 초기값으로 상태 업데이트:', initialHours);
+      log.info('OpeningHoursForm - 초기값으로 상태 업데이트:', initialHours);
       setHoursState(initialHours);
     } else {
       // initialHours가 없거나 빈 배열인 경우 디폴트값으로 설정
-      console.log('OpeningHoursForm - 디폴트값으로 상태 설정');
+      log.info('OpeningHoursForm - 디폴트값으로 상태 설정');
       setHoursState(days.map((d) => ({
         day: d,
         from: { hour: defaultOpenings[d].from[0], minute: defaultOpenings[d].from[1] },

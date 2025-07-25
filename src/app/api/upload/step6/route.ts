@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
     
     const available_languages = JSON.parse(available_languages_raw);
 
-    console.log("uploadActionsStep5 available_languages_raw:", available_languages_raw);
-    console.log("uploadActionsStep5 feedback: ", feedback);
-    console.log("uploadActionsStep5 id_uuid_hospital: ", id_uuid_hospital);
+    log.info("uploadActionsStep5 available_languages_raw:", available_languages_raw);
+    log.info("uploadActionsStep5 feedback: ", feedback);
+    log.info("uploadActionsStep5 id_uuid_hospital: ", id_uuid_hospital);
   
     // 1. 가능 언어 정보 업데이트
     const { data: dataAvailableLanguages, error: availableLanguagesError } = await supabase
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       .eq('id_uuid_hospital', id_uuid_hospital);
   
     if (availableLanguagesError) {
-      console.log("uploadActions5 available_languages error:", availableLanguagesError);
+      log.info("uploadActions5 available_languages error:", availableLanguagesError);
       return NextResponse.json({
         message: `availableLanguagesError:${availableLanguagesError.code || availableLanguagesError.message}`,
         status: "error",
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   
     // 2. 피드백 정보 저장 (피드백이 있을 때만)
     if (feedback && feedback.trim()) {
-      console.log("피드백 저장 시작:", feedback);
+      log.info("피드백 저장 시작:", feedback);
       
       // 피드백은 항상 새로운 레코드로 insert (id_uuid_hospital 중복 허용)
       const { data: dataFeedback, error: feedbackError } = await supabase
@@ -61,19 +61,19 @@ export async function POST(request: NextRequest) {
         }]);
       
       if (feedbackError) {
-        console.log("uploadActions5 feedback insert error:", feedbackError);
+        log.info("uploadActions5 feedback insert error:", feedbackError);
         return NextResponse.json({
           message: `feedbackInsertError:${feedbackError.code || feedbackError.message}`,
           status: "error",
         }, { status: 500 });
       }
       
-      console.log("피드백 저장 완료:", dataFeedback);
+      log.info("피드백 저장 완료:", dataFeedback);
     } else {
-      console.log("피드백이 없어서 저장하지 않음");
+      log.info("피드백이 없어서 저장하지 않음");
     }
 
-    console.log("가능 언어 및 피드백 저장 완료 ");
+    log.info("가능 언어 및 피드백 저장 완료 ");
    
     return NextResponse.json({
       message: "성공적으로 등록되었습니다.",
