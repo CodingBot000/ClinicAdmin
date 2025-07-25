@@ -17,7 +17,7 @@ import { supabase } from "@/lib/supabaseClient";
  * 현재 사용자의 병원 UUID를 가져옵니다
  */
 export async function getUserHospitalUuid(userUid: string): Promise<string | null> {
-  console.log(' 사용자 병원 UUID 조회 시작 auth userUid:', userUid);
+  log.info(' 사용자 병원 UUID 조회 시작 auth userUid:', userUid);
   
   const { data: admin, error } = await supabase
     .from(TABLE_ADMIN)
@@ -31,11 +31,11 @@ export async function getUserHospitalUuid(userUid: string): Promise<string | nul
   }
 
   if (!admin?.id_uuid_hospital) {
-    console.log(' 연결된 병원이 없습니다');
+    log.info(' 연결된 병원이 없습니다');
     return null;
   }
 
-  console.log(' 병원 UUID 찾음:', admin.id_uuid_hospital);
+  log.info(' 병원 UUID 찾음:', admin.id_uuid_hospital);
   return admin.id_uuid_hospital;
 }
 
@@ -43,7 +43,7 @@ export async function getUserHospitalUuid(userUid: string): Promise<string | nul
  * 병원 기본 정보를 가져옵니다
  */
 export async function loadHospitalData(hospitalUuid: string) {
-  console.log(' 병원 기본 정보 로딩 hospitalUuid:', hospitalUuid);
+  log.info(' 병원 기본 정보 로딩 hospitalUuid:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_HOSPITAL)
@@ -60,7 +60,7 @@ export async function loadHospitalData(hospitalUuid: string) {
     throw new Error('병원 정보를 찾을 수 없습니다');
   }
 
-  console.log(' 병원 정보 로딩 완료');
+  log.info(' 병원 정보 로딩 완료');
   return data;
 }
 
@@ -68,7 +68,7 @@ export async function loadHospitalData(hospitalUuid: string) {
  * 병원 상세 정보를 가져옵니다
  */
 async function loadHospitalDetailData(hospitalUuid: string) {
-  console.log(' 병원 상세 정보 로딩:', hospitalUuid);
+  log.info(' 병원 상세 정보 로딩:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_HOSPITAL_DETAIL)
@@ -81,9 +81,9 @@ async function loadHospitalDetailData(hospitalUuid: string) {
     throw new Error(`병원 상세 정보 로딩 실패: ${error.message}`);
   }
 
-  console.log(' 병원 상세 정보 로딩 완료:', data);
-  console.log(' available_languages 필드:', data?.available_languages);
-  console.log(' available_languages 타입:', typeof data?.available_languages);
+  log.info(' 병원 상세 정보 로딩 완료:', data);
+  log.info(' available_languages 필드:', data?.available_languages);
+  log.info(' available_languages 타입:', typeof data?.available_languages);
   
   return data;
 }
@@ -92,7 +92,7 @@ async function loadHospitalDetailData(hospitalUuid: string) {
  * 영업시간 정보를 가져옵니다
  */
 async function loadBusinessHours(hospitalUuid: string) {
-  console.log(' 영업시간 정보 로딩:', hospitalUuid);
+  log.info(' 영업시간 정보 로딩:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_HOSPITAL_BUSINESS_HOUR)
@@ -105,7 +105,7 @@ async function loadBusinessHours(hospitalUuid: string) {
     throw new Error(`영업시간 정보 로딩 실패: ${error.message}`);
   }
 
-  console.log(' 영업시간 정보 로딩 완료:', data?.length || 0, '건');
+  log.info(' 영업시간 정보 로딩 완료:', data?.length || 0, '건');
   return data || [];
 }
 
@@ -113,7 +113,7 @@ async function loadBusinessHours(hospitalUuid: string) {
  * 의사 정보를 가져옵니다
  */
 async function loadDoctors(hospitalUuid: string) {
-  console.log(' 의사 정보 로딩:', hospitalUuid);
+  log.info(' 의사 정보 로딩:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_DOCTOR)
@@ -125,7 +125,7 @@ async function loadDoctors(hospitalUuid: string) {
     throw new Error(`의사 정보 로딩 실패: ${error.message}`);
   }
 
-  console.log(' 의사 정보 로딩 완료:', data?.length || 0, '명');
+  log.info(' 의사 정보 로딩 완료:', data?.length || 0, '명');
   return data || [];
 }
 
@@ -133,7 +133,7 @@ async function loadDoctors(hospitalUuid: string) {
  * 시술 정보를 가져옵니다 - hospital_treatment 먼저 가져오고 별도로 treatment 정보 매칭
  */
 async function loadTreatments(hospitalUuid: string) {
-  console.log(' 시술 정보 로딩:', hospitalUuid);
+  log.info(' 시술 정보 로딩:', hospitalUuid);
   
   // 1. hospital_treatment 데이터 먼저 가져오기
   const { data: hospitalTreatments, error: hospitalTreatmentError } = await supabase
@@ -147,18 +147,18 @@ async function loadTreatments(hospitalUuid: string) {
   }
 
   if (!hospitalTreatments || hospitalTreatments.length === 0) {
-    console.log(' 시술 정보가 없습니다');
+    log.info(' 시술 정보가 없습니다');
     return [];
   }
 
-  console.log(' 병원 시술 정보 로딩 완료:', hospitalTreatments.length, '건');
+  log.info(' 병원 시술 정보 로딩 완료:', hospitalTreatments.length, '건');
 
   // 2. NULL이 아닌 id_uuid_treatment들만 추출
   const treatmentUuids = hospitalTreatments
     .filter(ht => ht.id_uuid_treatment !== null)
     .map(ht => ht.id_uuid_treatment);
 
-  console.log(' 매칭할 시술 UUID들:', treatmentUuids);
+  log.info(' 매칭할 시술 UUID들:', treatmentUuids);
 
   // 3. treatment 정보 가져오기 (UUID가 있는 경우만)
   let treatments: any[] = [];
@@ -176,7 +176,7 @@ async function loadTreatments(hospitalUuid: string) {
     treatments = treatmentData || [];
   }
 
-  console.log(' 시술 마스터 정보 로딩 완료:', treatments.length, '건');
+  log.info(' 시술 마스터 정보 로딩 완료:', treatments.length, '건');
 
   // 4. hospital_treatment와 treatment 매칭
   const result = hospitalTreatments.map(hospitalTreatment => {
@@ -196,13 +196,13 @@ async function loadTreatments(hospitalUuid: string) {
     }
   });
 
-  console.log(' 시술 정보 매칭 완료:', result.length, '건');
-  console.log(' 시술 정보 상세:', result);
+  log.info(' 시술 정보 매칭 완료:', result.length, '건');
+  log.info(' 시술 정보 상세:', result);
   return result;
 }
 
 async function loadFeedback(hospitalUuid: string) {
-  console.log(' 피드백 정보 로딩:', hospitalUuid);
+  log.info(' 피드백 정보 로딩:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_FEEDBACKS)
@@ -217,7 +217,7 @@ async function loadFeedback(hospitalUuid: string) {
     return null;
   }
 
-  console.log(' 피드백 정보 로딩 완료');
+  log.info(' 피드백 정보 로딩 완료');
   return data?.feedback_content || '';
 }
 
@@ -225,7 +225,7 @@ async function loadFeedback(hospitalUuid: string) {
  * 연락처 정보를 가져옵니다
  */
 async function loadContacts(hospitalUuid: string) {
-  console.log(' 연락처 정보 로딩:', hospitalUuid);
+  log.info(' 연락처 정보 로딩:', hospitalUuid);
   
   const { data, error } = await supabase
     .from(TABLE_CONTACTS)
@@ -238,7 +238,7 @@ async function loadContacts(hospitalUuid: string) {
     return [];
   }
 
-  console.log(' 연락처 정보 로딩 완료:', data?.length || 0, '개');
+  log.info(' 연락처 정보 로딩 완료:', data?.length || 0, '개');
   return data || [];
 }
 
@@ -252,18 +252,18 @@ export async function loadExistingHospitalData(
   prev: ExistingHospitalData | null = null // ✅ 이전 데이터 받기
 ): Promise<ExistingHospitalData | null> {
   try {
-    console.log('=== [loadExistingHospitalData] 시작 ===');
+    log.info('=== [loadExistingHospitalData] 시작 ===');
 
     let hospitalUuid = id_uuid_hospital;
     if (!hospitalUuid) {
       const userHospitalUuid = await getUserHospitalUuid(userUid);
       if (!userHospitalUuid) {
-        console.log('⛔️ 병원 UUID 없음 — 로딩 중단');
+        log.info('⛔️ 병원 UUID 없음 — 로딩 중단');
         return null;
       }
       hospitalUuid = userHospitalUuid;
     }
-    console.log(`✅ 병원 UUID: ${hospitalUuid} | step: ${step}`);
+    log.info(`✅ 병원 UUID: ${hospitalUuid} | step: ${step}`);
 
     // ✅ 이전 데이터 있으면 사용, 없으면 EMPTY로
     const base = prev ?? {
@@ -379,7 +379,7 @@ export async function loadExistingHospitalData(
         throw new Error(`❌ 지원되지 않는 step: ${step}`);
     }
 
-    console.log('=== [loadExistingHospitalData] 로딩 요약 ===', {
+    log.info('=== [loadExistingHospitalData] 로딩 요약 ===', {
       상세정보: result.hospitalDetail ? '✅' : '⛔️',
       영업시간: result.businessHours?.length ?? 0,
     });

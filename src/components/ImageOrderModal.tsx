@@ -16,10 +16,10 @@ export default function ImageOrderModal({ images, onCancel, onComplete }: ImageO
 
   // 진단용 로그: items, activeId 상태 변화 추적
   useEffect(() => {
-    console.log('[ImageOrderModal] items:', items);
+    log.info('[ImageOrderModal] items:', items);
   }, [items]);
   useEffect(() => {
-    console.log('[ImageOrderModal] activeId:', activeId);
+    log.info('[ImageOrderModal] activeId:', activeId);
   }, [activeId]);
 
   // 센서 설정 (마우스, 터치)
@@ -38,19 +38,19 @@ export default function ImageOrderModal({ images, onCancel, onComplete }: ImageO
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id);
-    console.log('[ImageOrderModal] handleDragStart', event.active.id);
+    log.info('[ImageOrderModal] handleDragStart', event.active.id);
   };
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     setActiveId(null);
-    console.log('[ImageOrderModal] handleDragEnd', { active: active.id, over: over?.id });
+    log.info('[ImageOrderModal] handleDragEnd', { active: active.id, over: over?.id });
     if (active.id !== over?.id) {
       setItems((prev) => {
         const oldIndex = prev.indexOf(active.id);
         const newIndex = prev.indexOf(over.id);
         const moved = arrayMove(prev, oldIndex, newIndex);
-        console.log('[ImageOrderModal] arrayMove', { oldIndex, newIndex, moved });
+        log.info('[ImageOrderModal] arrayMove', { oldIndex, newIndex, moved });
         return moved;
       });
     }
@@ -58,7 +58,7 @@ export default function ImageOrderModal({ images, onCancel, onComplete }: ImageO
 
   const handleDragCancel = () => {
     setActiveId(null);
-    console.log('[ImageOrderModal] handleDragCancel');
+    log.info('[ImageOrderModal] handleDragCancel');
   };
 
   // 팝업 바깥 클릭 시 이벤트 버블링 방지

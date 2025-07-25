@@ -16,10 +16,10 @@ export default function DoctorOrderModal({ doctors, onCancel, onComplete }: Doct
 
   // 진단용 로그: items, activeId 상태 변화 추적
   useEffect(() => {
-    console.log('[DoctorOrderModal] items:', items);
+    log.info('[DoctorOrderModal] items:', items);
   }, [items]);
   useEffect(() => {
-    console.log('[DoctorOrderModal] activeId:', activeId);
+    log.info('[DoctorOrderModal] activeId:', activeId);
   }, [activeId]);
 
   // 센서 설정 (마우스, 터치)
@@ -38,19 +38,19 @@ export default function DoctorOrderModal({ doctors, onCancel, onComplete }: Doct
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id);
-    console.log('[DoctorOrderModal] handleDragStart', event.active.id);
+    log.info('[DoctorOrderModal] handleDragStart', event.active.id);
   };
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     setActiveId(null);
-    console.log('[DoctorOrderModal] handleDragEnd', { active: active.id, over: over?.id });
+    log.info('[DoctorOrderModal] handleDragEnd', { active: active.id, over: over?.id });
     if (active.id !== over?.id) {
       setItems((prev) => {
         const oldIndex = prev.findIndex(doctor => doctor.id === active.id);
         const newIndex = prev.findIndex(doctor => doctor.id === over.id);
         const moved = arrayMove(prev, oldIndex, newIndex);
-        console.log('[DoctorOrderModal] arrayMove', { oldIndex, newIndex, moved });
+        log.info('[DoctorOrderModal] arrayMove', { oldIndex, newIndex, moved });
         return moved;
       });
     }
@@ -58,7 +58,7 @@ export default function DoctorOrderModal({ doctors, onCancel, onComplete }: Doct
 
   const handleDragCancel = () => {
     setActiveId(null);
-    console.log('[DoctorOrderModal] handleDragCancel');
+    log.info('[DoctorOrderModal] handleDragCancel');
   };
 
   // 팝업 바깥 클릭 시 이벤트 버블링 방지

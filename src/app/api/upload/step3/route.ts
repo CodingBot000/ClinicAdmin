@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
     const opening_hours_raw = formData.get("opening_hours") as string;
     const extra_options_raw = formData.get("extra_options") as string;
 
-    console.log('current_user_uid', current_user_uid);
-    console.log('id_uuid_hospital', id_uuid_hospital);
+    log.info('current_user_uid', current_user_uid);
+    log.info('id_uuid_hospital', id_uuid_hospital);
 
     // opening_hours JSON 파싱
     let opening_hours_parsed;
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       opening_hours_parsed = []; // 빈 배열로 초기화
     }
 
-    console.log("파싱된 opening_hours (배열):", opening_hours_parsed);
+    log.info("파싱된 opening_hours (배열):", opening_hours_parsed);
 
     // 각 요일별로 개별 레코드 생성 및 insert
     const businessHourInserts = [];
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       businessHourInserts.push(form_business_hour);
     }
 
-    console.log("영업시간 데이터:", businessHourInserts);
+    log.info("영업시간 데이터:", businessHourInserts);
 
     // 먼저 기존 데이터가 있는지 확인
     const { data: existingBusinessHour, error: checkErrorBusinessHour } = await supabase
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     console.error("hospital_business_hours 조회 중 에러:", checkErrorBusinessHour);
 
     if (existingBusinessHour && existingBusinessHour.length > 0) {
-      console.log("hospital_business_hours 데이터가 존재");
+      log.info("hospital_business_hours 데이터가 존재");
       for (const form_business_hour of businessHourInserts) {
         const { day_of_week } = form_business_hour;
       
@@ -108,18 +108,18 @@ export async function POST(request: NextRequest) {
         if (error) {
           console.error(`요일 ${day_of_week} 업데이트 실패:`, error);
         } else {
-          console.log(`요일 ${day_of_week} 업데이트 성공:`, data);
+          log.info(`요일 ${day_of_week} 업데이트 성공:`, data);
         }
       }
     } else {
-      console.log("hospital_business_hours 데이터가 존재하지 않습니다. 추가할 데이터: ", businessHourInserts);
+      log.info("hospital_business_hours 데이터가 존재하지 않습니다. 추가할 데이터: ", businessHourInserts);
       let operateBusinessHour = await supabase
         .from(TABLE_HOSPITAL_BUSINESS_HOUR)
         .insert(businessHourInserts)
         .select("*");
 
       if (operateBusinessHour.error) {
-        console.log("error 3 : ", operateBusinessHour.error);
+        log.info("error 3 : ", operateBusinessHour.error);
         return NextResponse.json({
           message: operateBusinessHour.error.code || operateBusinessHour.error.message,
           status: "error",
@@ -158,8 +158,8 @@ export async function POST(request: NextRequest) {
       specialist_count: parseInt(extra_options_parsed.specialist_count) || 0,
     };
 
-    console.log("변환된 opening_hours (배열):", opening_hours_parsed);
-    console.log("변환된 extra_options:", extra_options);
+    log.info("변환된 opening_hours (배열):", opening_hours_parsed);
+    log.info("변환된 extra_options:", extra_options);
     
     // 먼저 기존 데이터가 있는지 확인
     const { data: existingDetail, error: checkError } = await supabase
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       .eq('id_uuid_hospital', id_uuid_hospital);
     
     if (detailOperation.error) {
-      console.log("hospitalDetail operation error:", detailOperation.error);
+      log.info("hospitalDetail operation error:", detailOperation.error);
       return NextResponse.json({
         message: detailOperation.error.code || detailOperation.error.message,
         status: "error",

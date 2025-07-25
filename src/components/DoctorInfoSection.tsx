@@ -59,7 +59,7 @@ const DoctorInfoSection: React.FC<
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   
   // 렌더링 시점 디버깅
-  console.log('DoctorInfoSection 렌더링:', {
+  log.info('DoctorInfoSection 렌더링:', {
     받은initialDoctors: initialDoctors?.length || 0,
     현재doctors: doctors.length,
     initialDoctorsData: initialDoctors,
@@ -81,7 +81,7 @@ const DoctorInfoSection: React.FC<
         originalImageUrl: doctor.imagePreview,
       }));
       setDoctors(doctorsWithImageInfo);
-      console.log(
+      log.info(
         'DoctorInfoSection 초기값 설정 완료:',
         doctorsWithImageInfo.length,
         '명',

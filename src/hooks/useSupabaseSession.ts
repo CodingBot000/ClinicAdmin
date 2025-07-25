@@ -14,7 +14,7 @@ export function useSupabaseSession() {
       try {
         // 1. 먼저 로컬 스토리지에서 세션 확인
         const localSession = localStorage.getItem('supabase.auth.token');
-        console.log('로컬 스토리지 세션:', localSession);
+        log.info('로컬 스토리지 세션:', localSession);
 
         // 2. Supabase 세션 확인
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
@@ -43,7 +43,7 @@ export function useSupabaseSession() {
     // 세션 상태 변화 구독
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log('세션 상태 변화:', event, currentSession?.user?.email);
+        log.info('세션 상태 변화:', event, currentSession?.user?.email);
         
         if (mounted) {
           setSession(currentSession);

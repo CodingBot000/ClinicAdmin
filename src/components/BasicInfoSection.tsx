@@ -105,7 +105,7 @@ const BasicInfoSection = ({
   onInfoChange,
   initialInfo,
 }: BasicInfoSectionProps) => {
-  console.log('BasicInfoSection initialInfo:', {
+  log.info('BasicInfoSection initialInfo:', {
     sns_content_agreement: initialInfo?.sns_content_agreement,
     type: initialInfo?.sns_content_agreement != null ? typeof initialInfo.sns_content_agreement : 'null'
   });
@@ -133,7 +133,7 @@ const BasicInfoSection = ({
   // initialInfo가 변경될 때마다 info 상태 업데이트
   useEffect(() => {
     if (initialInfo) {
-      console.log('initialInfo changed, updating info state:', initialInfo.sns_content_agreement);
+      log.info('initialInfo changed, updating info state:', initialInfo.sns_content_agreement);
       setInfo({
         name: initialInfo.name || info.name,
         email: initialInfo.email || info.email,
@@ -156,7 +156,7 @@ const BasicInfoSection = ({
     }
   }, [initialInfo]);
 
-  console.log('BasicInfoSection info state:', {
+  log.info('BasicInfoSection info state:', {
     sns_content_agreement: info.sns_content_agreement,
     type: info.sns_content_agreement != null ? typeof info.sns_content_agreement : 'null'
   });

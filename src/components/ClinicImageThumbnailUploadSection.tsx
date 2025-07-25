@@ -62,7 +62,7 @@ const ClinicImageThumbnailUploadSection = ({
   // 초기 이미지 설정 및 변경 감지
   useEffect(() => {
     if (initialImage) {
-      console.log(
+      log.info(
         'ClinicImageThumbnailUploadSection 이미지 설정:',
         initialImage,
       );
@@ -121,7 +121,7 @@ const ClinicImageThumbnailUploadSection = ({
     // 기존 이미지가 삭제되는 경우 URL 추적
     if (isExistingImage && preview) {
       setDeletedImageUrl(preview);
-      console.log('기존 이미지 삭제됨:', preview);
+      log.info('기존 이미지 삭제됨:', preview);
     }
 
     setPreview(null);

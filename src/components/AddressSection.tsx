@@ -38,7 +38,7 @@ export default function AddressSection({
   const [directionsToClinicEn, setDirectionsToClinicEn] = useState(initialDirectionsEn || "");
 
   // 렌더링 시점 디버깅
-  console.log('AddressSection 렌더링:', {
+  log.info('AddressSection 렌더링:', {
     받은props: {
       initialAddress,
       initialAddressDetail,
@@ -61,7 +61,7 @@ export default function AddressSection({
 
   // props 변경 시 상태 업데이트 (한 번만 실행)
   useEffect(() => {
-    console.log('AddressSection useEffect 시작');
+    log.info('AddressSection useEffect 시작');
     let hasUpdates = false;
     
     if (initialAddress !== undefined && initialAddress !== showingAddress) {
@@ -97,9 +97,9 @@ export default function AddressSection({
     }
     
     if (hasUpdates) {
-      console.log('AddressSection 초기값 설정 완료');
+      log.info('AddressSection 초기값 설정 완료');
     } else {
-      console.log('AddressSection useEffect 실행됨 - 업데이트 없음:', {
+      log.info('AddressSection useEffect 실행됨 - 업데이트 없음:', {
         initialAddress,
         현재showingAddress: showingAddress,
         initialAddressDetail,
@@ -157,7 +157,7 @@ export default function AddressSection({
       latitude: apiAddress.latitude !== undefined ? Number(apiAddress.latitude) : undefined,
       longitude: apiAddress.longitude !== undefined ? Number(apiAddress.longitude) : undefined,
     });
-    console.log('주소 검색 후 addressForSendForm:', JSON.stringify({
+    log.info('주소 검색 후 addressForSendForm:', JSON.stringify({
       ...emptyAddress,
       ...(addressForSendForm || {}),
       ...apiAddress,

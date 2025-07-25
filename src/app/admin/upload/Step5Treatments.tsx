@@ -31,7 +31,7 @@ const Step5Treatments = ({
   onPrev,
   onNext,
 }: Step5TreatmentsProps) => {
-    console.log('qqqqqqqqq Step5Treatments id_uuid_hospital', id_uuid_hospital);
+    log.info('qqqqqqqqq Step5Treatments id_uuid_hospital', id_uuid_hospital);
 
   const {
     data: categories,
@@ -85,7 +85,7 @@ const Step5Treatments = ({
 
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
-    console.log(
+    log.info(
       `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
@@ -96,16 +96,16 @@ const Step5Treatments = ({
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      console.log(' 편집 모드 - 기존 데이터 로딩 시작');
+      log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 4);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
-        console.log(' 편집 모드 - 기존 데이터 로딩 완료');
+        log.info(' 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        console.log(' 편집 모드 - 기존 데이터가 없습니다');
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
@@ -126,26 +126,26 @@ const Step5Treatments = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    console.log('폼에 기존 데이터 적용 시작');
+    log.info('폼에 기존 데이터 적용 시작');
 
     try {
       // 1. 데이터를 폼 형식으로 변환
       const formData = mapExistingDataToFormValues(existingData);
-      console.log('변환된 폼 데이터:', formData);
+      log.info('변환된 폼 데이터:', formData);
 
       // 6. 시술 정보 설정
-      console.log('시술 정보 설정 시작');
-      console.log(
+      log.info('시술 정보 설정 시작');
+      log.info(
         '변환된 시술 데이터:',
         formData.treatments,
       );
       setInitialTreatmentData(formData.treatments);
-      console.log(
+      log.info(
         'initialTreatmentData 상태 업데이트 완료',
       );
 
-      console.log('기존 데이터 적용 완료!');
-      console.log('적용된 데이터:', {
+      log.info('기존 데이터 적용 완료!');
+      log.info('적용된 데이터:', {
         // 병원명: formData.hospital.name,
         // 의사수: formData.doctors.length,
         // 영업시간: Object.keys(formData.businessHours)
@@ -172,7 +172,7 @@ const Step5Treatments = ({
     etc: string;
     selectedDepartment?: 'skin' | 'surgery';
   }) => {
-    console.log('Step5Treatments - 시술 데이터 업데이트:', {
+    log.info('Step5Treatments - 시술 데이터 업데이트:', {
       selectedKeys: data.selectedKeys,
       productOptions: data.productOptions,
       priceExpose: data.priceExpose,
@@ -185,7 +185,7 @@ const Step5Treatments = ({
     setPriceExpose(data.priceExpose);
     setTreatmentEtc(data.etc);
 
-    console.log('Step5Treatments - 상태 업데이트 완료:', {
+    log.info('Step5Treatments - 상태 업데이트 완료:', {
       selectedTreatments: data.selectedKeys,
       treatmentOptions: data.productOptions,
       priceExpose: data.priceExpose,
@@ -202,22 +202,22 @@ const Step5Treatments = ({
 
 
 const handleNext = async () => {
-    console.log('handleNext');
+    log.info('handleNext');
     setIsSubmitting(true);
     const result = await handleSave();
     setIsSubmitting(false);
     document.body.style.overflow = '';
     if (result?.status === 'success') {
-        console.log('handleNext Step4 handlSave success');
+        log.info('handleNext Step4 handlSave success');
         onNext();
     } else {
-        console.log('handleNext Step4 handlSave what? :', result);
+        log.info('handleNext Step4 handlSave what? :', result);
     }
   };
 
  
   const handleSave = async () => {
-    console.log('Step4 handleSave 시작');
+    log.info('Step4 handleSave 시작');
     
     try {
       // FormData 구성
@@ -234,11 +234,11 @@ const handleNext = async () => {
       // 선택된 치료 항목들
       formData.append('selected_treatments', selectedTreatments.join(','));
 
-      console.log('Step4 API 호출 시작');
+      log.info('Step4 API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step5(formData);
-      console.log('Step4 API 응답:', result);
+      log.info('Step4 API 응답:', result);
 
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
@@ -257,7 +257,7 @@ const handleNext = async () => {
         };
       } else {
         // 성공 시 처리
-        console.log('Step4 데이터 저장 성공');
+        log.info('Step4 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',

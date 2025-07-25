@@ -22,14 +22,14 @@ export default function AdminLoginForm() {
     setIsLoading(true);
     
     try {
-      console.log('로그인 시도:', username);
+      log.info('로그인 시도:', username);
       
       const emailModify = `${username}@beautylink.com`;
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: emailModify, 
         password 
       });
-      console.log('로그인 시도 email:', emailModify);
+      log.info('로그인 시도 email:', emailModify);
       
       if (error) {
         console.error('로그인 에러:', error);
@@ -39,8 +39,8 @@ export default function AdminLoginForm() {
       }
       
       if (data.user && data.session) {
-        console.log('로그인 성공:', data.user.email);
-        console.log('세션 생성됨:', data.session.access_token ? '토큰 존재' : '토큰 없음');
+        log.info('로그인 성공:', data.user.email);
+        log.info('세션 생성됨:', data.session.access_token ? '토큰 존재' : '토큰 없음');
         
         // Next.js router 사용
         router.push('/admin');

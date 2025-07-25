@@ -49,7 +49,7 @@ export default function ExtraOptions({
   );
 
   // 렌더링 시점 디버깅
-  console.log('ExtraOptions 렌더링:', {
+  log.info('ExtraOptions 렌더링:', {
     받은initialOptions: initialOptions,
     현재options: options,
   });
@@ -62,13 +62,13 @@ export default function ExtraOptions({
         JSON.stringify(options)
     ) {
       setOptions(initialOptions);
-      console.log('ExtraOptions 초기값 설정 완료');
+      log.info('ExtraOptions 초기값 설정 완료');
     }
   }, [initialOptions]);
 
   // options가 변경될 때마다 상위 컴포넌트에 알림
   useEffect(() => {
-    console.log(' ExtraOptions - 상태 변경:', options);
+    log.info(' ExtraOptions - 상태 변경:', options);
     onSelectOptionState?.(options);
   }, [options, onSelectOptionState]);
 
@@ -77,7 +77,7 @@ export default function ExtraOptions({
     (key: keyof ExtraOptionState) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.checked;
-      console.log(
+      log.info(
         ` ExtraOptions - ${key} 체크박스 변경:`,
         newValue,
       );
@@ -99,7 +99,7 @@ export default function ExtraOptions({
         10,
       ),
     );
-    console.log(' ExtraOptions - 전문의 수 변경:', val);
+    log.info(' ExtraOptions - 전문의 수 변경:', val);
 
     setOptions((prev) => ({
       ...prev,

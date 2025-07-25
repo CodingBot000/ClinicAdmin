@@ -9,7 +9,7 @@ interface SortableImageItemProps {
 }
 
 export default function SortableImageItem({ id, url, hideName }: SortableImageItemProps) {
-  console.log('[SortableImageItem] id:', id);
+  log.info('[SortableImageItem] id:', id);
   
   const { 
     attributes, 

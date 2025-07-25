@@ -14,7 +14,7 @@ const AvailableLanguageSection: React.FC<AvailableLanguageSectionProps> = ({
 
   // initialLanguages가 변경될 때 내부 상태 업데이트
   useEffect(() => {
-    console.log('AvailableLanguageSection - initialLanguages 변경:', initialLanguages);
+    log.info('AvailableLanguageSection - initialLanguages 변경:', initialLanguages);
     setSelectedLanguages(initialLanguages);
   }, [initialLanguages]);
 
@@ -27,7 +27,7 @@ const AvailableLanguageSection: React.FC<AvailableLanguageSectionProps> = ({
     onLanguagesChange(updatedLanguages);
   };
 
-  console.log('AvailableLanguageSection - 현재 선택된 언어:', selectedLanguages);
+  log.info('AvailableLanguageSection - 현재 선택된 언어:', selectedLanguages);
 
   return (
     <div className="w-full">

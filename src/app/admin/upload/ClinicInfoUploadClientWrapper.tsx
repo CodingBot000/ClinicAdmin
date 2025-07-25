@@ -19,7 +19,7 @@ export default function ClinicInfoUploadClientWrapper() {
 
   const checkAuthAndSetup = async () => {
     try {
-      console.log('UploadAuthWrapper - 인증 확인 시작');
+      log.info('UploadAuthWrapper - 인증 확인 시작');
 
       // 1. 사용자 인증 확인
       const {
@@ -28,21 +28,21 @@ export default function ClinicInfoUploadClientWrapper() {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        console.log(
+        log.info(
           '인증되지 않은 사용자 - 로그인 페이지로 이동',
         );
         router.push('/admin/login');
         return;
       }
 
-      console.log('인증된 사용자:', user.email);
+      log.info('인증된 사용자:', user.email);
       setCurrentUserUid(user.id);
 
       // 2. 편집 모드 확인
       const mode = searchParams.get('mode');
       const editMode = mode === 'edit';
       setIsEditMode(editMode);
-      console.log(
+      log.info(
         'Upload 페이지 모드:',
         editMode ? '편집' : '신규등록',
       );

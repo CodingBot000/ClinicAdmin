@@ -151,7 +151,7 @@ export function setCorsHeaders(response: NextResponse): NextResponse {
 
 // 요청 로깅
 export function logRequest(request: NextRequest, additionalInfo?: any) {
-  console.log(`[API] ${request.method} ${request.url}`, {
+  log.info(`[API] ${request.method} ${request.url}`, {
     timestamp: new Date().toISOString(),
     userAgent: request.headers.get('user-agent'),
     ...additionalInfo

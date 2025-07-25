@@ -1,4 +1,3 @@
-// utils/logger.ts
 const IS_SERVER = typeof window === 'undefined';
 
 const ENABLE_CLIENT_LOG =
@@ -27,3 +26,11 @@ export const log = {
     console.debug(`[${IS_SERVER ? 'SERVER' : 'CLIENT'}][DEBUG]`, ...args);
   }
 };
+
+// 타입 내보내기
+export type Logger = typeof log;
+
+// 전역 등록 (서버와 클라이언트 공통)
+if (typeof globalThis !== 'undefined') {
+  globalThis.log = log;
+}
