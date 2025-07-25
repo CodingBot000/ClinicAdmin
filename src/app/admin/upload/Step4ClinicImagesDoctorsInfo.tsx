@@ -218,10 +218,9 @@ const Step4ClinicImagesDoctorsInfo = ({
     useState<FormData | null>(null);
   
 
-  if (
-    isLoadingExistingData
-  )
+  if (isLoadingExistingData || isSubmitting) {
     return <LoadingSpinner backdrop />;
+  }
 
   const handleNext = async () => {
     log.info('handleNext Step3');
@@ -357,38 +356,31 @@ const Step4ClinicImagesDoctorsInfo = ({
       // 4. 새 이미지 업로드
       if (newClinicImages.length > 0) {
         log.info('병원 이미지 업로드 시작:', newClinicImages.length, '개');
-        
-        for (const file of newClinicImages) {
-          try {
+        // 병렬 업로드로 개선
+        const uploadResults = await Promise.all(
+          newClinicImages.map(async (file) => {
             // 고유한 파일명 생성 (타임스탬프 + UUID + 원본 확장자)
             const timestamp = Date.now();
             const uuid = crypto.randomUUID().split('-')[0];
             const extension = file.name.split('.').pop() || 'jpg';
             const sanitizedName = file.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
             const fileName = `hospital_${sanitizedName}_${uuid}_${timestamp}.${extension}`;
-            
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-            
             const { data, error } = await supabase.storage
               .from(STORAGE_IMAGES)
               .upload(filePath, file, {
                 cacheControl: '3600',
                 upsert: false
               });
-
             if (error) throw error;
-
             const { data: urlData } = supabase.storage
               .from(STORAGE_IMAGES)
               .getPublicUrl(filePath);
-
-            newClinicImageUrls.push(urlData.publicUrl);
             log.info('병원 이미지 업로드 성공:', fileName);
-          } catch (error) {
-            console.error('병원 이미지 업로드 실패:', error);
-            throw error;
-          }
-        }
+            return urlData.publicUrl;
+          })
+        );
+        newClinicImageUrls.push(...uploadResults);
       }
 
       // 5. 기존 이미지와 새 이미지 비교하여 삭제할 이미지 찾기
@@ -437,38 +429,31 @@ const Step4ClinicImagesDoctorsInfo = ({
       );
 
       log.info('의사 이미지 업로드 시작:', doctorsWithImages.length, '개');
-      
-      for (const doctor of doctorsWithImages) {
-        try {
+      // 병렬 업로드로 개선
+      const doctorUploadResults = await Promise.all(
+        doctorsWithImages.map(async (doctor) => {
           // 고유한 파일명 생성
           const timestamp = Date.now();
           const uuid = crypto.randomUUID().split('-')[0];
           const extension = doctor.imageFile!.name.split('.').pop() || 'jpg';
           const sanitizedDoctorName = doctor.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
           const fileName = `doctor_${sanitizedDoctorName}_${uuid}_${timestamp}.${extension}`;
-          
           const filePath = `images/doctors/${id_uuid_hospital}/${fileName}`;
-          
           const { data, error } = await supabase.storage
             .from(STORAGE_IMAGES)
             .upload(filePath, doctor.imageFile!, {
               cacheControl: '3600',
               upsert: false
             });
-
           if (error) throw error;
-
           const { data: urlData } = supabase.storage
             .from(STORAGE_IMAGES)
             .getPublicUrl(filePath);
-
-          doctorImageUrls.push(urlData.publicUrl);
           log.info('의사 이미지 업로드 성공:', fileName);
-        } catch (error) {
-          console.error('의사 이미지 업로드 실패:', error);
-          throw error;
-        }
-      }
+          return urlData.publicUrl;
+        })
+      );
+      doctorImageUrls.push(...doctorUploadResults);
 
       // 8. FormData 준비
       const formData = new FormData();
@@ -558,8 +543,15 @@ const Step4ClinicImagesDoctorsInfo = ({
       
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
-        const errorMessage = formatApiError(result.error);
-        
+        let errorMessage = formatApiError(result.error);
+        // 504 에러 메시지 커스텀 (null/undefined, string, object 모두 대응)
+        if (
+          (result.error && typeof result.error === 'object' && 'status' in result.error && (result.error as any).status === 504)
+          || (result.error && typeof result.error === 'object' && 'message' in result.error && typeof (result.error as any).message === 'string' && (result.error as any).message.includes('504'))
+          || (typeof result.error === 'string' && result.error.includes('504'))
+        ) {
+          errorMessage = '서버가 응답하지 않거나 일시적인 장애가 발생했습니다. 다시 시도해주세요. 504';
+        }
         setFormState({
           message: errorMessage,
           status: 'error',
@@ -574,9 +566,11 @@ const Step4ClinicImagesDoctorsInfo = ({
       
     } catch (error) {
       console.error('Step3 API 호출 에러:', error);
-      
-      const errorMessage = formatApiError(error);
-      
+      let errorMessage = formatApiError(error);
+      // 504 에러 메시지 커스텀
+      if ((error as any)?.status === 504 || (error as any)?.message?.includes('504')) {
+        errorMessage = '서버가 응답하지 않거나 일시적인 장애가 발생했습니다. 다시 시도해주세요. 504';
+      }
       setFormState({
         message: errorMessage,
         status: 'error',
@@ -620,7 +614,7 @@ const Step4ClinicImagesDoctorsInfo = ({
    · 예시: 권장: 해상도 640 x 240 px 이상 (8:3) 2MB이하 권장 
   · 알림: 주어진 사진을 중앙을 기준으로 8:3  비율로 넘치는 부분이 자동으로 잘라집니다.
       사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
-      * File 한개당 20MB 이하(권장)로 업로드 해주세요.
+      * File 한개당 2MB 이하(권장)로 업로드 해주세요.
       * 최소(3개이상) - 최대(권장) 7개까지 업로드 가능합니다. 추가 업로드 원하시면 문의 부탁드립니다.
       * (대표이미지) 추가 된 순서대로 보여지며 첫번째 이미지가 대표 이미지가 됩니다.`}
           onFilesChange={setClinicImages}
