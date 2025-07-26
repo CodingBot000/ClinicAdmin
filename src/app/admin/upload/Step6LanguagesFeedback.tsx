@@ -373,6 +373,7 @@ const Step6LanguagesFeedback = ({
       <Divider />
       <div className='w-full'>
         <h2 className="font-semibold mb-2 text-red-500">아래 Preview 버튼을 눌러 최종결과를 재검토 부탁드립니다.</h2>
+        <h2 className="font-semibold mb-2 text-red-500">Draft Save 임시저장을 눌러야 본 화면내용도 저장됩니다.</h2>
       </div>
       </div>
 
