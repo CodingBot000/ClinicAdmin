@@ -19,6 +19,9 @@ export default function AdminPageClient({
     router.push(url);
   };
 
+  const handleReservationDashBoard = () => {
+    router.push('/admin/reservation');
+  }
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/admin/login');
@@ -39,6 +42,13 @@ export default function AdminPageClient({
           : '병원정보입력하기'}
       </button>
 
+      <button
+        onClick={handleReservationDashBoard}
+         className={`w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 bg-yellow-500 text-white`}
+      >
+        예약정보 보기
+{/* /Users/switch/Documents/웹개발요청/complete/beauty-main/src/app/hospital/[id]/reservation/ReservationClient.tsx */}
+      </button>
       <button
         onClick={handleLogout}
         className='w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200'

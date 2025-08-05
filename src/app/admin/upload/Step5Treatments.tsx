@@ -294,7 +294,11 @@ const handleNext = async () => {
       {/* 컨텐츠 영역 */}
       <div className="flex-1 my-8 mx-auto px-6 pb-24" 
       style={{ width: '100vw', maxWidth: '1024px' }}>
+        <div className='w-full'>>
+            <h1>엑셀파일로 로드하기</h1>
+        </div>
         <div className='w-full'>
+          
           {/* 가능시술 선택하기  선택 모달 */}
           {categories && (
             <TreatmentSelectBox

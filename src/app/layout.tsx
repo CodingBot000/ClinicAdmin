@@ -9,6 +9,8 @@ import Providers from "@/provider/QueryProvider";
 import { TurborepoAccessTraceResult } from "next/dist/build/turborepo-access-trace";
 import { Toaster } from "sonner";
 import OverflowFixer from "@/components/utils/OverflowFixer";
+import { useAlarmStore } from "@/stores/useHospitalUUIDStore";
+import { useReservationRealtime } from "@/hooks/useReservationRealtime";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +32,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { info } = useAlarmStore(); // 1. 로그인 전에는 null
+  const hospitalId = info?.id_uuid_hospital;
+
+  if (hospitalId) {
+    useReservationRealtime(hospitalId); // 2. hospitalId가 undefined → 구독 X
+  }
 
   return (
     <html lang="en">
