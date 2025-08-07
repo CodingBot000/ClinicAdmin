@@ -16,6 +16,11 @@ import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
 import PageBottom from '@/components/PageBottom';
 import { toast } from "sonner";
+import FileUploadSection from '@/components/FileUploadSection';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+// import { Label } from '@radix-ui/react-dropdown-menu';
+
 interface Step5TreatmentsProps {
   id_uuid_hospital: string;
   currentUserUid: string;
@@ -31,7 +36,7 @@ const Step5Treatments = ({
   onPrev,
   onNext,
 }: Step5TreatmentsProps) => {
-    log.info('qqqqqqqqq Step5Treatments id_uuid_hospital', id_uuid_hospital);
+    // log.info('Step5Treatments id_uuid_hospital', id_uuid_hospital);
 
   const {
     data: categories,
@@ -57,6 +62,9 @@ const Step5Treatments = ({
       priceExpose: boolean;
       etc: string;
     } | null>(null);
+
+    const [uploadMethod, setUploadMethod] = useState('excel');
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -200,6 +208,10 @@ const Step5Treatments = ({
   )
     return <LoadingSpinner backdrop />;
 
+  const handleFileChange = (files: File[]) => {
+      log.info('handleFileChange', files);
+      setUploadedFiles(files);
+  }
 
 const handleNext = async () => {
     log.info('handleNext');
@@ -294,46 +306,72 @@ const handleNext = async () => {
       {/* 컨텐츠 영역 */}
       <div className="flex-1 my-8 mx-auto px-6 pb-24" 
       style={{ width: '100vw', maxWidth: '1024px' }}>
-        <div className='w-full'>>
-            <h1>엑셀파일로 로드하기</h1>
-        </div>
         <div className='w-full'>
-          
-          {/* 가능시술 선택하기  선택 모달 */}
-          {categories && (
-            <TreatmentSelectBox
-              onSelectionChange={
-                handleTreatmentSelectionChange
-              }
-              initialSelectedKeys={
-                initialTreatmentData?.selectedKeys ||
-                selectedTreatments
-              }
-              initialProductOptions={
-                initialTreatmentData?.productOptions ||
-                treatmentOptions
-              }
-              initialPriceExpose={
-                initialTreatmentData?.priceExpose ??
-                priceExpose
-              }
-              initialEtc={
-                initialTreatmentData?.etc || treatmentEtc
-              }
-              categories={categories}
-            />
-          )}
+          <div className='flex flex-col gap-4'>
+            <h1>시술 업데이트 방법 선택하기</h1>
+            <RadioGroup value={uploadMethod} onValueChange={setUploadMethod}>
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="excel" id="excel" />
+                <Label htmlFor="excel">엑셀파일업로드</Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="manual" id="manual" />
+                <Label htmlFor="manual">직접입력하기</Label>
+              </div>
+            </RadioGroup>
+            </div>
+            <div style={{ display: uploadMethod === 'excel' ? 'block' : 'none' }}>
+              <FileUploadSection 
+                  onFileChange={handleFileChange}
+                  name="treatment_file"
+                  title="시술 정보 엑셀파일"
+                  description="시술 정보를 엑셀파일로 로드합니다. (가능 확장자 : .xlsx, .xls, .csv)"
+                  fileType="excel"
+                  maxFiles={5}
+              />
+            </div>
         </div>
+        {uploadMethod === 'manual' && (
+          <>
+            <div className='w-full py-6'>
+              
+              {/* 가능시술 선택하기  선택 모달 */}
+              {categories && (
+                <TreatmentSelectBox
+                  onSelectionChange={
+                    handleTreatmentSelectionChange
+                  }
+                  initialSelectedKeys={
+                    initialTreatmentData?.selectedKeys ||
+                    selectedTreatments
+                  }
+                  initialProductOptions={
+                    initialTreatmentData?.productOptions ||
+                    treatmentOptions
+                  }
+                  initialPriceExpose={
+                    initialTreatmentData?.priceExpose ??
+                    priceExpose
+                  }
+                  initialEtc={
+                    initialTreatmentData?.etc || treatmentEtc
+                  }
+                  categories={categories}
+                />
+              )}
+            </div>
 
-        {/* 선택된 시술 정보 표시 */}
-        <TreatmentSelectedOptionInfo
-          selectedKeys={selectedTreatments}
-          productOptions={treatmentOptions}
-          etc={treatmentEtc}
-          categories={categories || []}
-          showTitle={false}
-          className="mt-4"
-        />
+            {/* 선택된 시술 정보 표시 */}
+            <TreatmentSelectedOptionInfo
+              selectedKeys={selectedTreatments}
+              productOptions={treatmentOptions}
+              etc={treatmentEtc}
+              categories={categories || []}
+              showTitle={false}
+              className="mt-4"
+            />
+          </>
+        )}
         
 
       <PageBottom step={5} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} onDraftSave={handleSave}>

@@ -17,15 +17,19 @@ import {
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 
+type FileType = 'image' | 'excel' | 'pdf';
+
 interface FileUploadSectionProps {
-  onFileChange: (file: File | string | null) => void;
+  onFileChange: (files: File[]) => void;
   name: string;
   title: string;
   description: string;
-  initialImage?: string | null;
+  fileType: FileType;
+  maxFiles?: number;
+  initialFiles?: string[];
   onExistingDataChange?: (data: any) => void;
-  onDeletedImageChange?: (deletedUrl: string | null) => void;
-  onCurrentImageChange?: (currentUrl: string | null) => void;
+  onDeletedFileChange?: (deletedUrl: string | null) => void;
+  onCurrentFileChange?: (currentUrl: string | null) => void;
 }
 
 const FileUploadSection = ({
@@ -33,69 +37,102 @@ const FileUploadSection = ({
   name,
   title,
   description,
-  initialImage,
+  fileType,
+  maxFiles = 1,
+  initialFiles = [],
   onExistingDataChange,
-  onDeletedImageChange,
-  onCurrentImageChange,
+  onDeletedFileChange,
+  onCurrentFileChange,
 }: FileUploadSectionProps) => {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [isExistingImage, setIsExistingImage] = useState<boolean>(false);
-  // 삭제된 이미지 URL 추적
-  const [deletedImageUrl, setDeletedImageUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileNames, setFileNames] = useState<string[]>([]);
+  const [isExistingFiles, setIsExistingFiles] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 삭제된 파일 URL 추적
+  const [deletedFileUrl, setDeletedFileUrl] = useState<string | null>(null);
 
-  // 삭제된 이미지 URL 변경 시 부모 컴포넌트에 알림
+  // 삭제된 파일 URL 변경 시 부모 컴포넌트에 알림
   useEffect(() => {
-    if (onDeletedImageChange) {
-      onDeletedImageChange(deletedImageUrl);
+    
+    if (onDeletedFileChange) {
+      onDeletedFileChange(deletedFileUrl);
     }
-  }, [deletedImageUrl, onDeletedImageChange]);
+  }, [deletedFileUrl, onDeletedFileChange]);
 
-  // 현재 표시된 이미지 URL 변경 시 부모 컴포넌트에 알림 
+  // 초기 파일 설정 및 변경 감지
   useEffect(() => {
-    if (onCurrentImageChange) {
-      const currentUrl = preview && preview.startsWith('http') ? preview : null;
-      onCurrentImageChange(currentUrl);
-    }
-  }, [preview, onCurrentImageChange]);
-
-  // 초기 이미지 설정 및 변경 감지
-  useEffect(() => {
-    if (initialImage) {
+    // initialFiles가 실제로 변경되었을 때만 처리
+    if (initialFiles.length > 0) {
       log.info(
-        'FileUploadSection 이미지 설정:',
-        initialImage,
+        'FileUploadSection 파일 설정:',
+        initialFiles,
       );
-      setPreview(initialImage);
-      setIsExistingImage(true);
-      onFileChange(initialImage); // 초기 이미지가 있을 때 부모에게 알림
-    } else {
-      // initialImage가 null인 경우 (삭제된 경우)
-      setPreview(null);
-      setFile(null);
-      setIsExistingImage(false);
+      setIsExistingFiles(true);
+      setFileNames(initialFiles.map(file => file.split('/').pop() || '기존 파일'));
+      // 초기 파일이 있을 때는 부모에게 알리지 않음 (기존 파일이므로)
     }
-  }, [initialImage, onFileChange]);
+    // initialFiles가 빈 배열인 경우는 초기 상태와 동일하므로 아무것도 하지 않음
+  }, [JSON.stringify(initialFiles)]);
+
+  // 파일 타입별 accept 설정
+  const getAcceptConfig = () => {
+    switch (fileType) {
+      case 'image':
+        return {
+          'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
+        };
+      case 'excel':
+        return {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+          'application/vnd.ms-excel': ['.xls', '.csv', '.xlsx'],
+        };
+      case 'pdf':
+        return {
+          'application/pdf': ['.pdf'],
+        };
+      default:
+        return {};
+    }
+  };
 
   // 파일 처리 함수
   const processFiles = useCallback(
-    (acceptedFiles: File[]) => {
-      const selectedFile = acceptedFiles[0]; // 첫 번째 파일만 사용
-      if (!selectedFile) return;
+    (acceptedFiles: File[], rejectedFiles: any[]) => {
+      // 에러 메시지 초기화
+      setErrorMessage(null);
 
-      setFile(selectedFile);
-      onFileChange(selectedFile); // 새 파일 선택 시 부모에게 알림
+      log.info(`processFiles - acceptedFiles: ${acceptedFiles.length}, rejectedFiles: ${rejectedFiles.length}`);
 
-      const fileReader = new FileReader();
-      fileReader.onload = () => {
-        const result = fileReader.result as string;
-        setPreview(result);
-        setIsExistingImage(false);
-      };
-      // 새로 추가한 이미지는 base64 데이터로 생성 
-      fileReader.readAsDataURL(selectedFile);
+      setFiles(prevFiles => {
+        // 1. 최대 파일 개수 체크 (가장 먼저)
+        log.info(`개수 체크 prevFiles.length: ${prevFiles.length}   acceptedFiles.length: ${acceptedFiles.length} > max:${maxFiles}`);
+        
+        if (prevFiles.length + acceptedFiles.length > maxFiles) {
+          setErrorMessage(`최대 ${maxFiles}개까지 업로드 가능합니다.`);
+          return prevFiles;
+        }
+
+        // 2. 파일 형식 체크 (개수 체크 통과 후)
+        if (rejectedFiles.length > 0) {
+          setErrorMessage('지원하지 않는 파일 형식입니다. 올바른 파일을 선택해주세요.');
+          return prevFiles;
+        }
+
+        // 3. 모든 검증 통과 - 파일 추가
+        const newFiles = [...prevFiles, ...acceptedFiles];
+        
+        setFileNames(prevFileNames => {
+          const newFileNames = [...prevFileNames, ...acceptedFiles.map(file => file.name)];
+          return newFileNames;
+        });
+        
+        onFileChange(newFiles); // 새 파일들 선택 시 부모에게 알림
+        setIsExistingFiles(false);
+        
+        return newFiles;
+      });
     },
-    [onFileChange],
+    [onFileChange, maxFiles],
   );
 
   // dropzone 설정
@@ -107,27 +144,27 @@ const FileUploadSection = ({
     isDragAccept,
   } = useDropzone({
     onDrop: processFiles,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
-    },
-    maxFiles: 1,
+    accept: getAcceptConfig() as any,
+    // maxFiles 설정 제거 - 우리가 직접 제어
   });
 
-  // 이미지 삭제
-  const handleDeleteImage = (e: MouseEvent<HTMLButtonElement>) => {
+  // 파일 삭제
+  const handleDeleteFile = (index: number) => (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // 기존 이미지가 삭제되는 경우 URL 추적
-    if (isExistingImage && preview) {
-      setDeletedImageUrl(preview);
-      log.info('기존 이미지 삭제됨:', preview);
-    }
-
-    setPreview(null);
-    setFile(null);
-    setIsExistingImage(false);
-    onFileChange(null);
+    setFiles(prevFiles => {
+      const newFiles = prevFiles.filter((_, i) => i !== index);
+      
+      setFileNames(prevFileNames => {
+        const newFileNames = prevFileNames.filter((_, i) => i !== index);
+        return newFileNames;
+      });
+      
+      onFileChange(newFiles);
+      
+      return newFiles;
+    });
     
     // existingData 수정 부분 제거 - 원본 데이터는 그대로 유지
   };
@@ -168,79 +205,93 @@ const FileUploadSection = ({
         </div>
       </div>
 
-      {/* 이미지 영역과 삭제 버튼을 나란히 배치 */}
-      <div className='flex items-start gap-4'>
-        {/* 이미지 영역 */}
-        <div className='flex-shrink-0'>
-          {preview ? (
-            /* 이미지가 있는 경우 */
-            <div className='relative w-[150px] h-[100px] overflow-hidden bg-gray-100 border-2 border-gray-200 rounded-lg'>
-              <Image
-                src={preview}
-                alt='thumbnail preview'
-                width={150}
-                height={100}
-                className='object-cover rounded-lg'
-              />
-            </div>
-          ) : (
-            /* 이미지가 없는 경우 드롭존 표시 */
-            <div
-              {...getRootProps()}
-              className={`${getDropzoneStyle()} rounded-lg w-[150px] h-[100px] flex items-center justify-center text-center`}
-            >
-              <input {...getInputProps()} />
-              <div className='flex flex-col items-center justify-center space-y-1'>
-                {isDragActive ? (
-                  <>
-                    <Upload className='w-6 h-6 text-blue-500' />
-                    <p className='text-xs font-medium text-blue-600'>
-                      {isDragAccept
-                        ? '파일을 여기에 놓으세요!'
-                        : '지원하지 않는 파일입니다'}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className='w-6 h-6 text-gray-400' />
-                    <div className='space-y-1'>
-                      <p className='text-xs font-medium text-gray-600'>
-                        이미지 업로드
-                      </p>
-                      <p className='text-xs text-gray-500'>
-                        클릭 또는 드래그
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+      {/* 에러 메시지 표시 */}
+      {errorMessage && (
+        <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-lg'>
+          <p className='text-sm text-red-600'>{errorMessage}</p>
         </div>
+      )}
 
-        {/* 삭제 버튼 - 이미지가 있을 때만 표시 */}
-        {preview && (
-          <span>
-          <button
-            type='button'
-            onClick={handleDeleteImage}
-            className='
-              flex items-center justify-center
-              w-8 h-8 
-              bg-red-500 hover:bg-red-600 
-              text-white rounded-full
-              transition-colors duration-200
-              shadow-md hover:shadow-lg
-              transform hover:scale-105
-            '
-            title='이미지 삭제'
-          >
-            <Trash2 size={16} />
-          </button>
-          <h2 className='text-sm text-gray-600'>이미지를 교체하시려면 삭제 후 새로 업로드 해주세요.</h2>
-          </span>
-        )}
+      {/* 파일 개수 표시 */}
+      <div className='mb-2 text-sm text-gray-600'>
+        업로드된 파일: {files.length} / {maxFiles}
       </div>
+
+      {/* 파일 목록 */}
+      {files.length > 0 && (
+        <div className='mb-4 space-y-2'>
+          {files.map((file, index) => (
+            <div key={index} className='flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg'>
+              <div className='flex items-center space-x-3'>
+                <div className='w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>
+                  {fileType === 'excel' && <span className='text-blue-600 text-xs font-bold'>X</span>}
+                  {fileType === 'pdf' && <span className='text-red-600 text-xs font-bold'>P</span>}
+                  {fileType === 'image' && <span className='text-green-600 text-xs font-bold'>I</span>}
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <p className='text-sm font-medium text-gray-900 truncate'>
+                    {fileNames[index]}
+                  </p>
+                  <p className='text-xs text-gray-500'>
+                    {fileType === 'excel' ? 'Excel 파일' : fileType === 'pdf' ? 'PDF 파일' : '이미지 파일'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type='button'
+                onClick={handleDeleteFile(index)}
+                className='
+                  flex items-center justify-center
+                  w-6 h-6 
+                  bg-red-500 hover:bg-red-600 
+                  text-white rounded-full
+                  transition-colors duration-200
+                  shadow-md hover:shadow-lg
+                  transform hover:scale-105
+                '
+                title='파일 삭제'
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 드롭존 - 파일이 최대 개수보다 적을 때만 표시 */}
+      {files.length < maxFiles && (
+        <div
+          {...getRootProps()}
+          className={`${getDropzoneStyle()} rounded-lg w-full h-16 flex items-center justify-center text-center`}
+        >
+          <input {...getInputProps()} />
+          <div className='flex items-center space-x-2'>
+            {isDragActive ? (
+              <>
+                <Upload className='w-5 h-5 text-blue-500' />
+                <p className='text-sm font-medium text-blue-600'>
+                  {isDragAccept
+                    ? '파일을 여기에 놓으세요!'
+                    : '지원하지 않는 파일입니다'}
+                </p>
+              </>
+            ) : (
+              <>
+                <Upload className='w-5 h-5 text-gray-400' />
+                <div>
+                  <p className='text-sm font-medium text-gray-600'>
+                    {fileType === 'excel' ? 'Excel 파일 업로드' : 
+                     fileType === 'pdf' ? 'PDF 파일 업로드' : '이미지 업로드'}
+                  </p>
+                  <p className='text-xs text-gray-500'>
+                    클릭 또는 드래그 (최대 {maxFiles}개)
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
