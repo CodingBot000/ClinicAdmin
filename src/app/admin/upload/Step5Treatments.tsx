@@ -12,6 +12,7 @@ import { ExistingHospitalData } from '@/types/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { supabase } from '@/lib/supabaseClient';
 
 import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
 import PageBottom from '@/components/PageBottom';
@@ -19,6 +20,9 @@ import { toast } from "sonner";
 import FileUploadSection from '@/components/FileUploadSection';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+
+// Supabase Storage 상수
+const STORAGE_IMAGES = 'images';
 // import { Label } from '@radix-ui/react-dropdown-menu';
 
 interface Step5TreatmentsProps {
@@ -63,8 +67,9 @@ const Step5Treatments = ({
       etc: string;
     } | null>(null);
 
-    const [uploadMethod, setUploadMethod] = useState('excel');
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+      const [uploadMethod, setUploadMethod] = useState('excel');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [existingFileNames, setExistingFileNames] = useState<string[]>([]);
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -90,6 +95,43 @@ const Step5Treatments = ({
     }
   }, [formState, showFinalResult]);
 
+  // 기존 엑셀 파일 확인
+  const checkExistingExcelFiles = async () => {
+    try {
+      const filePath = `files/${id_uuid_hospital}/treatments/`;
+      log.info('기존 엑셀 파일 확인 시작:', filePath);
+      
+      const { data, error } = await supabase.storage
+        .from(STORAGE_IMAGES)
+        .list(filePath);
+
+      if (error) {
+        console.error('기존 파일 확인 실패:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // 파일이 존재하면 uploadMethod를 'excel'로 설정
+        log.info('기존 엑셀 파일 발견:', data.length, '개');
+        setUploadMethod('excel');
+        setExistingFileNames(data.map(item => item.name));
+      } else {
+        // 파일이 없으면 uploadMethod를 'manual'로 설정
+        log.info('기존 엑셀 파일 없음');
+        // setUploadMethod('manual');
+        setExistingFileNames([]);
+      }
+    } catch (error) {
+      console.error('기존 파일 확인 중 오류:', error);
+      setUploadMethod('manual');
+      setExistingFileNames([]);
+    }
+  };
+
+  // 컴포넌트 마운트 시 기존 파일 확인
+  useEffect(() => {
+    checkExistingExcelFiles();
+  }, [id_uuid_hospital]);
 
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
@@ -208,12 +250,63 @@ const Step5Treatments = ({
   )
     return <LoadingSpinner backdrop />;
 
-  const handleFileChange = (files: File[]) => {
+    const handleFileChange = (files: File[]) => {
       log.info('handleFileChange', files);
       setUploadedFiles(files);
   }
 
-const handleNext = async () => {
+  // 기존 파일 전체 삭제
+  const handleClearAllFiles = async () => {
+    try {
+      const filePath = `files/${id_uuid_hospital}/treatments/`;
+      log.info('기존 파일 전체 삭제 시작:', filePath);
+      
+      // 기존 파일 목록 가져오기
+      const { data, error } = await supabase.storage
+        .from(STORAGE_IMAGES)
+        .list(filePath);
+
+      if (error) {
+        console.error('기존 파일 목록 조회 실패:', error);
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        // 삭제할 파일 경로들 생성
+        const filesToDelete = data.map(item => `${filePath}${item.name}`);
+        
+        log.info('삭제할 파일들:', filesToDelete);
+        
+        // 파일들 삭제
+        const { error: deleteError } = await supabase.storage
+          .from(STORAGE_IMAGES)
+          .remove(filesToDelete);
+
+        if (deleteError) {
+          console.error('파일 삭제 실패:', deleteError);
+          throw deleteError;
+        }
+
+        log.info('기존 파일 전체 삭제 완료:', data.length, '개');
+        
+        // 기존 파일명 목록 초기화
+        setExistingFileNames([]);
+        
+        // uploadMethod를 manual로 변경
+        setUploadMethod('manual');
+        
+        toast.success('기존 파일이 모두 삭제되었습니다.');
+      } else {
+        log.info('삭제할 파일이 없습니다.');
+      }
+    } catch (error) {
+      console.error('전체 파일 삭제 중 오류:', error);
+      toast.error('파일 삭제 중 오류가 발생했습니다.');
+      throw error;
+    }
+  };
+
+  const handleNext = async () => {
     log.info('handleNext');
     setIsSubmitting(true);
     const result = await handleSave();
@@ -229,7 +322,7 @@ const handleNext = async () => {
 
  
   const handleSave = async () => {
-    log.info('Step4 handleSave 시작');
+    log.info('Step5 handleSave 시작');
     
     try {
       // FormData 구성
@@ -238,19 +331,108 @@ const handleNext = async () => {
       formData.append('current_user_uid', currentUserUid);
       formData.append('id_uuid_hospital', id_uuid_hospital);
       
-      // 치료 옵션과 가격 정보
-      formData.append('treatment_options', JSON.stringify(treatmentOptions));
-      formData.append('price_expose', priceExpose.toString());
-      formData.append('etc', treatmentEtc);
-      
-      // 선택된 치료 항목들
-      formData.append('selected_treatments', selectedTreatments.join(','));
+      // uploadMethod에 따른 처리
+      if (uploadMethod === 'excel') {
+        // 엑셀 파일 업로드 처리
+        if (uploadedFiles.length === 0) {
+          setFormState({
+            message: '엑셀 파일을 업로드해주세요.',
+            status: 'error',
+            errorType: 'validation',
+          });
+          setShowFinalResult(true);
+          return {
+            status: 'error',
+            message: '엑셀 파일을 업로드해주세요.'
+          };
+        }
 
-      log.info('Step4 API 호출 시작');
+        log.info('엑셀 파일 업로드 시작:', uploadedFiles.length, '개');
+        
+        // 엑셀 파일들을 Supabase Storage에 업로드
+        const uploadedFileUrls: string[] = [];
+        
+        for (const file of uploadedFiles) {
+          try {
+            // 고유한 파일명 생성 (원본네이밍 + timestamp + 확장자)
+            const timestamp = Date.now();
+            // const originalName = file.name.replace(/\.[^/.]+$/, ''); // 확장자 제거
+            //  확장자 제거 + 공백 제거
+            const originalName = file.name
+            .replace(/\.[^/.]+$/, '')    // 확장자 제거
+            .replace(/\s+/g, '');        // 공백 제거
+
+            const extension = file.name.split('.').pop() || 'xlsx';
+            const fileName = `${originalName}_${timestamp}.${extension}`;
+            
+            const containsKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(file.name);
+            const containsSpace = /\s/.test(file.name);
+            
+            if (containsKorean || containsSpace) {
+              setFormState({
+                message: '파일명에 한글 혹은 공백이 포함된것으로 확인됩니다. 한글 혹은 공백을 모두 제거하고 올려주세요.',
+                status: 'error',
+                errorType: 'validation',
+              });
+              setShowFinalResult(true);
+              return {
+                status: 'error',
+                message: '파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요.'
+              };
+            }
+
+            const filePath = `files/${id_uuid_hospital}/treatments/${fileName}`;
+            
+            const { data, error } = await supabase.storage
+              .from(STORAGE_IMAGES)
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (error) throw error;
+
+            const { data: urlData } = supabase.storage
+              .from(STORAGE_IMAGES)
+              .getPublicUrl(filePath);
+
+            uploadedFileUrls.push(urlData.publicUrl);
+            log.info('엑셀 파일 업로드 성공:', fileName);
+          } catch (error) {
+            console.error('엑셀 파일 업로드 실패:', error);
+            throw error;
+          }
+        }
+
+        // 업로드된 파일 URL들을 FormData에 추가
+        formData.append('excel_file_urls', JSON.stringify(uploadedFileUrls));
+        formData.append('upload_method', 'excel');
+        
+        // 직접 입력 데이터는 빈 값으로 설정
+        formData.append('treatment_options', JSON.stringify([]));
+        formData.append('price_expose', 'true');
+        formData.append('etc', '');
+        formData.append('selected_treatments', '');
+        
+      } else {
+        // 직접 입력 처리
+        formData.append('upload_method', 'manual');
+        formData.append('excel_file_urls', JSON.stringify([]));
+        
+        // 치료 옵션과 가격 정보
+        formData.append('treatment_options', JSON.stringify(treatmentOptions));
+        formData.append('price_expose', priceExpose.toString());
+        formData.append('etc', treatmentEtc);
+        
+        // 선택된 치료 항목들
+        formData.append('selected_treatments', selectedTreatments.join(','));
+      }
+
+      log.info('Step5 API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step5(formData);
-      log.info('Step4 API 응답:', result);
+      log.info('Step5 API 응답:', result);
 
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
@@ -269,7 +451,7 @@ const handleNext = async () => {
         };
       } else {
         // 성공 시 처리
-        log.info('Step4 데이터 저장 성공');
+        log.info('Step5 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',
@@ -283,7 +465,7 @@ const handleNext = async () => {
       }
       
     } catch (error) {
-      console.error('Step4 API 호출 에러:', error);
+      console.error('Step5 API 호출 에러:', error);
 
       const errorMessage = formatApiError(error);
 
@@ -309,6 +491,7 @@ const handleNext = async () => {
         <div className='w-full'>
           <div className='flex flex-col gap-4'>
             <h1>시술 업데이트 방법 선택하기</h1>
+            
             <RadioGroup value={uploadMethod} onValueChange={setUploadMethod}>
               <div className="flex items-center gap-3">
                 <RadioGroupItem value="excel" id="excel" />
@@ -328,6 +511,8 @@ const handleNext = async () => {
                   description="시술 정보를 엑셀파일로 로드합니다. (가능 확장자 : .xlsx, .xls, .csv)"
                   fileType="excel"
                   maxFiles={5}
+                  existingFileNames={existingFileNames}
+                  onClearAllFiles={handleClearAllFiles}
               />
             </div>
         </div>
@@ -374,7 +559,14 @@ const handleNext = async () => {
         )}
         
 
-      <PageBottom step={5} isSubmitting={isSubmitting}  onNext={handleNext} onPrev={onPrev} onDraftSave={handleSave}>
+      <PageBottom 
+        step={5} 
+        isSubmitting={isSubmitting} 
+        isDraftSaveDisabled={uploadMethod === 'excel'}
+        onNext={handleNext} 
+        onPrev={onPrev} 
+        onDraftSave={handleSave}
+      >
         <div className="text-xs text-gray-500 whitespace-pre-line">
           <p>
             <span className="text-red-500 font-semibold">

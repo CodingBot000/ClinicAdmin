@@ -9,6 +9,7 @@ interface PageBottomProps {
   onPreview?: () => void;
   onHome?: () => void;
   isSubmitting?: boolean;
+  isDraftSaveDisabled?: boolean;
   children?: React.ReactNode; // 설명 텍스트 등
   className?: string;
 }
@@ -21,6 +22,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
   onPreview,
   onHome,
   isSubmitting = false,
+  isDraftSaveDisabled = false,
   children,
   className = '',
 }) => {
@@ -90,7 +92,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               type="button"
               className="btn btn-primary bg-red-400"
               onClick={onDraftSave}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDraftSaveDisabled}
             >
               {isSubmitting ? (
                 <>
@@ -141,7 +143,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
               type="button"
               className="btn btn-primary bg-red-400"
               onClick={onDraftSave}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDraftSaveDisabled}
             >
               {isSubmitting ? (
                 <>

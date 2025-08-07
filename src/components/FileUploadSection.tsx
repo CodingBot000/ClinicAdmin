@@ -27,9 +27,11 @@ interface FileUploadSectionProps {
   fileType: FileType;
   maxFiles?: number;
   initialFiles?: string[];
+  existingFileNames?: string[];
   onExistingDataChange?: (data: any) => void;
   onDeletedFileChange?: (deletedUrl: string | null) => void;
   onCurrentFileChange?: (currentUrl: string | null) => void;
+  onClearAllFiles?: () => Promise<void>;
 }
 
 const FileUploadSection = ({
@@ -40,9 +42,11 @@ const FileUploadSection = ({
   fileType,
   maxFiles = 1,
   initialFiles = [],
+  existingFileNames = [],
   onExistingDataChange,
   onDeletedFileChange,
   onCurrentFileChange,
+  onClearAllFiles,
 }: FileUploadSectionProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [fileNames, setFileNames] = useState<string[]>([]);
@@ -102,6 +106,17 @@ const FileUploadSection = ({
       setErrorMessage(null);
 
       log.info(`processFiles - acceptedFiles: ${acceptedFiles.length}, rejectedFiles: ${rejectedFiles.length}`);
+
+      // 파일명 검증 (한글, 공백 체크)
+      for (const file of acceptedFiles) {
+        const containsKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(file.name);
+        const containsSpace = /\s/.test(file.name);
+        
+        if (containsKorean || containsSpace) {
+          setErrorMessage('파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요.');
+          return;
+        }
+      }
 
       setFiles(prevFiles => {
         // 1. 최대 파일 개수 체크 (가장 먼저)
@@ -169,6 +184,25 @@ const FileUploadSection = ({
     // existingData 수정 부분 제거 - 원본 데이터는 그대로 유지
   };
 
+
+  const handleClearAll = async () => {
+    log.info('handleClearAll : ', onClearAllFiles);
+    try {
+      // 실제 파일 삭제 수행
+      if (onClearAllFiles) {
+        await onClearAllFiles();
+      }
+      
+      // 로컬 상태 초기화
+      setFiles([]);
+      setFileNames([]);
+      onFileChange([]);
+      setIsExistingFiles(false);
+    } catch (error) {
+      console.error('전체 삭제 중 오류:', error);
+    }
+  };
+
   // dropzone 스타일
   const getDropzoneStyle = () => {
     let baseStyle =
@@ -214,8 +248,45 @@ const FileUploadSection = ({
 
       {/* 파일 개수 표시 */}
       <div className='mb-2 text-sm text-gray-600'>
-        업로드된 파일: {files.length} / {maxFiles}
+        {existingFileNames.length > 0 
+          ? `기존 파일: ${existingFileNames.length} / ${maxFiles}개`
+          : `업로드 예정 파일: ${files.length} / ${maxFiles}`
+        }
       </div>
+      {existingFileNames.length > 0 && (
+            <button
+              type='button'
+              onClick={handleClearAll}
+              className='text-sm bg-red-400 text-white border rounded px-3 py-1 hover:bg-white-500 transition-colors'
+            >
+              전체 삭제
+            </button>
+          )}
+      {/* 기존 파일 목록 표시 */}
+      {existingFileNames.length > 0 && (
+        <div className='mb-4'>
+          <h4 className='text-sm font-medium text-gray-700 mb-2'>기존 파일:</h4>
+          <div className='space-y-2'>
+            {existingFileNames.map((fileName, index) => (
+              <div key={index} className='flex items-center space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                {/* <div className='w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>
+                  {fileType === 'excel' && <span className='text-blue-600 text-xs font-bold'>X</span>}
+                  {fileType === 'pdf' && <span className='text-red-600 text-xs font-bold'>P</span>}
+                  {fileType === 'image' && <span className='text-green-600 text-xs font-bold'>I</span>}
+                </div> */}
+                <div className='flex-1 min-w-0'>
+                  <p className='text-sm font-medium text-gray-900 truncate'>
+                    {fileName}
+                  </p>
+                  <p className='text-xs text-blue-600'>
+                    기존 파일
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 파일 목록 */}
       {files.length > 0 && (
@@ -223,11 +294,11 @@ const FileUploadSection = ({
           {files.map((file, index) => (
             <div key={index} className='flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg'>
               <div className='flex items-center space-x-3'>
-                <div className='w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>
+                {/* <div className='w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>
                   {fileType === 'excel' && <span className='text-blue-600 text-xs font-bold'>X</span>}
                   {fileType === 'pdf' && <span className='text-red-600 text-xs font-bold'>P</span>}
                   {fileType === 'image' && <span className='text-green-600 text-xs font-bold'>I</span>}
-                </div>
+                </div> */}
                 <div className='flex-1 min-w-0'>
                   <p className='text-sm font-medium text-gray-900 truncate'>
                     {fileNames[index]}
@@ -259,7 +330,7 @@ const FileUploadSection = ({
       )}
 
       {/* 드롭존 - 파일이 최대 개수보다 적을 때만 표시 */}
-      {files.length < maxFiles && (
+      {(existingFileNames.length === 0 && files.length < maxFiles) && (
         <div
           {...getRootProps()}
           className={`${getDropzoneStyle()} rounded-lg w-full h-16 flex items-center justify-center text-center`}
