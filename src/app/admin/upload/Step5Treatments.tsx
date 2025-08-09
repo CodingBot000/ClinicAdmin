@@ -20,10 +20,13 @@ import { toast } from "sonner";
 import FileUploadSection from '@/components/FileUploadSection';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { STORAGE_IMAGES } from '@/constants/tables';
+import { Divide } from 'lucide-react';
+import Divider from '@/components/Divider';
 
-// Supabase Storage 상수
-const STORAGE_IMAGES = 'images';
+
 // import { Label } from '@radix-ui/react-dropdown-menu';
+const EXCEL_MAX_FILES = 1;
 
 interface Step5TreatmentsProps {
   id_uuid_hospital: string;
@@ -503,14 +506,26 @@ const Step5Treatments = ({
               </div>
             </RadioGroup>
             </div>
+            <Divider />
             <div style={{ display: uploadMethod === 'excel' ? 'block' : 'none' }}>
+
+              <div className='flex items-center justify-between mb-2'>
+                <h2 className='font-semibold text-lg'>시술 정보 엑셀파일</h2>
+                <button
+                  type="button"
+                  onClick={() => window.open('<iframe src="https://bittersweet-makemake-b02.notion.site/ebd/2495ffceb78c80158a4dd66aba457812" width="100%" height="600" frameborder="0" allowfullscreen />', '_blank', 'noopener,noreferrer')}
+                  className="text-sm px-3 py-1 rounded border border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  엑셀 작성 가이드보기
+                </button>
+              </div>
               <FileUploadSection 
                   onFileChange={handleFileChange}
                   name="treatment_file"
-                  title="시술 정보 엑셀파일"
-                  description="시술 정보를 엑셀파일로 로드합니다. (가능 확장자 : .xlsx, .xls, .csv)\n 파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요."
+                  title=""
+                  description={`시술 정보를 엑셀파일로 로드합니다. (가능 확장자 : .xlsx, .xls, .csv)\n 파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요.`}
                   fileType="excel"
-                  maxFiles={5}
+                  maxFiles={EXCEL_MAX_FILES}
                   existingFileNames={existingFileNames}
                   onClearAllFiles={handleClearAllFiles}
               />
