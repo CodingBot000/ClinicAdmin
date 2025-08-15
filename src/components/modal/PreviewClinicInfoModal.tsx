@@ -26,6 +26,8 @@ import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import Divider from '../Divider';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
 import { Card, CardContent } from '../ui/card';
+import { getTreatmentsFilePath } from '@/constants/paths';
+import { STORAGE_IMAGES } from '@/constants/tables';
 
 interface PreviewClinicInfoModalProps {
   isOpen: boolean;
@@ -54,6 +56,7 @@ interface CombinedHospitalData extends HospitalData, Partial<HospitalDetailData>
   treatmentDetails?: any[];
   feedback?: string;
   contacts?: any[];
+  excelFileName?: string;
 }
 
 const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
@@ -192,6 +195,25 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
       if (contactsError) {
         console.error('연락처 정보 로딩 실패:', contactsError);
       }
+
+      // Step 8: 엑셀 파일 확인
+      let excelFileName = '';
+      try {
+        const filePath = getTreatmentsFilePath(id_uuid_hospital);
+        const { data: files, error: fileError } = await supabase.storage
+          .from(STORAGE_IMAGES)
+          .list(filePath);
+
+        if (!fileError && files && files.length > 0) {
+          // 가장 최신 파일 선택 (created_at 기준)
+          const latestFile = files.sort((a, b) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          )[0];
+          excelFileName = latestFile.name;
+        }
+      } catch (err) {
+        console.error('엑셀 파일 확인 실패:', err);
+      }
       
       // 데이터 조합
       const combinedData: CombinedHospitalData = {
@@ -203,6 +225,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         available_languages: hospitalDetails?.available_languages || [],
         feedback: feedbackData?.feedback_content || '',
         contacts: contactsData || [],
+        excelFileName,
         ...hospitalDetails,
       };
 
@@ -825,7 +848,7 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
               </div>
 
               {/* Step 5: 치료 정보 */}
-              {hospitalData.treatments && hospitalData.treatments.length > 0 && (
+              {(hospitalData.treatments && hospitalData.treatments.length > 0) || hospitalData.excelFileName ? (
                 <div className="bg-green-50 p-6 rounded-lg">
                   <h3 className="text-xl font-semibold mb-4 text-green-800 flex items-center justify-between">
                     <div className="flex items-center">
@@ -846,45 +869,102 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                       편집
                     </button>
                   </h3>
+
+                  {/* 엑셀 파일 표시 */}
+                  {hospitalData.excelFileName && (
+                    <div className="mb-4 p-4 bg-blue-100 border border-blue-300 rounded-lg">
+                      <h4 className="font-medium mb-2 text-blue-800 flex items-center">
+                        📊 업로드된 시술정보 엑셀 파일
+                      </h4>
+                      <div className="flex items-center text-blue-700">
+                        <span className="font-mono text-sm bg-white px-2 py-1 rounded border">
+                          {hospitalData.excelFileName}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   
-                  {/* TreatmentSelectedOptionInfo 컴포넌트 사용 */}
-                  <TreatmentSelectedOptionInfo
-                    selectedKeys={(() => {
-                      // treatmentDetails의 code를 사용하여 selectedKeys 생성
-                      if (!hospitalData.treatmentDetails || !categories) return [];
-                      const codes = hospitalData.treatmentDetails.map(detail => detail.code);
-                      log.info('Treatment codes:', codes);
-                      return [...new Set(codes)].filter(code => !!code);
-                    })()}
-                    productOptions={(() => {
-                      // treatments와 treatmentDetails를 매칭하여 productOptions 생성
-                      if (!hospitalData.treatments || !hospitalData.treatmentDetails) return [];
-                      
-                      return hospitalData.treatments.map((treatment) => {
-                        // UUID로 treatmentDetails에서 해당 치료 정보 찾기
-                        const treatmentDetail = hospitalData.treatmentDetails?.find(
-                          detail => detail.id_uuid === treatment.id_uuid_treatment
-                        );
-                        
-                        return {
-                          id: treatment.id_uuid,
-                          treatmentKey: treatmentDetail?.code || '',
-                          value1: treatment.option_value && treatment.option_value.trim() !== '' 
-                            ? (isNaN(parseInt(treatment.option_value)) ? 0 : parseInt(treatment.option_value))
-                            : 0,
-                          value2: treatment.price || 0
-                        };
-                      });
-                    })()}
-                    etc={hospitalData.treatments
-                      .filter(treatment => treatment.etc && treatment.etc.trim() !== '')
-                      .map(treatment => treatment.etc)
-                      .join('\n')
-                    }
-                    categories={categories || []}
-                    showTitle={false}
-                    className="bg-white"
-                  />
+                  {/* TreatmentSelectedOptionInfo 컴포넌트 사용 (직접 입력한 시술 정보가 있는 경우) */}
+                  {hospitalData.treatments && hospitalData.treatments.length > 0 && (
+                    <div>
+                      {hospitalData.excelFileName && (
+                        <h4 className="font-medium mb-2 text-green-800">직접 입력한 시술 정보</h4>
+                      )}
+                      <TreatmentSelectedOptionInfo
+                        selectedKeys={(() => {
+                          // treatmentDetails의 code를 사용하여 selectedKeys 생성
+                          if (!hospitalData.treatmentDetails || !categories) return [];
+                          const codes = hospitalData.treatmentDetails.map(detail => detail.code);
+                          log.info('Treatment codes:', codes);
+                          return [...new Set(codes)].filter(code => !!code);
+                        })()}
+                        productOptions={(() => {
+                          // treatments와 treatmentDetails를 매칭하여 productOptions 생성
+                          if (!hospitalData.treatments || !hospitalData.treatmentDetails) return [];
+                          
+                          return hospitalData.treatments.map((treatment) => {
+                            // UUID로 treatmentDetails에서 해당 치료 정보 찾기
+                            const treatmentDetail = hospitalData.treatmentDetails?.find(
+                              detail => detail.id_uuid === treatment.id_uuid_treatment
+                            );
+                            
+                            return {
+                              id: treatment.id_uuid,
+                              treatmentKey: treatmentDetail?.code || '',
+                              value1: treatment.option_value && treatment.option_value.trim() !== '' 
+                                ? (isNaN(parseInt(treatment.option_value)) ? 0 : parseInt(treatment.option_value))
+                                : 0,
+                              value2: treatment.price || 0
+                            };
+                          });
+                        })()}
+                        etc={hospitalData.treatments
+                          .filter(treatment => treatment.etc && treatment.etc.trim() !== '')
+                          .map(treatment => treatment.etc)
+                          .join('\n')
+                        }
+                        categories={categories || []}
+                        showTitle={false}
+                        className="bg-white"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* 시술 정보가 아무것도 없는 경우 */}
+                  {!hospitalData.excelFileName && (!hospitalData.treatments || hospitalData.treatments.length === 0) && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="text-sm text-gray-500 italic text-center">
+                        등록된 시술 정보가 없습니다.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-600 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="bg-gray-400 text-white px-3 py-1 rounded-full text-sm mr-3">Step 6</span>
+                      치료 정보
+                    </div>
+                    <button
+                      onClick={() => handleMoveStep(5)}
+                      className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        5 < currentStep
+                          ? 'bg-gray-600 text-white hover:bg-gray-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={5 >= currentStep}
+                      title={5 < currentStep ? 'Step 5 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      편집
+                    </button>
+                  </h3>
+                  <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-500 italic text-center">
+                      등록된 시술 정보가 없습니다.
+                    </div>
+                  </div>
                 </div>
               )}
 
