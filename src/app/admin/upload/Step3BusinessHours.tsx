@@ -327,7 +327,10 @@ const handleNext = async () => {
             <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
             <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+              <Button onClick={() => {
+                setShowFinalResult(false);
+                document.body.style.overflow = '';
+              }}>확인</Button>
             </div>
           </div>
         </div>

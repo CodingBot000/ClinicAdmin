@@ -49,7 +49,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
         );
       case 2:
       case 3:
-      case 4:
+      
         return (
           <>
             <Button
@@ -77,6 +77,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
             </Button>
           </>
         );
+        case 4:
       case 5:
         return (
           <>

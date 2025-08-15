@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { STORAGE_IMAGES } from '@/constants/tables';
 import { Divide } from 'lucide-react';
 import Divider from '@/components/Divider';
+import { getTreatmentsFilePath } from '@/constants/paths';
 
 
 // import { Label } from '@radix-ui/react-dropdown-menu';
@@ -101,7 +102,8 @@ const Step5Treatments = ({
   // 기존 엑셀 파일 확인
   const checkExistingExcelFiles = async () => {
     try {
-      const filePath = `files/${id_uuid_hospital}/treatments/`;
+      const filePath = getTreatmentsFilePath(id_uuid_hospital);
+      
       log.info('기존 엑셀 파일 확인 시작:', filePath);
       
       const { data, error } = await supabase.storage
@@ -212,6 +214,7 @@ const Step5Treatments = ({
 
   const handleModal = () => {
     setShowFinalResult(false); // 결과 모달을 닫을 때 showFinalResult 초기화
+    document.body.style.overflow = '';
     handleOpenModal();
   };
 
@@ -261,7 +264,8 @@ const Step5Treatments = ({
   // 기존 파일 전체 삭제
   const handleClearAllFiles = async () => {
     try {
-      const filePath = `files/${id_uuid_hospital}/treatments/`;
+     const filePath = getTreatmentsFilePath(id_uuid_hospital);
+      
       log.info('기존 파일 전체 삭제 시작:', filePath);
       
       // 기존 파일 목록 가져오기
@@ -337,13 +341,14 @@ const Step5Treatments = ({
       // uploadMethod에 따른 처리
       if (uploadMethod === 'excel') {
         // 엑셀 파일 업로드 처리
-        if (uploadedFiles.length === 0) {
+        if (uploadedFiles.length === 0 && existingFileNames.length === 0) {
           setFormState({
             message: '엑셀 파일을 업로드해주세요.',
             status: 'error',
             errorType: 'validation',
           });
           setShowFinalResult(true);
+          document.body.style.overflow = '';
           return {
             status: 'error',
             message: '엑셀 파일을 업로드해주세요.'
@@ -378,14 +383,13 @@ const Step5Treatments = ({
                 errorType: 'validation',
               });
               setShowFinalResult(true);
+              document.body.style.overflow = '';
               return {
                 status: 'error',
                 message: '파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요.'
               };
             }
-
-            const filePath = `files/${id_uuid_hospital}/treatments/${fileName}`;
-            
+            const filePath = getTreatmentsFilePath(id_uuid_hospital, fileName);
             const { data, error } = await supabase.storage
               .from(STORAGE_IMAGES)
               .upload(filePath, file, {
@@ -485,6 +489,7 @@ const Step5Treatments = ({
       };
     }
   };
+  const notionUrl = "https://www.notion.so/Treatments-update-guide-line-2495ffceb78c80158a4dd66aba457812";
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -513,7 +518,7 @@ const Step5Treatments = ({
                 <h2 className='font-semibold text-lg'>시술 정보 엑셀파일</h2>
                 <button
                   type="button"
-                  onClick={() => window.open('<iframe src="https://bittersweet-makemake-b02.notion.site/ebd/2495ffceb78c80158a4dd66aba457812" width="100%" height="600" frameborder="0" allowfullscreen />', '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open(notionUrl, "_blank")}
                   className="text-sm px-3 py-1 rounded border border-blue-500 text-blue-600 hover:bg-blue-50"
                 >
                   엑셀 작성 가이드보기
@@ -585,7 +590,7 @@ const Step5Treatments = ({
         <div className="text-xs text-gray-500 whitespace-pre-line">
           <p>
             <span className="text-red-500 font-semibold">
-              *주의* 저장 버튼을 눌러야만 정보가 데이터베이스에 저장됩니다.
+              *주의* 특히 직접 시술 입력시 저장 버튼을 눌러야만 정보가 데이터베이스에 저장되는데 더욱 유념해주시기 바랍니다..
             </span>
             {'\n'}
             나중에 다시 수정하더라도 꼭 저장 버튼을 눌러주세요.

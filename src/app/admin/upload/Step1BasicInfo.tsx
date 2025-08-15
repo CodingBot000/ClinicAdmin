@@ -418,14 +418,14 @@ const Step1BasicInfo = ({
       errors.push('대표전화번호를 입력해주세요.');
     }
 
-    if (!basicInfo.sns_content_agreement) {
+    if (basicInfo.sns_content_agreement === null || basicInfo.sns_content_agreement === undefined) {
       errors.push('SNS 이용 동의에 대해 동의  혹은 미동의를 선택해 주세요.');
     }
 
     // 5. 기본 주소 검증 (상세주소, 찾아오는 방법 상세안내 제외)
     // 서울 동작구 남부순환로 2005 의 경우 도로명 선택시 지번을 DaumPost api에서 빈값으로 준다. 
     // 그래서 &&조건으로 변경한다
-    if (!addressForSendForm?.address_full_jibun?.trim() && !addressForSendForm?.address_full_road?.trim()) {
+    if (!addressForSendForm || (!addressForSendForm.address_full_jibun?.trim() && !addressForSendForm.address_full_road?.trim())) {
       errors.push('기본 주소를 입력해주세요.');
     }
 
@@ -524,6 +524,7 @@ const Step1BasicInfo = ({
           errorType: 'validation',
         });
         setShowFinalResult(true);
+        document.body.style.overflow = '';
         return { status: 'error' };
       }
       
@@ -711,7 +712,10 @@ const Step1BasicInfo = ({
             <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
             <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+              <Button onClick={() => {
+                setShowFinalResult(false);
+                document.body.style.overflow = '';
+              }}>확인</Button>
             </div>
           </div>
         </div>
