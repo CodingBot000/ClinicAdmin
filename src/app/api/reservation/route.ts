@@ -29,12 +29,14 @@ export async function GET(req: NextRequest) {
 }
 
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // const supabase = createClient();
     const body = await req.json();
-
-    const hospitalId = params.id;
+    
+    // Next.js 15에서 params는 Promise 타입
+    const resolvedParams = await params;
+    const hospitalId = resolvedParams.id;
 
     const reservationData: ReservationInputDto = {
       id_user: body.id_user,
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       consultation_request: body.consultation_request,
       additional_info: body.additional_info,
       preferred_languages: body.preferred_languages ?? [],
-      status: "pending", // 기본 상태
+      status_code: PENDING,
       created_at: new Date().toISOString(),
     };
 
