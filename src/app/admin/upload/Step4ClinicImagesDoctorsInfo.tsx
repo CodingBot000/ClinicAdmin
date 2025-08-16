@@ -24,6 +24,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { ExistingHospitalData } from '@/types/hospital';
 import ClinicImageThumbnailUploadSection from '@/components/ClinicImageThumbnailUploadSection';
 import PageBottom from '@/components/PageBottom';
+import { toast } from 'sonner';
 
 interface Surgery {
   created_at: string;
@@ -97,20 +98,20 @@ const Step4ClinicImagesDoctorsInfo = ({
       `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
     );
     if (isEditMode && currentUserUid) {
-      log.info('Step3 편집 모드 - 기존 데이터 로드');
+      log.info('Step4 편집 모드 - 기존 데이터 로드');
       loadExistingDataForEdit();
     }
   }, [isEditMode, currentUserUid]);
 
   useEffect(() => {
-    log.info('Step3 - existingData 변경됨:', existingData);
-    log.info('Step3 - hospital imageurls:', existingData?.hospital?.imageurls);
-    log.info('Step3 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
-    log.info('Step3 - doctors:', existingData?.doctors);
+    log.info('Step4 - existingData 변경됨:', existingData);
+    log.info('Step4 - hospital imageurls:', existingData?.hospital?.imageurls);
+    log.info('Step4 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
+    log.info('Step4 - doctors:', existingData?.doctors);
   }, [existingData]);
 
   useEffect(() => {
-    log.info('Step3 - doctors 상태 변경됨:', doctors);
+    log.info('Step4 - doctors 상태 변경됨:', doctors);
   }, [doctors]);
 
   const loadExistingDataForEdit = async () => {
@@ -121,9 +122,9 @@ const Step4ClinicImagesDoctorsInfo = ({
       const data =
         await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 3);
       if (data) {
-        log.info('Step3 - 로드된 데이터:', data);
-        log.info('Step3 - hospital 데이터:', data.hospital);
-        log.info('Step3 - doctors 데이터:', data.doctors);
+        log.info('Step4 - 로드된 데이터:', data);
+        log.info('Step4 - hospital 데이터:', data.hospital);
+        log.info('Step4 - doctors 데이터:', data.doctors);
         
         setExistingData(data);
         
@@ -223,18 +224,18 @@ const Step4ClinicImagesDoctorsInfo = ({
   }
 
   const handleNext = async () => {
-    log.info('handleNext Step3');
+    log.info('handleNext Step4');
     setIsSubmitting(true);
     const result = await handleSave();
-    log.info('handleNext Step3 handlSave after result', result);
+    log.info('handleNext Step4 handlSave after result', result);
     document.body.style.overflow = '';
     setIsSubmitting(false);
     if (result?.status === 'success') {
-        log.info('handleNext Step3 handlSave success');
+        log.info('handleNext Step4 handlSave success');
         
         onNext();
     } else {
-        log.info('handleNext Step3 handlSave what? :', result);
+        log.info('handleNext Step4 handlSave what? :', result);
     }
   };
  
@@ -276,7 +277,7 @@ const Step4ClinicImagesDoctorsInfo = ({
   };
 
   const handleSave = async () => {
-    log.info('handleSave Step3');
+    log.info('handleSave Step4');
     
     try {
       // 기존 병원 썸네일 이미지 (원본 데이터에서 가져옴)
@@ -314,6 +315,7 @@ const Step4ClinicImagesDoctorsInfo = ({
 
           newThumbnailImageUrl = urlData.publicUrl;
           log.info('썸네일 이미지 업로드 성공:', fileName);
+          toast.success('image 현재 상태 업데이트 성공');
         } catch (error) {
           console.error('썸네일 이미지 업로드 실패:', error);
           throw error;
@@ -533,13 +535,13 @@ const Step4ClinicImagesDoctorsInfo = ({
         log.info('의사 데이터가 없습니다.');
       }
 
-      log.info('Step3 uploadActionStep3 before formData:', formData);
+      log.info('Step4 uploadActionStep4 before formData:', formData);
       
-      log.info('Step3 API 호출 시작');
+      log.info('Step4 API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step4(formData);
-      log.info('Step3 API 응답:', result);
+      log.info('Step4 API 응답:', result);
       
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
@@ -561,11 +563,12 @@ const Step4ClinicImagesDoctorsInfo = ({
         return { status: 'error' };
       }
 
-      log.info('Step3 데이터 저장 성공');
+      log.info('Step4 데이터 저장 성공');
+      toast.success('image, 의사정보 모두 현재 상태 업데이트 성공');
       return { status: 'success' };
       
     } catch (error) {
-      console.error('Step3 API 호출 에러:', error);
+      console.error('Step4 API 호출 에러:', error);
       let errorMessage = formatApiError(error);
       // 504 에러 메시지 커스텀
       if ((error as any)?.status === 504 || (error as any)?.message?.includes('504')) {
@@ -626,6 +629,10 @@ const Step4ClinicImagesDoctorsInfo = ({
           onCurrentImagesChange={setCurrentDisplayedUrls}
         />
         <Divider />
+        
+        <h1 className='text-red-500'>만에 하나 발생할 네트워크 오류를 대비해 하단의 임시저장을 누른후 의사정보 등록을 진행하세요.
+          입력하실 의사선생님이 많을 경우 자주 임시저장을 해주세요.
+        </h1>
         <DoctorInfoSection
           title='의사 정보 등록'
           description={`- 의사 프로필 정보를 입력하고 이미지를 등록하세요.
@@ -637,7 +644,7 @@ const Step4ClinicImagesDoctorsInfo = ({
         <Divider />
        </div>
 
-      <PageBottom step={4} isSubmitting={isSubmitting} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={4} isSubmitting={isSubmitting} onNext={handleNext} onDraftSave={handleSave} onPrev={onPrev} />
       {/* 기본 모달 */}
       {formState?.message && showFinalResult && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -645,7 +652,10 @@ const Step4ClinicImagesDoctorsInfo = ({
             <h3 className="text-lg font-semibold mb-2">{formState.status === 'success' ? '성공' : '오류'}</h3>
             <p className="text-sm text-gray-800 mb-4 whitespace-pre-line">{formState.message}</p>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setShowFinalResult(false)}>확인</Button>
+              <Button onClick={() => {
+                setShowFinalResult(false);
+                document.body.style.overflow = '';
+              }}>확인</Button>
             </div>
           </div>
         </div>

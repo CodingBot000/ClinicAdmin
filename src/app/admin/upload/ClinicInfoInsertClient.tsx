@@ -118,6 +118,13 @@ export default function ClinicInfoInsertClient(
       />
 
       {step === 1 && (
+      //   <Step5Treatments
+      //   id_uuid_hospital={id_uuid_hospital}
+      //   isEditMode={isEditMode}
+      //   onNext={goNext}
+      //   onPrev={goBack}
+      //   currentUserUid={currentUserUid}
+      // />
         <Step1BasicInfo
           id_uuid_hospital={id_uuid_hospital}
           setIdUUIDHospital={setIdUuidHospital}

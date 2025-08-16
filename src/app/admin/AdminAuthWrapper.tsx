@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import AdminPageClient from './AdminPageClient';
 import { TABLE_ADMIN, TABLE_HOSPITAL } from '@/constants/tables';
 import { useSupabaseSession } from '@/hooks/useSupabaseSession';
+import { useReservationRealtime } from '@/hooks/useReservationRealtime';
+import { useAlarmStore } from '@/stores/useHospitalUUIDStore';
 
 export default function AdminAuthWrapper() {
   const router = useRouter();
@@ -69,6 +71,9 @@ export default function AdminAuthWrapper() {
           }
 
           clinicInfo = hospital.length > 0;
+          // 예약 알림 구독하기 
+          useAlarmStore.setState(admin.id_uuid_hospital);
+          
         }
 
         if (mounted) {
@@ -108,6 +113,9 @@ export default function AdminAuthWrapper() {
     router.push('/admin/login');
     return null;
   }
+
+
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
