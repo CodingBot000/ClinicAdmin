@@ -119,7 +119,7 @@ export default function ExtraOptions({
           <span className="text-sm font-medium">의사</span>
           <input
             type="number"
-            className="w-12 border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 text-center text-sm"
+            className="w-12 border-b border-gray-300 focus:outline-none focus:border-blue-500 px-1 text-center text-sm appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             min={1}
             value={options.specialist_count}
             onChange={handleCountChange}
