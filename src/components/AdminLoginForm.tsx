@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import InputField from "./InputField";
 import { Button } from "./ui/button";
+import Image from "next/image";
 
 
 export default function AdminLoginForm() {
@@ -56,7 +57,20 @@ export default function AdminLoginForm() {
   };
 
   return (
-    <div className="flex justify-center items-center w-full min-h-screen">
+    <div className="flex flex-col justify-center items-center w-full min-h-screen bg-gray-50">
+      <div className="text-center mb-8">
+          <Image
+              src="/logo/logo_mimotok.svg"
+              alt="logo"
+              width={0}  // dummy
+              height={0} // dummy
+              style={{ width: "500px", height: "auto" }} // 기본값
+             className="w-[200px] h-auto md:w-[300px] lg:w-[386px]"
+            />
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Mimotok Admin</h1>
+      
+        <p className="text-lg text-gray-600">Please enter your ID and password</p>
+      </div>
       <form onSubmit={handleLogin} className="space-y-4 w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
         <InputField
             label="Login ID"
@@ -83,7 +97,7 @@ export default function AdminLoginForm() {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? '로그인 중...' : 'Login'}
         </Button>
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500 text-center">{error}</p>}
       </form>
       </div>
   );

@@ -341,19 +341,19 @@ const Step5Treatments = ({
       // uploadMethod에 따른 처리
       if (uploadMethod === 'excel') {
         // 엑셀 파일 업로드 처리
-        if (uploadedFiles.length === 0 && existingFileNames.length === 0) {
-          setFormState({
-            message: '엑셀 파일을 업로드해주세요.',
-            status: 'error',
-            errorType: 'validation',
-          });
-          setShowFinalResult(true);
-          document.body.style.overflow = '';
-          return {
-            status: 'error',
-            message: '엑셀 파일을 업로드해주세요.'
-          };
-        }
+        // if (uploadedFiles.length === 0 && existingFileNames.length === 0) {
+        //   setFormState({
+        //     message: '엑셀 파일을 업로드해주세요.',
+        //     status: 'error',
+        //     errorType: 'validation',
+        //   });
+        //   setShowFinalResult(true);
+        //   document.body.style.overflow = '';
+        //   return {
+        //     status: 'error',
+        //     message: '엑셀 파일을 업로드해주세요.'
+        //   };
+        // }
 
         log.info('엑셀 파일 업로드 시작:', uploadedFiles.length, '개');
         
@@ -433,6 +433,26 @@ const Step5Treatments = ({
         
         // 선택된 치료 항목들
         formData.append('selected_treatments', selectedTreatments.join(','));
+      }
+
+      let apiPass = false;
+      if (uploadMethod === 'excel') {
+        if (uploadedFiles.length === 0 && existingFileNames.length === 0) {
+          apiPass = true;
+        }
+      } else {
+        if (treatmentOptions.length === 0) {
+          apiPass = true;
+        }
+      }
+
+      // 아무것도 입력되지 않았으면 API 호출 없이 성공 처리
+      if (apiPass) {
+        log.info('Step5 - 입력 데이터 없음, API 호출 스킵하고 다음 단계로 진행');
+        return {
+          status: 'success',
+          message: '다음 단계로 진행합니다.'
+        };
       }
 
       log.info('Step5 API 호출 시작');

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Edit2, Trash2 } from 'lucide-react';
 
@@ -25,6 +25,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   onChiefChange,
   getValidImageUrl
 }) => {
+  const [imageError, setImageError] = useState(false);
   // 안전한 이미지 URL 생성 함수
   const getSafeImageUrl = (imageUrl?: string): string => {
     // 사용자 정의 함수가 있으면 먼저 사용
@@ -78,7 +79,12 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
     }
   };
 
-  const safeImageUrl = getSafeImageUrl(doctor.imagePreview);
+  const safeImageUrl = imageError ? '/default/doctor_default_man.png' : getSafeImageUrl(doctor.imagePreview);
+
+  const handleImageError = () => {
+    console.warn('이미지 로드 실패:', doctor.imagePreview);
+    setImageError(true);
+  };
 
   return (
     <div
@@ -116,12 +122,8 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
             width={80}
             height={80}
             className='object-cover w-full h-full'
-            onError={(e) => {
-              console.warn('이미지 로드 실패:', safeImageUrl);
-              // 이미지 로드 실패 시 기본 이미지로 대체
-              const target = e.target as HTMLImageElement;
-              target.src = '/default/doctor_default_man.png';
-            }}
+            onError={handleImageError}
+            unoptimized={imageError} // 기본 이미지는 최적화 비활성화
           />
         </div>
       </div>
