@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     const current_user_uid = formData.get("current_user_uid") as string;
   
     const name = formData.get("name") as string;
+    const name_en = formData.get("name_en") as string;
     const surgeries = formData.get("surgeries") as string;
     const searchkey = formData.get("searchkey") as string;
     const search_key = formData.get("search_key") as string;
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
       id_uuid: id_uuid_hospital,
       id_uuid_admin: adminData.id,
       name,
+      name_en,
       searchkey,
       search_key,
       address_full_road,

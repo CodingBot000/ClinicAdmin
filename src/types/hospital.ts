@@ -1,6 +1,7 @@
 export interface HospitalData {
   id_uuid: string;
   name: string;
+  name_en: string;
   address_full_road: string;
   address_full_road_en: string;
   address_full_jibun: string;

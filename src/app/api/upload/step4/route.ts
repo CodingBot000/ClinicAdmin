@@ -247,7 +247,9 @@ export async function POST(request: NextRequest) {
       const doctorData = {
         id_uuid_hospital,
         name: doctor.name,
+        name_en: doctor.name_en,
         bio: doctor.bio || '',
+        bio_en: doctor.bio_en || '',
         image_url: doctor.image_url || '',
         chief: doctor.chief,
       };

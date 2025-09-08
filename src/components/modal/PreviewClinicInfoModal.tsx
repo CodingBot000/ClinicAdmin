@@ -365,7 +365,8 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                     <div className="space-y-3">
                       <div className="flex items-center">
                         <strong className="w-20 text-gray-700">병원명:</strong>
-                        <span className="text-lg font-medium">{hospitalData.name || '입력되지 않음'}</span>
+                        <span className="text-lg font-medium mr-2">{hospitalData.name || '입력되지 않음'}</span> | 
+                        <span className="text-lg font-medium ml-2">{hospitalData.name_en || '입력되지 않음'}</span>
                       </div>
                       <div className="flex items-center">
                         <Mail className="w-4 h-4 mr-2 text-gray-500" />

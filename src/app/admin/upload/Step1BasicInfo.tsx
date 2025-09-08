@@ -87,6 +87,8 @@ const Step1BasicInfo = ({
   // 편집 모드를 위한 폼 초기값 상태들
   const [hospitalName, setHospitalName] =
     useState<string>('');
+    const [hospitalNameEn, setHospitalNameEn] =
+    useState<string>('');
   const [hospitalDirections, setHospitalDirections] =
     useState<string>('');
   const [hospitalLocation, setHospitalLocation] =
@@ -101,6 +103,7 @@ const Step1BasicInfo = ({
 
   const [basicInfo, setBasicInfo] = useState<BasicInfo>({
     name: '',
+    name_en: '',
     email: '',
     tel: '',
     introduction: '',
@@ -209,6 +212,7 @@ const Step1BasicInfo = ({
 
       // 2. 병원 기본 정보 설정
       setHospitalName(formData.hospital.name);
+      setHospitalNameEn(formData.hospital.name_en)
       setHospitalDirections(formData.hospital.directions);
       setHospitalLocation(formData.hospital.location);
       
@@ -216,6 +220,7 @@ const Step1BasicInfo = ({
       if (existingData.hospitalDetail) {
         setBasicInfo({
           name: formData.hospital.name || '',
+          name_en: formData.hospital.name_en || '',
           email: existingData.hospitalDetail.email || '',
           tel: existingData.hospitalDetail.tel || '',
           introduction: existingData.hospitalDetail.introduction || '',
@@ -254,32 +259,6 @@ const Step1BasicInfo = ({
         log.info('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
       }
 
-      // // 3. 주소 정보 설정
-      // if (formData.address.roadAddress) {
-      //   setAddress(formData.address.roadAddress);
-      //   setAddressForSendForm({
-      //     address_full_road: formData.address.roadAddress,
-      //     address_full_road_en: formData.address.roadAddressEnglish || '',
-      //     address_full_jibun: formData.address.jibunAddress,
-      //     address_full_jibun_en: formData.address.jibunAddressEnglish || '',
-      //     zipcode: formData.address.zonecode,
-      //     address_si: formData.address.sido,
-      //     address_si_en: formData.address.sidoEnglish || '',
-      //     address_gu: formData.address.sigungu,
-      //     address_gu_en: formData.address.sigunguEnglish || '',
-      //     address_dong: formData.address.bname,
-      //     address_dong_en: formData.address.bnameEnglish || '',
-      //     bname: formData.address.bname,
-      //     bname_en: formData.address.bnameEnglish || '',
-      //     address_detail: existingData.hospital?.address_detail,
-      //     address_detail_en: existingData.hospital?.address_detail_en,
-      //     directions_to_clinic: existingData.hospital?.directions_to_clinic,
-      //     directions_to_clinic_en: existingData.hospital?.directions_to_clinic_en,
-      //     latitude: existingData.hospital?.latitude,
-      //     longitude: existingData.hospital?.longitude,
-
-      //   });
-
 
       // 3. 주소 정보 설정
       if (existingData.hospital?.address_full_road) {
@@ -309,52 +288,8 @@ const Step1BasicInfo = ({
 
         });
 
-        // log.info(`Step1 - 위도경도 정보 existingData: ${existingData.hospital?.latitude}, ${existingData.hospital?.longitude}`);
-        // log.info(`Step1 - 위도경도 정보 formData: ${formData.address.coordinates.latitude}, ${formData.address.coordinates.longitude}`);
-        // if (existingData.hospital?.latitude && existingData.hospital?.longitude) {
-        //   setCoordinates({
-        //     latitude: existingData.hospital.latitude,
-        //     longitude: existingData.hospital.longitude,
-        //   });
-        // } else if (
-        //   formData.address.coordinates.latitude &&
-        //    formData.address.coordinates.longitude
-        //   ) {
-        //   setCoordinates({
-        //     latitude: formData.address.coordinates.latitude,
-        //     longitude: formData.address.coordinates.longitude,
-        //   });
-        // }
         log.info('Step1 - 주소 정보 설정 완료');
       }
-
-      // 4. 영업시간 설정
-      // log.info('Step1 - 영업시간 설정 시작');
-      // console.debug(
-      //   'Step1 - 변환된 영업시간 데이터:',
-      //   formData.businessHours,
-      // );
-      // setInitialBusinessHours(formData.businessHours);
-      // log.info(
-      //   'Step1 - initialBusinessHours 상태 업데이트 완료',
-      // );
-
-      // // 5. 편의시설 설정
-      // setOptionState({
-      //   has_private_recovery_room:
-      //     formData.facilities.has_private_recovery_room,
-      //   has_parking: formData.facilities.has_parking,
-      //   has_cctv: formData.facilities.has_cctv,
-      //   has_night_counseling:
-      //     formData.facilities.has_night_counseling,
-      //   has_female_doctor:
-      //     formData.facilities.has_female_doctor,
-      //   has_anesthesiologist:
-      //     formData.facilities.has_anesthesiologist,
-      //     specialist_count:
-      //     formData.facilities.specialist_count,
-      // });
-      // log.info('Step1 - 편의시설 설정 완료');
 
       // 6. 위치 정보 설정
       if (existingData.hospital?.location) {
@@ -397,8 +332,8 @@ const Step1BasicInfo = ({
     const errors: string[] = [];
 
     // 1. 병원명 검증
-    if (!basicInfo.name?.trim()) {
-      errors.push('병원명을 입력해주세요.');
+    if (!basicInfo.name?.trim() || !basicInfo.name_en?.trim()) {
+      errors.push('병원명을 입력해주세요. 영문이름도 같이 입력해주세요.');
     }
 
     // 2. 이메일 검증
@@ -539,6 +474,7 @@ const Step1BasicInfo = ({
       // 기본 정보
       formData.append('id_uuid', id_uuid_hospital);
       formData.append('name', basicInfo.name);
+      formData.append('name_en', basicInfo.name_en);
       formData.append('email', basicInfo.email);
       formData.append('tel', basicInfo.tel);
       formData.append('introduction', basicInfo.introduction);

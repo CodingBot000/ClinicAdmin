@@ -335,6 +335,7 @@ export function mapExistingDataToFormValues(data: ExistingHospitalData) {
     // 병원 기본 정보
     hospital: {
       name: data.hospital?.name || '',
+      name_en: data.hospital?.name_en || '',
       directions: data.hospital?.directions_to_clinic || '',
       location: data.hospital?.location || '',
       images: data.hospital?.imageurls || [],

@@ -112,6 +112,7 @@ const BasicInfoSection = ({
   
   const [info, setInfo] = useState<BasicInfo>({
     name: initialInfo?.name || '',
+    name_en: initialInfo?.name_en || '',
     email: initialInfo?.email || '',
     introduction: initialInfo?.introduction || '',
     introduction_en: initialInfo?.introduction_en || '',
@@ -136,6 +137,7 @@ const BasicInfoSection = ({
       log.info('initialInfo changed, updating info state:', initialInfo.sns_content_agreement);
       setInfo({
         name: initialInfo.name || info.name,
+        name_en: initialInfo.name_en || info.name_en,
         email: initialInfo.email || info.email,
         introduction: initialInfo.introduction || info.introduction,
         introduction_en: initialInfo.introduction_en || info.introduction_en,
@@ -242,7 +244,15 @@ const BasicInfoSection = ({
           onChange={(e) => handleChange('name', e.target.value)}
         />
 
-<div className="flex flex-row w-full gap-6">
+        <InputField
+          label="병원명 (영문)"
+          name="name"
+          required
+          value={info.name_en}
+          placeholder='영문명은 구글맵에서 검색가능한 키워드로 권장드립니다. 영문명이 없으면 발음대로 써주세요.'
+          onChange={(e) => handleChange('name_en', e.target.value)}
+        />
+      <div className="flex flex-row w-full gap-6">
           {/* 병원 소개 - 국문 */}
           <div className="flex flex-col w-1/2 gap-1">
             <label htmlFor="introduction" className="font-medium">

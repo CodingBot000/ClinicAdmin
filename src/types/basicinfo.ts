@@ -1,6 +1,7 @@
 
 export interface BasicInfo {
     name: string;
+    name_en: string;
     email: string;
     introduction: string;
     introduction_en: string;

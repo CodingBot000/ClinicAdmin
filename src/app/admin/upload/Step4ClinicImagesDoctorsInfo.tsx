@@ -144,7 +144,9 @@ const Step4ClinicImagesDoctorsInfo = ({
           const existingDoctors = data.doctors.map((doctor: any) => ({
             id: doctor.id_uuid || uuidv4(),
             name: doctor.name,
+            name_en: doctor.name_en,
             bio: doctor.bio || '',
+            bio_en: doctor.bio_en || '',
             isChief: doctor.chief === 1,
             useDefaultImage: doctor.image_url?.includes('/default/') || false,
             defaultImageType: (doctor.image_url?.includes('woman') ? 'woman' : 'man') as 'man' | 'woman',
@@ -514,7 +516,9 @@ const Step4ClinicImagesDoctorsInfo = ({
           const doctorData = {
             id_uuid: doctor.id || null,
             name: doctor.name,
+            name_en: doctor.name_en,
             bio: doctor.bio || '',
+            bio_en: doctor.bio_en || '',
             image_url: imageUrl,
             chief: doctor.isChief ? 1 : 0,
             useDefaultImage: doctor.useDefaultImage,
