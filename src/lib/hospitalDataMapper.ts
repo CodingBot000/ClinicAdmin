@@ -175,7 +175,9 @@ export function mapDoctorsToForm(doctors: any[]): DoctorInfo[] {
   return doctors.map((doctor) => ({
     id: doctor.id_uuid || '',
     name: doctor.name || '',
+    name_en: doctor.name_en || '',
     bio: doctor.bio || '',
+    bio_en: doctor.bio_en || '',
     imagePreview: getImageUrlFromData(doctor.image_url), // 이미지 URL 안전 처리
     useDefaultImage: false,
     isChief: doctor.chief === 1,
