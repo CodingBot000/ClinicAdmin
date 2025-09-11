@@ -1,14 +1,16 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState, useEffect } from "react";
 import { Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Divider from "./Divider";
+import "@/utils/logger";
 
 interface PageHeaderProps {
   name: string;
   onPreview: () => void;
   onSave: () => void;
-  currentStep: number; // 1 ~ 5
+  currentStep: number; // 1 ~ 6
   onStepChange?: (step: number) => void; // 스텝 변경 콜백 추가
+  id_uuid_hospital?: string; // 병원 ID 추가
 }
 
 const PageHeader = ({
@@ -18,8 +20,14 @@ const PageHeader = ({
   onPreview,
   onSave,
   onStepChange,
+  id_uuid_hospital,
 }: PropsWithChildren<PageHeaderProps>) => {
   const router = useRouter();
+  const [stepValidation, setStepValidation] = useState<{
+    hospital_exists: boolean;
+    hospital_detail_exists: boolean;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleHomeClick = () => {
     router.push("/admin");
@@ -33,9 +41,66 @@ const PageHeader = ({
     onSave();
   };
 
+  // 병원 데이터 유효성 검사
+  const validateHospitalData = async () => {
+    if (!id_uuid_hospital) return;
+    
+    try {
+      setIsLoading(true);
+      log.info('PageHeader 유효성 검사 시작:', id_uuid_hospital);
+      
+      const response = await fetch(`/api/validate?id_uuid=${id_uuid_hospital}`);
+      const result = await response.json();
+      
+      log.info('PageHeader 유효성 검사 결과:', result);
+      
+      if (result.status === 'success') {
+        setStepValidation(result.data);
+      }
+    } catch (error) {
+      console.error('PageHeader 유효성 검사 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    validateHospitalData();
+  }, [id_uuid_hospital]);
+
+  // 스텝 클릭 가능 여부 확인
+  const isStepClickable = (step: number) => {
+    console.log(`isStepClickable step: ${step}  currentStep:${currentStep}`);
+    console.log(`isStepClickable stepValidation:`, stepValidation);
+    
+    // 현재 단계는 클릭 불가
+    if (step === currentStep) return false;
+    
+    // Step 1은 항상 가능
+    if (step <= 1) return true;
+    
+    // stepValidation이 없으면 불가능
+    if (!stepValidation) return false;
+    
+    // Step 2 이후는 병원 데이터가 있어야 가능
+    if (step >= 2 && !stepValidation.hospital_exists) {
+      console.log(`Step ${step} 불가: hospital_exists = false`);
+      return false;
+    }
+    
+    // Step 4 이후는 병원 상세 데이터도 있어야 가능
+    if (step >= 4 && !stepValidation.hospital_detail_exists) {
+      console.log(`Step ${step} 불가: hospital_detail_exists = false`);
+      return false;
+    }
+    
+    console.log(`Step ${step} 가능`);
+    return true;
+  };
+
   const handleStepClick = (step: number) => {
-    // 현재 단계 이전 단계만 클릭 가능
-    if (step < currentStep && onStepChange) {
+    console.log(`handleStepClick step: ${step}  onStepChange:${onStepChange} isStepClickable(step):${isStepClickable(step)}`);
+    if (isStepClickable(step) && onStepChange) {
       onStepChange(step);
     }
   };
@@ -65,20 +130,25 @@ const PageHeader = ({
             <div key={step} className="flex items-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
-                  step < currentStep
-                    ? "bg-blue-500 border-blue-500 text-white cursor-pointer hover:bg-blue-600 hover:border-blue-600"
-                    : step === currentStep
+                  step === currentStep
                     ? "bg-orange-500 border-orange-500 text-white cursor-default"
+                    : isStepClickable(step)
+                    ? "bg-blue-500 border-blue-500 text-white cursor-pointer hover:bg-blue-600 hover:border-blue-600"
                     : "bg-white border-gray-400 text-gray-400 cursor-not-allowed"
                 }`}
                 onClick={() => {
-                  if (step < currentStep && onStepChange) onStepChange(step);
+                  console.log(`onClick step: ${step}, isClickable: ${isStepClickable(step)}`);
+                  if (isStepClickable(step)) {
+                    handleStepClick(step);
+                  }
                 }}
                 title={
-                  step < currentStep
-                    ? `Step ${step}로 이동`
-                    : step === currentStep
+                  step === currentStep
                     ? "현재 단계"
+                    : isStepClickable(step)
+                    ? `Step ${step}로 이동`
+                    : step < currentStep
+                    ? "데이터가 없어 이동할 수 없습니다"
                     : "아직 진행되지 않은 단계"
                 }
               >

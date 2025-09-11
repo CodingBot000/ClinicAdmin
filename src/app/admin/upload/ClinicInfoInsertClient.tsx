@@ -115,6 +115,7 @@ export default function ClinicInfoInsertClient(
         onPreview={handlePreview}
         onSave={handleSave}
         onStepChange={goToStep}
+        id_uuid_hospital={id_uuid_hospital}
       />
 
       {step === 1 && (
