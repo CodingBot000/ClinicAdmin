@@ -150,9 +150,73 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
     onSelectOpeningHours?.(hoursState);
   }, [hoursState, onSelectOpeningHours]);
 
+  // 일괄 설정 상태
+  const [bulkFrom, setBulkFrom] = useState({ hour: 9, minute: 0 });
+  const [bulkTo, setBulkTo] = useState({ hour: 18, minute: 0 });
+
+  // 일괄 적용 함수
+  const handleBulkApply = () => {
+    setHoursState((prev) =>
+      prev.map((h) => ({
+        ...h,
+        from: { ...bulkFrom },
+        to: { ...bulkTo },
+      }))
+    );
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white rounded-xl shadow">
       <h2 className="text-lg font-bold mb-4">진료시간 입력하기</h2>
+
+      {/* 일괄 설정 섹션 */}
+      <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <h3 className="text-sm font-semibold text-blue-800 mb-2">일괄설정하기 - 모든숫자는 직업입력 복사 붙여넣기가 가능합니다</h3>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            max="23"
+            value={bulkFrom.hour}
+            onChange={(e) => setBulkFrom({ ...bulkFrom, hour: parseInt(e.target.value) || 0 })}
+            className="border rounded px-2 py-1 text-sm w-16"
+          />
+          :
+          <input
+            type="number"
+            min="0"
+            max="59"
+            value={bulkFrom.minute}
+            onChange={(e) => setBulkFrom({ ...bulkFrom, minute: parseInt(e.target.value) || 0 })}
+            className="border rounded px-2 py-1 text-sm w-16"
+          />
+          <span className="mx-1">~</span>
+          <input
+            type="number"
+            min="0"
+            max="23"
+            value={bulkTo.hour}
+            onChange={(e) => setBulkTo({ ...bulkTo, hour: parseInt(e.target.value) || 0 })}
+            className="border rounded px-2 py-1 text-sm w-16"
+          />
+          :
+          <input
+            type="number"
+            min="0"
+            max="59"
+            value={bulkTo.minute}
+            onChange={(e) => setBulkTo({ ...bulkTo, minute: parseInt(e.target.value) || 0 })}
+            className="border rounded px-2 py-1 text-sm w-16"
+          />
+          <button
+            onClick={handleBulkApply}
+            className="ml-3 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+          >
+            일괄적용하기
+          </button>
+        </div>
+      </div>
+
       <div className="space-y-3">
         {hoursState.map((row, idx) => {
           const invalid = !row.closed && !row.ask && isInvalidTime(row.from, row.to);
@@ -165,69 +229,57 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
               <div className="w-8 text-center font-medium">{row.day}</div>
 
               {/* 시작시간 */}
-              <select
-                className="border rounded px-1 py-0.5 text-xs"
+              <input
+                type="number"
+                min="0"
+                max="23"
+                className="border rounded px-1 py-0.5 text-xs w-12"
                 disabled={row.closed || row.ask}
                 value={row.from.hour}
                 onChange={(e) =>
-                  handleChange(idx, 'from', 'hour', parseInt(e.target.value, 10))
+                  handleChange(idx, 'from', 'hour', parseInt(e.target.value, 10) || 0)
                 }
-              >
-                {hours.map((h) => (
-                  <option key={h} value={h}>
-                    {h.toString().padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+              />
               :
-              <select
-                className="border rounded px-1 py-0.5 text-xs"
+              <input
+                type="number"
+                min="0"
+                max="59"
+                className="border rounded px-1 py-0.5 text-xs w-12"
                 disabled={row.closed || row.ask}
                 value={row.from.minute}
                 onChange={(e) =>
-                  handleChange(idx, 'from', 'minute', parseInt(e.target.value, 10))
+                  handleChange(idx, 'from', 'minute', parseInt(e.target.value, 10) || 0)
                 }
-              >
-                {minutes.map((m) => (
-                  <option key={m} value={m}>
-                    {m.toString().padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+              />
 
               {/* ~ */}
               <span className="mx-1">~</span>
 
               {/* 종료시간 */}
-              <select
-                className="border rounded px-1 py-0.5 text-xs"
+              <input
+                type="number"
+                min="0"
+                max="23"
+                className="border rounded px-1 py-0.5 text-xs w-12"
                 disabled={row.closed || row.ask}
                 value={row.to.hour}
                 onChange={(e) =>
-                  handleChange(idx, 'to', 'hour', parseInt(e.target.value, 10))
+                  handleChange(idx, 'to', 'hour', parseInt(e.target.value, 10) || 0)
                 }
-              >
-                {hours.map((h) => (
-                  <option key={h} value={h}>
-                    {h.toString().padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+              />
               :
-              <select
-                className="border rounded px-1 py-0.5 text-xs"
+              <input
+                type="number"
+                min="0"
+                max="59"
+                className="border rounded px-1 py-0.5 text-xs w-12"
                 disabled={row.closed || row.ask}
                 value={row.to.minute}
                 onChange={(e) =>
-                  handleChange(idx, 'to', 'minute', parseInt(e.target.value, 10))
+                  handleChange(idx, 'to', 'minute', parseInt(e.target.value, 10) || 0)
                 }
-              >
-                {minutes.map((m) => (
-                  <option key={m} value={m}>
-                    {m.toString().padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+              />
 
               {/* 영업 라디오 버튼 */}
               <label className="flex items-center gap-1 text-xs ml-2">
