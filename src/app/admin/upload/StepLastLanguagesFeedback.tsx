@@ -17,7 +17,7 @@ import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import PageBottom from '@/components/PageBottom';
 import { toast } from "sonner";
 
-interface Step6LanguagesFeedbackProps {
+interface StepLastLanguagesFeedbackProps {
   id_uuid_hospital: string;
   currentUserUid: string;
   isEditMode?: boolean; // 편집 모드 여부
@@ -27,15 +27,15 @@ interface Step6LanguagesFeedbackProps {
 }
 
 
-const Step6LanguagesFeedback = ({
+const StepLastLanguagesFeedback = ({
   id_uuid_hospital,
   currentUserUid,
   isEditMode = false,
   onPrev,
   onComplete,
   onStepChange,
-}: Step6LanguagesFeedbackProps) => {
-    log.info(' Step6LanguagesFeedback id_uuid_hospital', id_uuid_hospital);
+}: StepLastLanguagesFeedbackProps) => {
+    log.info(' StepLastLanguagesFeedback id_uuid_hospital', id_uuid_hospital);
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -377,7 +377,7 @@ const Step6LanguagesFeedback = ({
       </div>
       </div>
 
-      <PageBottom step={6} 
+      <PageBottom step={7} 
       onDraftSave={handleSave}
        onPrev={onPrev}
        onPreview={handlePreview}
@@ -463,4 +463,4 @@ const Step6LanguagesFeedback = ({
   );
 };
 
-export default Step6LanguagesFeedback;
+export default StepLastLanguagesFeedback;

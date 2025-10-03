@@ -6,3 +6,12 @@ export type CategoryNode = {
   department?: string;
   children?: CategoryNode[];
 };
+
+
+export type CategoryNodeTag = {
+    key: string;
+    ko: string;
+    en: string;
+    children?: CategoryNodeTag[];
+  };
+  

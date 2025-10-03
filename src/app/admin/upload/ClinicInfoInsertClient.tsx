@@ -9,9 +9,11 @@ import Step2BasicContactInfo from "./Step2BasicContactInfo";
 import Step3BusinessHours from "./Step3BusinessHours";
 import Step4ClinicImagesDoctorsInfo from "./Step4ClinicImagesDoctorsInfo";
 import Step5Treatments from "./Step5Treatments";
-import Step6LanguagesFeedback from "./Step6LanguagesFeedback";
+import Step6SupportTreatments from "./Step6SupportTreatments";
+import StepLastLanguagesFeedback from "./StepLastLanguagesFeedback";
 import PageHeader from "@/components/PageHeader";
 import { getUserHospitalUuid, loadHospitalData } from "@/lib/hospitalDataLoader";
+
 
 
 export default function ClinicInfoInsertClient(
@@ -172,7 +174,16 @@ export default function ClinicInfoInsertClient(
         />
       )}
       {step === 6 && (
-        <Step6LanguagesFeedback
+        <Step6SupportTreatments
+          id_uuid_hospital={id_uuid_hospital}
+          isEditMode={isEditMode}
+          onNext={goNext}
+          onPrev={goBack}
+          currentUserUid={currentUserUid}
+        />
+      )}
+      {step === 7 && (
+        <StepLastLanguagesFeedback
           id_uuid_hospital={id_uuid_hospital}
           isEditMode={isEditMode}
           onComplete={() => {

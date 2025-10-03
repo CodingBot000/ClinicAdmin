@@ -126,7 +126,7 @@ const PageHeader = ({
       
       <div className="flex justify-center py-2 bg-gray-100">
         <div className="flex gap-4 items-center">
-          {[1, 2, 3, 4, 5, 6].map((step) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((step) => (
             <div key={step} className="flex items-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
@@ -155,7 +155,7 @@ const PageHeader = ({
                 {step}
               </div>
               {/* 선 사이에 간격 조정 */}
-              {step !== 6 && (
+              {step !== 7 && (
                 <div className="ml-3 w-8 h-1 bg-gray-400"></div>
               )}
             </div>

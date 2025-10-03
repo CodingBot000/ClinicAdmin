@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from './ui/button';
 
 interface PageBottomProps {
-  step: 1 | 2 | 3 | 4 | 5 | 6;
+  step: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   onPrev?: () => void;
   onNext?: () => void;
   onDraftSave?: () => void;
@@ -79,6 +79,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
         );
         case 4:
       case 5:
+      case 6:
         return (
           <>
             <Button
@@ -121,7 +122,7 @@ const PageBottom: React.FC<PageBottomProps> = ({
             </Button>
           </>
         );
-      case 6:
+      case 7:
         return (
           <>
              <Button
