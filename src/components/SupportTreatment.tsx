@@ -51,6 +51,33 @@ const SupportTreatment = ({
     return `${type}/${path.join('/')}`;
   };
 
+  // Get node's ID from path
+  const getNodeFromPath = (type: TabType, path: string[]): CategoryNodeTag | undefined => {
+    const categoriesData = type === 'skin' ? SKIN_BEAUTY_CATEGORIES : PLASTIC_SURGERY_CATEGORIES;
+    let currentNode: CategoryNodeTag | undefined;
+
+    for (let i = 0; i < path.length; i++) {
+      const key = path[i];
+      if (i === 0) {
+        currentNode = categoriesData.find(cat => cat.key === key);
+      } else {
+        currentNode = currentNode?.children?.find(child => child.key === key);
+      }
+      if (!currentNode) return undefined;
+    }
+    return currentNode;
+  };
+
+  const getAllChildIds = (node: CategoryNodeTag): string[] => {
+    const ids = [node.id];
+    if (node.children) {
+      node.children.forEach(child => {
+        ids.push(...getAllChildIds(child));
+      });
+    }
+    return ids;
+  };
+
   const getAllChildUids = (type: TabType, node: CategoryNodeTag, parentPath: string[] = []): string[] => {
     const currentPath = [...parentPath, node.key];
     const currentUid = createItemUid(type, currentPath);
@@ -67,9 +94,13 @@ const SupportTreatment = ({
 
   const toggleItem = (type: TabType, path: string[]) => {
     const uid = createItemUid(type, path);
+    const node = getNodeFromPath(type, path);
+    if (!node) return;
+
     const currentSelected = type === 'skin' ? selectedSkinItems : selectedPlasticItems;
     const newSelected = new Set(currentSelected);
 
+    // Store ID instead of UID
     if (newSelected.has(uid)) {
       newSelected.delete(uid);
     } else {

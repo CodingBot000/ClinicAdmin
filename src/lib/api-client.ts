@@ -161,7 +161,7 @@ export const uploadAPI = {
     }
   },
 
-  // Step 6: 언어 설정 및 피드백
+  // Step 6: 시술/장비 정보
   step6: async (formData: FormData): Promise<ApiResponse> => {
     log.info(`[API] Step6 호출 시작`);
     try {
@@ -170,6 +170,19 @@ export const uploadAPI = {
       return result;
     } catch (error) {
       console.error(`[API] Step6 실패:`, error);
+      throw error;
+    }
+  },
+
+  // Step Last: 언어 설정 및 피드백
+  step_last: async (formData: FormData): Promise<ApiResponse> => {
+    log.info(`[API] Step_last 호출 시작`);
+    try {
+      const result = await apiCallWithFormData('/upload/step_last', formData);
+      log.info(`[API] Step_last 성공:`, result);
+      return result;
+    } catch (error) {
+      console.error(`[API] Step_last 실패:`, error);
       throw error;
     }
   },

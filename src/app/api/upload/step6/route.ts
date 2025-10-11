@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { 
-  TABLE_HOSPITAL_DETAIL,
-  TABLE_FEEDBACKS
-} from '@/constants/tables';
-import "@/utils/logger"; 
+import "@/utils/logger";
 
 // CORS 헤더 정의
 const corsHeaders = {
@@ -17,72 +13,140 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 200, headers: corsHeaders });
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id_uuid_hospital = searchParams.get('id_uuid_hospital');
+
+    if (!id_uuid_hospital) {
+      return NextResponse.json({
+        message: 'id_uuid_hospital is required',
+        status: 'error',
+      }, { status: 400, headers: corsHeaders });
+    }
+
+    log.info("Step6 GET API - id_uuid_hospital:", id_uuid_hospital);
+
+    // hospital_treatment_selection 테이블에서 데이터 조회
+    const { data, error } = await supabase
+      .from('hospital_treatment_selection')
+      .select('category, ids, device_ids')
+      .eq('id_uuid_hospital', id_uuid_hospital);
+
+    if (error) {
+      log.error("Step6 GET API - Query error:", error);
+      return NextResponse.json({
+        message: `Query error: ${error.message}`,
+        status: "error",
+      }, { status: 500, headers: corsHeaders });
+    }
+
+    // 카테고리별로 데이터 분리
+    const skinData = data?.find(row => row.category === 'skin');
+    const plasticData = data?.find(row => row.category === 'plastic');
+
+    const result = {
+      skinTreatmentIds: skinData?.ids || [],
+      plasticTreatmentIds: plasticData?.ids || [],
+      skinDeviceIds: skinData?.device_ids || [],
+      plasticDeviceIds: plasticData?.device_ids || [],
+      // 모든 device_ids 합치기 (중복 제거)
+      deviceIds: Array.from(new Set([
+        ...(skinData?.device_ids || []),
+        ...(plasticData?.device_ids || [])
+      ])),
+    };
+
+    log.info("Step6 GET API - Result:", result);
+
+    return NextResponse.json(result, {
+      status: 200,
+      headers: corsHeaders
+    });
+
+  } catch (error) {
+    console.error('Step6 GET API 오류:', error);
+    return NextResponse.json({
+      message: "서버 오류가 발생했습니다.",
+      status: "error",
+    }, { status: 500, headers: corsHeaders });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    
-    const isEditMode = formData.get("is_edit_mode")?.toString() === "true";
-    const id_uuid_hospital = formData.get("id_uuid_hospital") as string;
-    const current_user_uid = formData.get("current_user_uid") as string;
-    const available_languages_raw = formData.get("available_languages") as string;
-    const feedback = formData.get("feedback") as string;
-    
-    const available_languages = JSON.parse(available_languages_raw);
+    const body = await request.json();
 
-    log.info("uploadActionsStep5 available_languages_raw:", available_languages_raw);
-    log.info("uploadActionsStep5 feedback: ", feedback);
-    log.info("uploadActionsStep5 id_uuid_hospital: ", id_uuid_hospital);
-  
-    // 1. 가능 언어 정보 업데이트
-    const { data: dataAvailableLanguages, error: availableLanguagesError } = await supabase
-      .from(TABLE_HOSPITAL_DETAIL)
-      .update({
-        available_languages: available_languages,
-      })
-      .eq('id_uuid_hospital', id_uuid_hospital);
-  
-    if (availableLanguagesError) {
-      log.info("uploadActions5 available_languages error:", availableLanguagesError);
+    const { id_uuid_hospital, skinTreatmentIds, plasticTreatmentIds, deviceIds } = body;
+
+    log.info("Step6 API - id_uuid_hospital:", id_uuid_hospital);
+    log.info("Step6 API - skinTreatmentIds:", skinTreatmentIds);
+    log.info("Step6 API - plasticTreatmentIds:", plasticTreatmentIds);
+    log.info("Step6 API - deviceIds:", deviceIds);
+
+    // Skin 카테고리 데이터 준비
+    const skinData = {
+      id_uuid_hospital,
+      category: 'skin',
+      ids: skinTreatmentIds || [],
+      device_ids: deviceIds.filter((id: string) => {
+        // Device가 skin 또는 both인지 확인 필요 - 일단 전체 포함
+        return true;
+      }),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Plastic 카테고리 데이터 준비
+    const plasticData = {
+      id_uuid_hospital,
+      category: 'plastic',
+      ids: plasticTreatmentIds || [],
+      device_ids: deviceIds.filter((id: string) => {
+        // Device가 plastic 또는 both인지 확인 필요 - 일단 전체 포함
+        return true;
+      }),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Upsert skin category
+    const { error: skinError } = await supabase
+      .from('hospital_treatment_selection')
+      .upsert(skinData, {
+        onConflict: 'id_uuid_hospital,category'
+      });
+
+    if (skinError) {
+      log.error("Step6 API - Skin upsert error:", skinError);
       return NextResponse.json({
-        message: `availableLanguagesError:${availableLanguagesError.code || availableLanguagesError.message}`,
+        message: `Skin upsert error: ${skinError.message}`,
         status: "error",
-      }, { status: 500 });
-    }
-  
-    // 2. 피드백 정보 저장 (피드백이 있을 때만)
-    if (feedback && feedback.trim()) {
-      log.info("피드백 저장 시작:", feedback);
-      
-      // 피드백은 항상 새로운 레코드로 insert (id_uuid_hospital 중복 허용)
-      const { data: dataFeedback, error: feedbackError } = await supabase
-        .from(TABLE_FEEDBACKS)
-        .insert([{
-          id_uuid_hospital: id_uuid_hospital,
-          feedback_content: feedback.trim()
-        }]);
-      
-      if (feedbackError) {
-        log.info("uploadActions5 feedback insert error:", feedbackError);
-        return NextResponse.json({
-          message: `feedbackInsertError:${feedbackError.code || feedbackError.message}`,
-          status: "error",
-        }, { status: 500 });
-      }
-      
-      log.info("피드백 저장 완료:", dataFeedback);
-    } else {
-      log.info("피드백이 없어서 저장하지 않음");
+      }, { status: 500, headers: corsHeaders });
     }
 
-    log.info("가능 언어 및 피드백 저장 완료 ");
-   
+    // Upsert plastic category
+    const { error: plasticError } = await supabase
+      .from('hospital_treatment_selection')
+      .upsert(plasticData, {
+        onConflict: 'id_uuid_hospital,category'
+      });
+
+    if (plasticError) {
+      log.error("Step6 API - Plastic upsert error:", plasticError);
+      return NextResponse.json({
+        message: `Plastic upsert error: ${plasticError.message}`,
+        status: "error",
+      }, { status: 500, headers: corsHeaders });
+    }
+
+    log.info("Step6 API - Treatment and device selections saved successfully");
+
     return NextResponse.json({
-      message: "성공적으로 등록되었습니다.",
+      message: "선택 항목이 성공적으로 저장되었습니다.",
       status: "success",
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Step5 API 오류:', error);
+    console.error('Step6 API 오류:', error);
     return NextResponse.json({
       message: "서버 오류가 발생했습니다.",
       status: "error",

@@ -57,6 +57,12 @@ interface CombinedHospitalData extends HospitalData, Partial<HospitalDetailData>
   feedback?: string;
   contacts?: any[];
   excelFileName?: string;
+  treatmentSelection?: {
+    skinTreatmentIds: string[];
+    plasticTreatmentIds: string[];
+    deviceIds: string[];
+  };
+  supportTreatmentFeedback?: string;
 }
 
 const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
@@ -160,8 +166,31 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
           }
         }
       }
+      // Step 6:  제공가능 시술 및 장비정보 , 관련피드백 정보 조회
+      const { data: treatmentSelectionData, error: treatmentSelectionError } = await supabase
+        .from('hospital_treatment_selection')
+        .select('category, ids, device_ids')
+        .eq('id_uuid_hospital', id_uuid_hospital);
 
-      // Step 5: 병원 상세 정보 조회 (언어 및 기타 정보)
+      if (treatmentSelectionError) {
+        console.error('시술/장비 선택 정보 로딩 실패:', treatmentSelectionError);
+      }
+
+      // Step 6-1: 피드백 정보 조회 (support_treatment 타입)
+      const { data: supportTreatmentFeedbackData, error: supportTreatmentFeedbackError } = await supabase
+        .from(TABLE_FEEDBACKS)
+        .select('feedback_content')
+        .eq('id_uuid_hospital', id_uuid_hospital)
+        .eq('type', 'support_treatment')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (supportTreatmentFeedbackError && supportTreatmentFeedbackError.code !== 'PGRST116') {
+        console.error('제공시술 피드백 정보 로딩 실패:', supportTreatmentFeedbackError);
+      }
+
+      //  병원 상세 정보 조회 (언어 및 기타 정보)
       const { data: hospitalDetails, error: detailError } = await supabase
         .from(TABLE_HOSPITAL_DETAIL)
         .select('*')
@@ -172,11 +201,12 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         throw detailError;
       }
 
-      // Step 6: 피드백 정보 조회
+      // Step 6-2: 피드백 정보 조회 (type이 null인 경우)
       const { data: feedbackData, error: feedbackError } = await supabase
         .from(TABLE_FEEDBACKS)
         .select('feedback_content')
         .eq('id_uuid_hospital', id_uuid_hospital)
+        .is('type', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -216,6 +246,10 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
       }
       
       // 데이터 조합
+      // 시술/장비 선택 정보 정리
+      const skinData = treatmentSelectionData?.find(row => row.category === 'skin');
+      const plasticData = treatmentSelectionData?.find(row => row.category === 'plastic');
+
       const combinedData: CombinedHospitalData = {
         ...hospitalInfo,
         business_hours: businessHours || [],
@@ -226,6 +260,15 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         feedback: feedbackData?.feedback_content || '',
         contacts: contactsData || [],
         excelFileName,
+        treatmentSelection: {
+          skinTreatmentIds: skinData?.ids || [],
+          plasticTreatmentIds: plasticData?.ids || [],
+          deviceIds: Array.from(new Set([
+            ...(skinData?.device_ids || []),
+            ...(plasticData?.device_ids || [])
+          ])),
+        },
+        supportTreatmentFeedback: supportTreatmentFeedbackData?.feedback_content || '',
         ...hospitalDetails,
       };
 
@@ -426,16 +469,20 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                         {hospitalData ? (
                           <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                              {addressFields.map(({ label, key }) => (
-                                <div key={key}>
-                                  <span className="flex">
-                                    <div className="text-sm font-semibold text-gray-800">{label} :</div>
-                                    <div className="text-sm text-gray-600">
-                                      {hospitalData?.[key as keyof typeof hospitalData] || '-'}
-                                    </div>
-                                  </span>
-                                </div>
-                              ))}
+                              {addressFields.map(({ label, key }) => {
+                                const value = hospitalData?.[key as keyof typeof hospitalData];
+                                const displayValue = typeof value === 'object' ? '-' : (value || '-');
+                                return (
+                                  <div key={key}>
+                                    <span className="flex">
+                                      <div className="text-sm font-semibold text-gray-800">{label} :</div>
+                                      <div className="text-sm text-gray-600">
+                                        {displayValue}
+                                      </div>
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
                             
                             {/* 좌표 정보 */}
@@ -968,12 +1015,104 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
                   </div>
                 </div>
               )}
+             {/* Step 6:  제공가능 시술 및 장비정보 , 관련피드백 정보 조회 */ }
+              {hospitalData.treatmentSelection && (
+                <div className="bg-indigo-50 p-6 rounded-lg mb-6">
+                  <h3 className="text-xl font-semibold mb-4 text-indigo-800 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 6</span>
+                      제공 가능 시술 및 장비 정보
+                    </div>
+                    <button
+                      onClick={() => handleMoveStep(6)}
+                      className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        6 < currentStep
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={6 >= currentStep}
+                      title={6 < currentStep ? 'Step 6 편집하기' : '현재 단계이거나 진행되지 않은 단계입니다'}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      편집
+                    </button>
+                  </h3>
 
-              {/* Step 5: 사용가능 언어 및 피드백 정보  */}
+                  {/* 피부 시술 */}
+                  {hospitalData.treatmentSelection.skinTreatmentIds.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2 text-blue-700">피부 시술</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {hospitalData.treatmentSelection.skinTreatmentIds.map((id, index) => (
+                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            {id}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 성형 시술 */}
+                  {hospitalData.treatmentSelection.plasticTreatmentIds.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2 text-purple-700">성형 시술</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {hospitalData.treatmentSelection.plasticTreatmentIds.map((id, index) => (
+                          <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                            {id}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 보유 장비 */}
+                  {hospitalData.treatmentSelection.deviceIds.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2 text-green-700">보유 장비</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {hospitalData.treatmentSelection.deviceIds.map((id, index) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                            {id}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 피드백 정보 */}
+                  {hospitalData.supportTreatmentFeedback && (
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center">
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        제공 시술 관련 피드백
+                      </h4>
+                      <div className="p-4 bg-white rounded-lg border border-gray-200">
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {hospitalData.supportTreatmentFeedback}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 데이터가 없는 경우 */}
+                  {hospitalData.treatmentSelection.skinTreatmentIds.length === 0 &&
+                   hospitalData.treatmentSelection.plasticTreatmentIds.length === 0 &&
+                   hospitalData.treatmentSelection.deviceIds.length === 0 && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="text-sm text-gray-500 italic">
+                        선택된 시술 및 장비 정보가 없습니다.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 7: 사용가능 언어 및 피드백 정보  */}
               <div className="bg-pink-50 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold mb-4 text-pink-800 flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 6</span>
+                    <span className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm mr-3">Step 7</span>
                     사용 가능 언어 및 피드백 정보
                   </div>
                   <button

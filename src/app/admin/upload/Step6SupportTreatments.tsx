@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageBottom from '@/components/PageBottom';
 import SupportTreatment from '@/components/SupportTreatment';
 import SupportDevices from '@/components/SupportDevices';
 import PreviewModal from '@/components/modal/PreviewModal';
 import SupportTreatmentFeedbackModal from '@/components/modal/SupportTreatmentFeedbackModal';
+import { SKIN_BEAUTY_CATEGORIES } from '@/app/contents/skinBeautyCategories';
+import { PLASTIC_SURGERY_CATEGORIES } from '@/app/contents/plasticSurgeryCategories';
+import { CategoryNodeTag } from '@/types/category';
 
 interface Step6SupportTreatmentsProps {
   id_uuid_hospital: string;
@@ -25,6 +28,7 @@ const Step6SupportTreatments = ({
   onNext,
 }: Step6SupportTreatmentsProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeMainTab, setActiveMainTab] = useState<MainTabType>('treatment');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -35,6 +39,9 @@ const Step6SupportTreatments = ({
 
   // 보유장비 데이터
   const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set());
+
+  // 피드백 데이터
+  const [feedbackContent, setFeedbackContent] = useState<string>('');
 
   // 제공시술 데이터 변경 핸들러
   const handleTreatmentDataChange = (skinItems: Set<string>, plasticItems: Set<string>) => {
@@ -47,14 +54,194 @@ const Step6SupportTreatments = ({
     setSelectedDevices(devices);
   };
 
-  const handleNext = () => {
-    // TODO: 선택된 항목 저장 로직
-    console.log('=== 제공시술 ===');
-    console.log('Skin Treatments:', Array.from(selectedSkinTreatments));
-    console.log('Plastic Treatments:', Array.from(selectedPlasticTreatments));
-    console.log('=== 보유장비 ===');
-    console.log('Devices:', Array.from(selectedDevices));
-    // onNext();
+  // UID에서 ID를 추출하는 헬퍼 함수
+  const extractIdsFromUids = (uids: Set<string>, type: 'skin' | 'plastic'): string[] => {
+    const categoriesData = type === 'skin' ? SKIN_BEAUTY_CATEGORIES : PLASTIC_SURGERY_CATEGORIES;
+    const ids: string[] = [];
+
+    uids.forEach(uid => {
+      const [, ...pathParts] = uid.split('/'); // Remove type prefix
+      let currentNode: CategoryNodeTag | undefined;
+
+      for (let i = 0; i < pathParts.length; i++) {
+        const key = pathParts[i];
+        if (i === 0) {
+          currentNode = categoriesData.find(cat => cat.key === key);
+        } else {
+          currentNode = currentNode?.children?.find(child => child.key === key);
+        }
+        if (!currentNode) break;
+      }
+
+      if (currentNode) {
+        ids.push(currentNode.id);
+      }
+    });
+
+    return ids;
+  };
+
+  // ID에서 UID를 생성하는 헬퍼 함수 (역변환)
+  const convertIdsToUids = (ids: string[], type: 'skin' | 'plastic'): Set<string> => {
+    const categoriesData = type === 'skin' ? SKIN_BEAUTY_CATEGORIES : PLASTIC_SURGERY_CATEGORIES;
+    const uids = new Set<string>();
+
+    // ID로 노드를 찾는 재귀 함수
+    const findNodeById = (id: string, nodes: CategoryNodeTag[], path: string[] = []): string | null => {
+      for (const node of nodes) {
+        const currentPath = [...path, node.key];
+
+        if (node.id === id) {
+          return `${type}/${currentPath.join('/')}`;
+        }
+
+        if (node.children) {
+          const result = findNodeById(id, node.children, currentPath);
+          if (result) return result;
+        }
+      }
+      return null;
+    };
+
+    ids.forEach(id => {
+      const uid = findNodeById(id, categoriesData);
+      if (uid) {
+        uids.add(uid);
+      }
+    });
+
+    return uids;
+  };
+
+  // 컴포넌트 마운트 시 저장된 데이터 로드
+  useEffect(() => {
+    const loadSavedData = async () => {
+      try {
+        setIsLoading(true);
+
+        // 1. 선택된 시술/장비 데이터 로드
+        const response = await fetch(`/api/upload/step6?id_uuid_hospital=${id_uuid_hospital}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('로드된 데이터:', data);
+
+          // ID를 UID로 변환하여 상태 설정
+          const skinUids = convertIdsToUids(data.skinTreatmentIds || [], 'skin');
+          const plasticUids = convertIdsToUids(data.plasticTreatmentIds || [], 'plastic');
+          const deviceIds = new Set<string>(data.deviceIds || []);
+
+          setSelectedSkinTreatments(skinUids);
+          setSelectedPlasticTreatments(plasticUids);
+          setSelectedDevices(deviceIds);
+
+          console.log('변환된 UID - Skin:', Array.from(skinUids));
+          console.log('변환된 UID - Plastic:', Array.from(plasticUids));
+          console.log('Device IDs:', Array.from(deviceIds));
+        } else {
+          console.log('저장된 데이터가 없습니다.');
+        }
+
+        // 2. 피드백 데이터 로드
+        const feedbackResponse = await fetch(`/api/upload/step6/feedback?id_uuid_hospital=${id_uuid_hospital}`);
+
+        if (feedbackResponse.ok) {
+          const feedbackData = await feedbackResponse.json();
+          console.log('로드된 피드백:', feedbackData);
+          setFeedbackContent(feedbackData.feedback_content || '');
+        } else {
+          console.log('저장된 피드백이 없습니다.');
+        }
+      } catch (error) {
+        console.error('데이터 로드 중 오류:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id_uuid_hospital) {
+      loadSavedData();
+    }
+  }, [id_uuid_hospital]);
+
+  const handleSave = async () => {
+    log.info('Step6 handleSave 시작');
+
+    try {
+      // UID에서 ID 추출
+      const skinTreatmentIds = extractIdsFromUids(selectedSkinTreatments, 'skin');
+      const plasticTreatmentIds = extractIdsFromUids(selectedPlasticTreatments, 'plastic');
+
+      // Device는 이미 ID로 저장되어 있음
+      const deviceIds = Array.from(selectedDevices);
+
+      // 데이터가 없으면 성공으로 간주하고 통과
+      if (skinTreatmentIds.length === 0 && plasticTreatmentIds.length === 0 && deviceIds.length === 0) {
+        log.info('Step6 - 선택된 데이터가 없어 저장을 건너뜁니다.');
+        return {
+          status: 'success',
+          message: '저장할 데이터가 없습니다.'
+        };
+      }
+
+      console.log('=== 제공시술 (ID로 저장) ===');
+      console.log('Skin Treatment IDs:', skinTreatmentIds);
+      console.log('Plastic Treatment IDs:', plasticTreatmentIds);
+      console.log('=== 보유장비 (ID로 저장) ===');
+      console.log('Device IDs:', deviceIds);
+
+      // API 호출
+      const response = await fetch('/api/upload/step6', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id_uuid_hospital,
+          skinTreatmentIds,
+          plasticTreatmentIds,
+          deviceIds,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = result.message || '저장에 실패했습니다.';
+        console.error('저장 실패:', errorMessage);
+        alert(errorMessage);
+        return {
+          status: 'error',
+          message: errorMessage
+        };
+      }
+
+      console.log('저장 성공:', result);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '저장 중 오류가 발생했습니다.';
+      console.error('저장 중 오류:', error);
+      alert(errorMessage);
+      return {
+        status: 'error',
+        message: errorMessage
+      };
+    }
+  };
+
+  const handleNext = async () => {
+    log.info('handleNext Step6');
+    setIsSubmitting(true);
+    const result = await handleSave();
+    setIsSubmitting(false);
+    document.body.style.overflow = '';
+
+    if (result?.status === 'success') {
+      log.info('handleNext Step6 handleSave success');
+      onNext();
+    } else {
+      log.info('handleNext Step6 handleSave error:', result);
+    }
   };
 
   return (
@@ -63,6 +250,8 @@ const Step6SupportTreatments = ({
       <h1 className="text-2xl font-bold mb-2">시술/보유장비 선택</h1>
       <span className="text-md text-red-500 font-base mb-6">
         선택하는 시술과 보유장비는 병원정보에 보여지며 검색등 병원 노출을 위해 다양한 용도로 활용됩니다.
+        <br />  도웅말: 예를들어 얼굴 / 필러 / 이하부위 의 대부분의 부위가 가능하고 표현이 애매한것이 한두개라면 그냥 전체체크하시면 됩니다.
+        <br />  입력하신 내용은 언제든지 변경가능하지만, 변경사항에 대해 고지해주셔야 빠르게 반영됩니다.
       </span>
 
       {/* 메인 탭 (제공시술 / 보유장비) */}
@@ -117,23 +306,31 @@ const Step6SupportTreatments = ({
       </div>
 
       {/* 컨텐츠 영역 */}
-      <div className={activeMainTab === 'treatment' ? 'flex flex-col flex-1' : 'hidden'}>
-        <SupportTreatment
-          onDataChange={handleTreatmentDataChange}
-          initialSkinItems={selectedSkinTreatments}
-          initialPlasticItems={selectedPlasticTreatments}
-        />
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center flex-1">
+          <div className="text-gray-500">데이터를 불러오는 중...</div>
+        </div>
+      ) : (
+        <>
+          <div className={activeMainTab === 'treatment' ? 'flex flex-col flex-1' : 'hidden'}>
+            <SupportTreatment
+              onDataChange={handleTreatmentDataChange}
+              initialSkinItems={selectedSkinTreatments}
+              initialPlasticItems={selectedPlasticTreatments}
+            />
+          </div>
 
-      <div className={activeMainTab === 'device' ? 'flex flex-col flex-1' : 'hidden'}>
-        <SupportDevices
-          onDataChange={handleDeviceDataChange}
-          initialDevices={selectedDevices}
-        />
-      </div>
+          <div className={activeMainTab === 'device' ? 'flex flex-col flex-1' : 'hidden'}>
+            <SupportDevices
+              onDataChange={handleDeviceDataChange}
+              initialDevices={selectedDevices}
+            />
+          </div>
+        </>
+      )}
 
       {/* 하단 버튼 */}
-      <PageBottom step={6} isSubmitting={isSubmitting} onNext={handleNext} onPrev={onPrev} />
+      <PageBottom step={6} isSubmitting={isSubmitting} onDraftSave={handleSave} onNext={handleNext} onPrev={onPrev} />
 
       {/* 미리보기 모달 */}
       <PreviewModal
@@ -148,6 +345,9 @@ const Step6SupportTreatments = ({
       <SupportTreatmentFeedbackModal
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
+        id_uuid_hospital={id_uuid_hospital}
+        initialFeedback={feedbackContent}
+        onFeedbackSaved={(newFeedback) => setFeedbackContent(newFeedback)}
       />
     </main>
   );

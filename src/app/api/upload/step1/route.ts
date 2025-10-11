@@ -4,8 +4,6 @@ import {
   TABLE_HOSPITAL, 
   TABLE_HOSPITAL_DETAIL, 
   TABLE_ADMIN,
-  TABLE_CONTACTS,
-  TABLE_FEEDBACKS
 } from '@/constants/tables';
 import "@/utils/logger"; 
 

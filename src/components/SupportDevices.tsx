@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import deviceList from '@/constants/device_list.json';
+import { useState, useMemo, useEffect } from 'react';
+// import deviceList from '@/constants/device_list.json';
+import { Device } from '@/types/devices.dto';
 
 interface SupportDevicesProps {
   onDataChange: (selectedDevices: Set<string>) => void;
   initialDevices?: Set<string>;
-}
-
-interface Device {
-  id: string;
-  ko: string;
-  en: string;
-  type: 'device' | 'drug' | 'program';
-  group: string;
-  dept: 'skin' | 'plastic' | 'both';
 }
 
 type TabType = 'skin' | 'plastic';
@@ -23,11 +15,32 @@ const SupportDevices = ({
   onDataChange,
   initialDevices = new Set(),
 }: SupportDevicesProps) => {
+  const [deviceList, setDeviceList] = useState<Device[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedDevices, setSelectedDevices] = useState<Set<string>>(initialDevices);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('skin');
   const [language, setLanguage] = useState<'ko' | 'en'>('ko');
+
+  // API에서 장비 목록 가져오기
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/devices');
+        if (!response.ok) throw new Error('Failed to fetch devices');
+        const data = await response.json();
+        setDeviceList(data);
+      } catch (error) {
+        console.error('Error fetching devices:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDevices();
+  }, []);
 
   // 탭 전환 시 열린 depth 초기화
   const handleTabChange = (newTab: TabType) => {
@@ -40,14 +53,14 @@ const SupportDevices = ({
 
   // 탭에 따라 필터링된 장비 목록 (dept 기준)
   const filteredDevices = useMemo(() => {
-    return (deviceList as Device[]).filter(device => {
+    return deviceList.filter(device => {
       if (activeTab === 'skin') {
         return device.dept === 'skin' || device.dept === 'both';
       } else {
         return device.dept === 'plastic' || device.dept === 'both';
       }
     });
-  }, [activeTab]);
+  }, [activeTab, deviceList]);
 
   // type별로 그룹화
   const devicesByType = useMemo(() => {
@@ -132,6 +145,14 @@ const SupportDevices = ({
   const isGroupOpen = (typeKey: string, groupKey: string) => {
     return selectedGroup === getGroupKey(typeKey, groupKey);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center flex-1">
+        <div className="text-gray-500">장비 목록을 불러오는 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1">

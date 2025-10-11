@@ -9,6 +9,7 @@ export type CategoryNode = {
 
 
 export type CategoryNodeTag = {
+    id: string;
     key: string;
     ko: string;
     en: string;

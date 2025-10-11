@@ -171,7 +171,9 @@ export default function OpeningHoursForm({ onSelectOpeningHours, initialHours } 
 
       {/* 일괄 설정 섹션 */}
       <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2">일괄설정하기 - 모든숫자는 직접 입력 복사/붙여넣기 모두 가능합니다</h3>
+        <h3 className="text-sm font-semibold text-blue-800 mb-2">일괄설정하기</h3>
+        <h3 className="text-sm text-gray-500">모든숫자는 직접 입력 복사/붙여넣기 모두 가능합니다</h3>
+        <h3 className="text-sm text-gray-500 mb-1">09로 하시든 9로 하시든 최종은 모두 두 자리수 기준으로 보여집니다.</h3>
         <div className="flex items-center gap-2">
           <input
             type="number"
