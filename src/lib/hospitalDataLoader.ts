@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import {
   TABLE_HOSPITAL,
   TABLE_DOCTOR,

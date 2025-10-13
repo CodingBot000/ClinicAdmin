@@ -3,15 +3,14 @@
 import { useState, useMemo } from 'react';
 import { SKIN_BEAUTY_CATEGORIES } from '@/app/contents/skinBeautyCategories';
 import { PLASTIC_SURGERY_CATEGORIES } from '@/app/contents/plasticSurgeryCategories';
-import { CategoryNodeTag } from '@/types/category';
+import { CategoryNodeTag } from '@/models/category';
+import { TabType } from '@/models/common';
 
 interface SupportTreatmentProps {
   onDataChange: (skinItems: Set<string>, plasticItems: Set<string>) => void;
   initialSkinItems?: Set<string>;
   initialPlasticItems?: Set<string>;
 }
-
-type TabType = 'skin' | 'plastic';
 
 
 const SupportTreatment = ({

@@ -2,14 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 // import deviceList from '@/constants/device_list.json';
-import { Device } from '@/types/devices.dto';
+import { Device } from '@/models/devices.dto';
+import { TabType } from '@/models/common';
 
 interface SupportDevicesProps {
   onDataChange: (selectedDevices: Set<string>) => void;
   initialDevices?: Set<string>;
 }
-
-type TabType = 'skin' | 'plastic';
 
 const SupportDevices = ({
   onDataChange,

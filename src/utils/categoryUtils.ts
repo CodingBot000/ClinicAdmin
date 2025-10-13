@@ -1,4 +1,4 @@
-import { CategoryNode } from "@/types/category";
+import { CategoryNode } from "@/models/category";
 
 /**
  * 카테고리 트리에서 특정 키에 해당하는 라벨을 찾는 함수

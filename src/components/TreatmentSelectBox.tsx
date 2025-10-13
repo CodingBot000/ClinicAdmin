@@ -4,16 +4,9 @@ import React, { useState, useEffect } from "react";
 import { TreatmentSelectModal } from "./modal/TreatmentSelectModal";
 // import { X } from "lucide-react";
 // import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
-import { CategoryNode } from "@/types/category";
+import { CategoryNode } from "@/models/category";
+import { ProductOption } from "@/models/common";
 import { Button } from "@/components/ui/button";
-
-
-interface ProductOption {
-  id: string;
-  treatmentKey: string;
-  value1: number;
-  value2: number;
-}
 
 interface TreatmentData {
   selectedKeys: string[];

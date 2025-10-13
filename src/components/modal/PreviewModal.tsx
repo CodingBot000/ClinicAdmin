@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { SKIN_BEAUTY_CATEGORIES } from '@/app/contents/skinBeautyCategories';
 import { PLASTIC_SURGERY_CATEGORIES } from '@/app/contents/plasticSurgeryCategories';
 import deviceList from '@/constants/device_list.json';
+import { CategoryNodeTag } from '@/models/category';
+import { Device } from '@/models/devices.dto';
 
 interface PreviewModalProps {
   isOpen: boolean;
@@ -11,22 +13,6 @@ interface PreviewModalProps {
   selectedSkinTreatments: Set<string>;
   selectedPlasticTreatments: Set<string>;
   selectedDevices: Set<string>;
-}
-
-interface CategoryNodeTag {
-  ko: string;
-  en: string;
-  key: string;
-  children?: CategoryNodeTag[];
-}
-
-interface Device {
-  id: string;
-  ko: string;
-  en: string;
-  type: 'device' | 'drug' | 'program';
-  group: string;
-  dept: 'skin' | 'plastic' | 'both';
 }
 
 const PreviewModal = ({

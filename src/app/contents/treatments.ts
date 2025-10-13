@@ -1,4 +1,4 @@
-// import { CategoryNode } from "@/types/category";
+// import { CategoryNode } from "@/models/category";
 
 // export const TREATMENT_CATEGORIES: CategoryNode[] = [
 //   {

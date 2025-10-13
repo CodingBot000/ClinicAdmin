@@ -6,7 +6,9 @@
       "Bash(npm run dev:*)",
       "Bash(mkdir:*)",
       "Bash(cat:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(tree:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

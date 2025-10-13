@@ -2,18 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 // import { TREATMENT_CATEGORIES } from "@/app/contents/treatments";
-import { CategoryNode } from "@/types/category";
+import { CategoryNode } from "@/models/category";
+import { ProductOption } from "@/models/common";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ProductOptionInput from "@/components/ProductOptionInput";
 import { useTreatmentCategories } from "@/hooks/useTreatmentCategories";
-
-interface ProductOption {
-  id: string;
-  treatmentKey: string;
-  value1: number;
-  value2: number;
-}
 
 interface TreatmentSelectModalProps {
   open: boolean;

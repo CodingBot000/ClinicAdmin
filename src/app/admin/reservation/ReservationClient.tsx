@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ReservationInputDto, ReservationOutputDto } from '@/app/api/reservation/reservation.dto';
+import { ReservationInputDto, ReservationOutputDto } from '@/models/reservation.dto';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 

@@ -1,6 +1,6 @@
 // import { createClient } from "@/utils/supabase/server";
 import { supabase } from "@/lib/supabaseClient";
-import { ReservationOutputDto } from "./reservation.dto";
+import { ReservationOutputDto } from "@/models/reservation.dto";
 import { TABLE_RESERVATIONS } from "@/constants/tables";
 
 export const getReservationDatas = async (

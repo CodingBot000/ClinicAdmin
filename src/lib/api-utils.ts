@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from './supabaseClient';
 import { TABLE_ADMIN } from '@/constants/tables';
+import { ApiResponse } from '@/models/api';
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  status?: string;
-}
+export type { ApiResponse };
 
 // 성공 응답 생성
 export function createSuccessResponse<T>(data?: T, message?: string): NextResponse {

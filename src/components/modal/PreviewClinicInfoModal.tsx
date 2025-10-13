@@ -19,7 +19,7 @@ import {
   HospitalDetailData, 
   BusinessHourData, 
   DoctorData
-} from '@/types/hospital';
+} from '@/models/hospital';
 import DoctorCard from '../DoctorCard';
 import { TreatmentSelectedOptionInfo } from '../TreatmentSelectedOptionInfo';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';

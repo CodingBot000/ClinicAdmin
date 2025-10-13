@@ -11,22 +11,13 @@ import OpeningHoursForm, {
 import ExtraOptions, {
   ExtraOptionState,
 } from '@/components/ExtraOptions';
+import { Surgery } from '@/models/surgery';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import Divider from '@/components/Divider';
 import PageBottom from '@/components/PageBottom';
-
-interface Surgery {
-  created_at: string;
-  description: string;
-  id: number;
-  id_unique: number;
-  imageurls: string[];
-  name: string;
-  type: string;
-}
 
 interface Step3BusinessHoursProps {
   id_uuid_hospital: string;

@@ -8,7 +8,7 @@ import useModal from '@/hooks/useModal';
 import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
