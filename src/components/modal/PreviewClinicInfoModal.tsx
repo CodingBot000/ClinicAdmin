@@ -3,17 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Phone, Mail, Clock, Camera, Users, Star, Globe, MessageSquare, Edit } from 'lucide-react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabaseClient';
-import { 
-  TABLE_HOSPITAL, 
-  TABLE_DOCTOR, 
-  TABLE_HOSPITAL_DETAIL, 
-  TABLE_HOSPITAL_TREATMENT, 
-  TABLE_HOSPITAL_BUSINESS_HOUR, 
-  TABLE_TREATMENT_INFO,
-  TABLE_FEEDBACKS,
-  TABLE_CONTACTS
-} from '@/constants/tables';
+import { api } from '@/lib/api-client';
 import { 
   HospitalData, 
   HospitalDetailData, 
@@ -109,177 +99,23 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
   const loadHospitalData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Step 1: 병원 기본 정보 조회
-      const { data: hospitalInfo, error: hospitalError } = await supabase
-        .from(TABLE_HOSPITAL)
-        .select('*')
-        .eq('id_uuid', id_uuid_hospital)
-        .single();
+      // Use single consolidated API call instead of 9 separate queries
+      const result = await api.hospital.getPreview(id_uuid_hospital);
 
-      if (hospitalError) throw hospitalError;
-
-      // Step 2: 병원 운영 시간 조회
-      const { data: businessHours, error: businessError } = await supabase
-        .from(TABLE_HOSPITAL_BUSINESS_HOUR)
-        .select('*')
-        .eq('id_uuid_hospital', id_uuid_hospital)
-        .order('day_of_week');
-
-      if (businessError) throw businessError;
-
-      // Step 3: 의사 정보 조회
-      const { data: doctors, error: doctorError } = await supabase
-        .from(TABLE_DOCTOR)
-        .select('*')
-        .eq('id_uuid_hospital', id_uuid_hospital)
-        .order('chief', { ascending: false });
-
-      if (doctorError) throw doctorError;
-
-      // Step 4: 치료 정보 조회
-      const { data: treatments, error: treatmentError } = await supabase
-        .from(TABLE_HOSPITAL_TREATMENT)
-        .select('*')
-        .eq('id_uuid_hospital', id_uuid_hospital);
-
-      if (treatmentError) throw treatmentError;
-
-      // Step 4-1: 치료 정보에서 UUID 추출하여 실제 치료 데이터 가져오기
-      let treatmentDetails: any[] = [];
-      if (treatments && treatments.length > 0) {
-        const treatmentUuids = treatments
-          .filter(treatment => treatment.id_uuid_treatment)
-          .map(treatment => treatment.id_uuid_treatment);
-        
-        if (treatmentUuids.length > 0) {
-          const { data: treatmentData, error: treatmentDetailError } = await supabase
-            .from(TABLE_TREATMENT_INFO)
-            .select('id_uuid, code, name')
-            .in('id_uuid', treatmentUuids);
-
-          if (treatmentDetailError) {
-            console.error('시술 정보 로딩 실패:', treatmentDetailError);
-          } else {
-            treatmentDetails = treatmentData || [];
-          }
-        }
-      }
-      // Step 6:  제공가능 시술 및 장비정보 , 관련피드백 정보 조회
-      const { data: treatmentSelectionData, error: treatmentSelectionError } = await supabase
-        .from('hospital_treatment_selection')
-        .select('category, ids, device_ids')
-        .eq('id_uuid_hospital', id_uuid_hospital);
-
-      if (treatmentSelectionError) {
-        console.error('시술/장비 선택 정보 로딩 실패:', treatmentSelectionError);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to fetch hospital data');
       }
 
-      // Step 6-1: 피드백 정보 조회 (support_treatment 타입)
-      const { data: supportTreatmentFeedbackData, error: supportTreatmentFeedbackError } = await supabase
-        .from(TABLE_FEEDBACKS)
-        .select('feedback_content')
-        .eq('id_uuid_hospital', id_uuid_hospital)
-        .eq('type', 'support_treatment')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const combinedData = result.data.hospital as CombinedHospitalData;
 
-      if (supportTreatmentFeedbackError && supportTreatmentFeedbackError.code !== 'PGRST116') {
-        console.error('제공시술 피드백 정보 로딩 실패:', supportTreatmentFeedbackError);
-      }
-
-      //  병원 상세 정보 조회 (언어 및 기타 정보)
-      const { data: hospitalDetails, error: detailError } = await supabase
-        .from(TABLE_HOSPITAL_DETAIL)
-        .select('*')
-        .eq('id_uuid_hospital', id_uuid_hospital)
-        .single();
-
-      if (detailError && detailError.code !== 'PGRST116') {
-        throw detailError;
-      }
-
-      // Step 6-2: 피드백 정보 조회 (type이 null인 경우)
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from(TABLE_FEEDBACKS)
-        .select('feedback_content')
-        .eq('id_uuid_hospital', id_uuid_hospital)
-        .is('type', null)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (feedbackError) {
-        console.error('피드백 정보 로딩 실패:', feedbackError);
-      }
-
-      // Step 7: 연락처 정보 조회
-      const { data: contactsData, error: contactsError } = await supabase
-        .from(TABLE_CONTACTS)
-        .select('*')
-        .eq('id_uuid_hospital', id_uuid_hospital)
-        .order('type, sequence');
-
-      if (contactsError) {
-        console.error('연락처 정보 로딩 실패:', contactsError);
-      }
-
-      // Step 8: 엑셀 파일 확인
-      let excelFileName = '';
-      try {
-        const filePath = getTreatmentsFilePath(id_uuid_hospital);
-        const { data: files, error: fileError } = await supabase.storage
-          .from(STORAGE_IMAGES)
-          .list(filePath);
-
-        if (!fileError && files && files.length > 0) {
-          // 가장 최신 파일 선택 (created_at 기준)
-          const latestFile = files.sort((a, b) => 
-            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
-          )[0];
-          excelFileName = latestFile.name;
-        }
-      } catch (err) {
-        console.error('엑셀 파일 확인 실패:', err);
-      }
-      
-      // 데이터 조합
-      // 시술/장비 선택 정보 정리
-      const skinData = treatmentSelectionData?.find(row => row.category === 'skin');
-      const plasticData = treatmentSelectionData?.find(row => row.category === 'plastic');
-
-      const combinedData: CombinedHospitalData = {
-        ...hospitalInfo,
-        business_hours: businessHours || [],
-        doctors: doctors || [],
-        treatments: treatments || [],
-        treatmentDetails: treatmentDetails || [],
-        available_languages: hospitalDetails?.available_languages || [],
-        feedback: feedbackData?.feedback_content || '',
-        contacts: contactsData || [],
-        excelFileName,
-        treatmentSelection: {
-          skinTreatmentIds: skinData?.ids || [],
-          plasticTreatmentIds: plasticData?.ids || [],
-          deviceIds: Array.from(new Set([
-            ...(skinData?.device_ids || []),
-            ...(plasticData?.device_ids || [])
-          ])),
-        },
-        supportTreatmentFeedback: supportTreatmentFeedbackData?.feedback_content || '',
-        ...hospitalDetails,
-      };
-
-// log.info('combinedData START ==================================');
-//       log.info('combinedData', combinedData);
-//       log.info('combinedData END ==================================');
+      log.info('Hospital preview data loaded:', combinedData);
 
       setHospitalData(combinedData);
     } catch (err) {
-      console.error('병원 데이터 로드 실패:', err);
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      console.error('Hospital data load failed:', err);
+      setError('Failed to load data');
     } finally {
       setLoading(false);
     }

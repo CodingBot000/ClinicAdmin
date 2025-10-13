@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
 
 
-import { supabase } from '@/lib/supabaseClient';
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
@@ -22,7 +21,7 @@ import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import BasicInfoSection from '@/components/BasicInfoSection';
 import Divider from '@/components/Divider';
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { api, uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 import { findRegionByKey, REGIONS } from '@/app/contents/location';
 import { BasicInfo } from '@/models/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
@@ -121,20 +120,18 @@ const Step1BasicInfo = ({
     queryKey: ['surgery_info'],
     queryFn: async () => {
       const queryStartTime = Date.now();
-      // log.info(
-      //   'surgeryList 쿼리 시작:',
-      //   new Date().toISOString(),
-      // );
 
-      const { data, error } = await supabase
-        .from('surgery_info')
-        .select('*');
+      // Use API endpoint instead of direct Supabase access
+      const result = await api.surgery.getAll();
 
       const queryEndTime = Date.now();
       const queryTime = queryEndTime - queryStartTime;
-    
-      if (error) throw Error('surgery_info error');
-      return data;
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'surgery_info error');
+      }
+
+      return result.data.surgeryInfo || [];
     },
   });
 
