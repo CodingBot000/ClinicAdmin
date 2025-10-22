@@ -1,4 +1,4 @@
-import { CategoryNode } from "@/types/category";
+import { CategoryNode } from "@/models/category";
 import { fetchUtils } from "@/utils/fetch";
 import { useQuery } from "@tanstack/react-query";
 

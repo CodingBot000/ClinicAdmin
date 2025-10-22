@@ -8,7 +8,8 @@ import PreviewModal from '@/components/modal/PreviewModal';
 import SupportTreatmentFeedbackModal from '@/components/modal/SupportTreatmentFeedbackModal';
 import { SKIN_BEAUTY_CATEGORIES } from '@/app/contents/skinBeautyCategories';
 import { PLASTIC_SURGERY_CATEGORIES } from '@/app/contents/plasticSurgeryCategories';
-import { CategoryNodeTag } from '@/types/category';
+import { CategoryNodeTag } from '@/models/category';
+import { MainTabType } from '@/models/common';
 
 interface Step6SupportTreatmentsProps {
   id_uuid_hospital: string;
@@ -17,8 +18,6 @@ interface Step6SupportTreatmentsProps {
   onPrev: () => void;
   onNext: () => void;
 }
-
-type MainTabType = 'treatment' | 'device';
 
 const Step6SupportTreatments = ({
   id_uuid_hospital,

@@ -25,6 +25,10 @@ const TABLE_RESERVATIONS = "reservations";
 const TABLE_ADMIN = "admin";
 const TABLE_FEEDBACKS = "feedbacks";
 const TABLE_TREATMENT_INFO = "treatment_info";
+const TABLE_SURGERY_INFO = "surgery_info";
+const TABLE_DEVICE_CATALOG = "device_catalog";
+const TABLE_TREATMENT_SELECTION = "hospital_treatment_selection";
+const TABLE_CONSULTATION_SUBMISSIONS = "consultation_submissions";
 const STORAGE_IMAGES = "images";
 const STORAGE_HOSPITAL_IMG = "hospitalimg";
 const STORAGE_DOCTOR_IMG = "doctors";
@@ -38,6 +42,10 @@ export {
   TABLE_ADMIN,
   TABLE_FEEDBACKS,
   TABLE_TREATMENT_INFO,
+  TABLE_SURGERY_INFO,
+  TABLE_DEVICE_CATALOG,
+  TABLE_TREATMENT_SELECTION,
+  TABLE_CONSULTATION_SUBMISSIONS,
   TABLE_CONTACTS,
   TABLE_RESERVATIONS,
   STORAGE_IMAGES,

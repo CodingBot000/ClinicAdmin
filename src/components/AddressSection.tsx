@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DaumPost from "@/components/DaumPost";
 import InputField from "@/components/InputField";
-import { HospitalAddress } from "@/types/address";
+import { HospitalAddress } from "@/models/address";
 import { Card, CardContent } from "./ui/card";
 import { Divide } from "lucide-react";
 import Divider from "./Divider";

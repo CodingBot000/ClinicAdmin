@@ -14,7 +14,7 @@ import useModal from '@/hooks/useModal';
 import { useRouter } from 'next/navigation';
 
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import Divider from '@/components/Divider';
@@ -23,7 +23,7 @@ import ContactsInfoSection from '../../../components/ContactsInfoSection';
 
 import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
 
-import { ContactsInfo } from '@/types/basicinfo';
+import { ContactsInfo } from '@/models/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
 import PageBottom from '@/components/PageBottom';
 

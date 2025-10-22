@@ -5,16 +5,7 @@ import { ModalOverlay } from "@/components/modal/ModalOverlay";
 import useModal from "@/hooks/useModal";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-
-interface Surgery {
-  created_at: string;
-  description: string;
-  id: number;
-  id_unique: number;
-  imageurls: string[];
-  name: string;
-  type: string;
-}
+import { Surgery } from "@/models/surgery";
 
 interface SurgeriesModalProps {
   itemList: Surgery[];

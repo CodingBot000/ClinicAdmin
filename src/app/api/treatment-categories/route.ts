@@ -1,4 +1,4 @@
-import { CategoryNode } from '@/types/category';
+import { CategoryNode } from '@/models/category';
 import { NextResponse } from 'next/server';
 import { TABLE_TREATMENT_INFO } from '@/constants/tables';
 import { supabase } from '@/lib/supabaseClient';

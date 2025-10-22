@@ -8,7 +8,7 @@ import useModal from '@/hooks/useModal';
 
 import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import Divider from '@/components/Divider';

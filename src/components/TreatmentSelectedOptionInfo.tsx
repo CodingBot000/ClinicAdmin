@@ -1,21 +1,15 @@
 "use client";
 
 import React from "react";
-import { CategoryNode } from "@/types/category";
-import { 
-  getLabelByKey, 
-  getUnitByKey, 
+import { CategoryNode } from "@/models/category";
+import { ProductOption } from "@/models/common";
+import {
+  getLabelByKey,
+  getUnitByKey,
   getDepartmentByKey,
   getDepartmentDisplayName,
   getDepartmentStyleClass
 } from "@/utils/categoryUtils";
-
-interface ProductOption {
-  id: string;
-  treatmentKey: string;
-  value1: number;
-  value2: number;
-}
 
 interface TreatmentSelectedOptionInfoProps {
   selectedKeys: string[];

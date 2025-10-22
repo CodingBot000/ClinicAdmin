@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from './ui/card';
-import { HospitalData } from '@/types/hospital';
+import { HospitalData } from '@/models/hospital';
 
 interface AddressPreviewCardProps {
   hospitalData: HospitalData | null;

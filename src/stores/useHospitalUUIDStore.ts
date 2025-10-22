@@ -1,5 +1,5 @@
 
-import { AlarmDto } from '@/types/alarm';
+import { AlarmDto } from '@/models/alarm';
 import { create } from 'zustand';
 
 

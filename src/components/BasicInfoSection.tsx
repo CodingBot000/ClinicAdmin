@@ -5,7 +5,7 @@ import { AlertModal } from './modal';
 import { HelpCircle } from 'lucide-react';
 import SNSConsentButton from './modal/SNSContentModal';
 import Divider from './Divider';
-import { BasicInfo } from '@/types/basicinfo';
+import { BasicInfo } from '@/models/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
 
 const SNS_CHANNEL_LABELS = {

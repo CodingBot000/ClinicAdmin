@@ -1,6 +1,6 @@
 // import { DoctorInfo } from "@/components/DoctorInfoForm";
-// import { HospitalAddress } from "@/types/address";
-// import { BasicInfo } from "@/types/basicinfo";
+// import { HospitalAddress } from "@/models/address";
+// import { BasicInfo } from "@/models/basicinfo";
 
 // export interface ValidationResult {
 //   isValid: boolean;

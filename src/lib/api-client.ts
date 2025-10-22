@@ -1,22 +1,47 @@
+/**
+ * API Client - Comprehensive abstraction layer for all API calls
+ *
+ * This file provides a clean abstraction for ALL API calls in the application.
+ * It's designed to be easily switchable between Next.js API routes and AWS API Gateway.
+ *
+ * To migrate to AWS:
+ * 1. Set NEXT_PUBLIC_API_BASE_URL environment variable to your AWS API Gateway URL
+ * 2. Update authentication headers if needed
+ * 3. Test all endpoints
+ *
+ * See /docs/api_migration_to_aws.md for detailed migration guide
+ */
+
 import { ApiResponse } from './api-utils';
 
-// API 호출을 위한 기본 설정
-// const API_BASE_URL = process.env.NODE_ENV === 'production' 
-//   ? 'https://your-domain.com' 
-//   : '';
-const API_BASE_URL =
-  typeof window !== 'undefined' ? window.location.origin : '';
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
 
-  
-// 공통 fetch 래퍼
+/**
+ * API Base URL Configuration
+ * - Development/Production with Next.js API Routes: '' (empty string, same origin)
+ * - AWS Migration: Set NEXT_PUBLIC_API_BASE_URL to your AWS API Gateway URL
+ */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (typeof window !== 'undefined' ? window.location.origin : '');
+
+// =============================================================================
+// CORE HELPER FUNCTION
+// =============================================================================
+
+/**
+ * Generic API call wrapper
+ * Handles all HTTP requests with proper error handling and logging
+ */
 async function apiCall<T = any>(
-  endpoint: string, 
+  endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
     const url = `${API_BASE_URL}/api${endpoint}`;
-    log.info(`[API] 호출 시작: ${url}`, { method: options.method || 'GET' });
-    
+    log.info(`[API Client] Request: ${options.method || 'GET'} ${url}`);
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -25,201 +50,363 @@ async function apiCall<T = any>(
       ...options,
     });
 
-    log.info(`[API] 응답 상태: ${response.status} ${response.statusText}`);
-    
+    log.info(`[API Client] Response: ${response.status} ${response.statusText}`);
+
     const data = await response.json();
-    log.info(`[API] 응답 데이터:`, data);
-    
+
     if (!response.ok) {
       const errorMsg = data.error || `HTTP error! status: ${response.status}`;
-      console.error(`[API] HTTP 오류: ${errorMsg}`);
+      console.error(`[API Client] Error: ${errorMsg}`);
       throw new Error(errorMsg);
     }
 
     return data;
   } catch (error) {
-    console.error(`[API] 호출 실패 ${endpoint}:`, error);
-    console.error(`[API] 오류 타입:`, typeof error);
-    console.error(`[API] 오류 메시지:`, (error as any)?.message);
-    console.error(`[API] 오류 스택:`, (error as any)?.stack);
+    console.error(`[API Client] Failed ${endpoint}:`, error);
     throw error;
   }
 }
 
-// FormData를 사용한 API 호출
+/**
+ * API call for FormData (multipart/form-data)
+ */
 async function apiCallWithFormData<T = any>(
-  endpoint: string, 
+  endpoint: string,
   formData: FormData
 ): Promise<ApiResponse<T>> {
   try {
     const url = `${API_BASE_URL}/api${endpoint}`;
-    log.info(`[API] FormData 호출 시작: ${url}`);
-    
-    // FormData 내용 로깅 (개발용)
-    if (process.env.NODE_ENV === 'development') {
-      log.info(`[API] FormData 키들:`, Array.from(formData.keys()));
-      for (const [key, value] of formData.entries()) {
-        if (typeof value === 'string' && value.length < 100) {
-          log.info(`[API] FormData ${key}:`, value);
-        } else {
-          log.info(`[API] FormData ${key}:`, typeof value, value instanceof File ? `File(${value.size} bytes)` : '...');
-        }
-      }
-    }
-    
+    log.info(`[API Client] FormData Request: POST ${url}`);
+
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
-      // FormData 사용시 Content-Type 헤더를 자동으로 설정하도록 함
+      // Don't set Content-Type header - browser will set it with boundary
     });
 
-    log.info(`[API] FormData 응답 상태: ${response.status} ${response.statusText}`);
-    
+    log.info(`[API Client] FormData Response: ${response.status} ${response.statusText}`);
+
     const data = await response.json();
-    log.info(`[API] FormData 응답 데이터:`, data);
-    
+
     if (!response.ok) {
       const errorMsg = data.error || `HTTP error! status: ${response.status}`;
-      console.error(`[API] FormData HTTP 오류: ${errorMsg}`);
+      console.error(`[API Client] FormData Error: ${errorMsg}`);
       throw new Error(errorMsg);
     }
 
     return data;
   } catch (error) {
-    console.error(`[API] FormData 호출 실패 ${endpoint}:`, error);
-    console.error(`[API] FormData 오류 타입:`, typeof error);
-    console.error(`[API] FormData 오류 메시지:`,  (error as any)?.message);
-    console.error(`[API] FormData 오류 스택:`, (error as any)?.stack);
+    console.error(`[API Client] FormData Failed ${endpoint}:`, error);
     throw error;
   }
 }
 
-// Step별 API 호출 함수들
-export const uploadAPI = {
-  // Step 1: 기본 정보
-  step1: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step1 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step1', formData);
-      log.info(`[API] Step1 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step1 실패:`, error);
-      throw error;
-    }
+// =============================================================================
+// ADMIN API
+// =============================================================================
+
+export const adminApi = {
+  /**
+   * Verify admin authentication and fetch hospital data
+   * @param uid - Auth user ID
+   */
+  verifyAuth: async (uid: string) => {
+    return apiCall<{
+      adminExists: boolean;
+      hasClinicInfo: boolean;
+      admin: any;
+      hospital: any;
+    }>(`/admin/auth?uid=${encodeURIComponent(uid)}`, {
+      method: 'GET'
+    });
   },
 
-  // Step 2: 연락처 정보 
-  step2: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step2 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step2', formData);
-      log.info(`[API] Step2 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step2 실패:`, error);
-      throw error;
-    }
-  },
-
-  // Step 3: 영업시간 및 부대시설
-  step3: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step3 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step3', formData);
-      log.info(`[API] Step3 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step3 실패:`, error);
-      throw error;
-    }
-  },
-
-  // Step 4: 이미지 및 의사 정보
-  step4: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step4 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step4', formData);
-      log.info(`[API] Step4 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step4 실패:`, error);
-      throw error;
-    }
-  },
-
-  // Step 5: 치료 정보
-  step5: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step5 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step5', formData);
-      log.info(`[API] Step5 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step5 실패:`, error);
-      throw error;
-    }
-  },
-
-  // Step 6: 시술/장비 정보
-  step6: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step6 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step6', formData);
-      log.info(`[API] Step6 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step6 실패:`, error);
-      throw error;
-    }
-  },
-
-  // Step Last: 언어 설정 및 피드백
-  step_last: async (formData: FormData): Promise<ApiResponse> => {
-    log.info(`[API] Step_last 호출 시작`);
-    try {
-      const result = await apiCallWithFormData('/upload/step_last', formData);
-      log.info(`[API] Step_last 성공:`, result);
-      return result;
-    } catch (error) {
-      console.error(`[API] Step_last 실패:`, error);
-      throw error;
-    }
-  },
+  /**
+   * Create new admin entry
+   * @param uid - Auth user ID
+   * @param email - Admin email
+   */
+  createAdmin: async (uid: string, email: string) => {
+    return apiCall<{ admin: any }>('/admin/auth', {
+      method: 'POST',
+      body: JSON.stringify({ uid, email })
+    });
+  }
 };
 
-// 에러 메시지 포맷팅
+// =============================================================================
+// CONSULTATION API
+// =============================================================================
+
+export const consultationApi = {
+  /**
+   * Fetch all consultation submissions
+   * @param filters - Optional filters (status, limit)
+   */
+  getAll: async (filters?: { status?: string; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiCall<{ submissions: any[] }>(`/consultation${query}`, {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Update consultation submission
+   * @param id_uuid - Consultation ID
+   * @param updates - Fields to update (doctor_notes, status)
+   */
+  update: async (id_uuid: string, updates: { doctor_notes?: string; status?: string }) => {
+    return apiCall<{ consultation: any }>('/consultation', {
+      method: 'PATCH',
+      body: JSON.stringify({ id_uuid, ...updates })
+    });
+  }
+};
+
+// =============================================================================
+// SURGERY INFO API
+// =============================================================================
+
+export const surgeryApi = {
+  /**
+   * Fetch all surgery information
+   * @param category - Optional category filter
+   */
+  getAll: async (category?: string) => {
+    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+    return apiCall<{ surgeryInfo: any[] }>(`/surgery-info${query}`, {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Fetch surgery info by category
+   * @param category - Category to filter by
+   */
+  getByCategory: async (category: string) => {
+    return surgeryApi.getAll(category);
+  }
+};
+
+// =============================================================================
+// TREATMENT SELECTION API
+// =============================================================================
+
+export const treatmentSelectionApi = {
+  /**
+   * Fetch treatment selections for a hospital
+   * @param id_uuid_hospital - Hospital UUID
+   */
+  get: async (id_uuid_hospital: string) => {
+    return apiCall<{
+      treatmentSelection: {
+        skinTreatmentIds: string[];
+        plasticTreatmentIds: string[];
+        deviceIds: string[];
+      }
+    }>(`/treatment-selection?id_uuid_hospital=${encodeURIComponent(id_uuid_hospital)}`, {
+      method: 'GET'
+    });
+  }
+};
+
+// =============================================================================
+// HOSPITAL API
+// =============================================================================
+
+export const hospitalApi = {
+  /**
+   * Fetch complete hospital preview data (replaces 9 separate queries)
+   * @param id_uuid_hospital - Hospital UUID
+   */
+  getPreview: async (id_uuid_hospital: string) => {
+    return apiCall<{ hospital: any }>(`/hospital/preview?id_uuid_hospital=${encodeURIComponent(id_uuid_hospital)}`, {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Fetch hospital name only
+   * @param id_uuid - Hospital UUID
+   */
+  getName: async (id_uuid: string) => {
+    return apiCall<{ name: string; name_en: string }>(`/hospital/name?id_uuid=${encodeURIComponent(id_uuid)}`, {
+      method: 'GET'
+    });
+  }
+};
+
+// =============================================================================
+// RESERVATION API
+// =============================================================================
+
+export const reservationApi = {
+  /**
+   * Fetch reservations for a hospital
+   * @param id_uuid_hospital - Hospital UUID
+   */
+  getByHospital: async (id_uuid_hospital: string) => {
+    return apiCall<{ reservationData: any[] }>(`/reservation?id_uuid_hospital=${encodeURIComponent(id_uuid_hospital)}`, {
+      method: 'GET'
+    });
+  }
+};
+
+// =============================================================================
+// TREATMENT CATEGORIES API
+// =============================================================================
+
+export const treatmentCategoriesApi = {
+  /**
+   * Fetch all treatment categories
+   */
+  getAll: async () => {
+    return apiCall<any>('/treatment-categories', {
+      method: 'GET'
+    });
+  }
+};
+
+// =============================================================================
+// DEVICES API
+// =============================================================================
+
+export const devicesApi = {
+  /**
+   * Fetch all devices
+   */
+  getAll: async () => {
+    return apiCall<any>('/devices', {
+      method: 'GET'
+    });
+  }
+};
+
+// =============================================================================
+// UPLOAD API (Multi-step form)
+// =============================================================================
+
+export const uploadAPI = {
+  /**
+   * Step 1: Basic hospital information
+   */
+  step1: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step1');
+    return apiCallWithFormData('/upload/step1', formData);
+  },
+
+  /**
+   * Step 2: Contact information
+   */
+  step2: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step2');
+    return apiCallWithFormData('/upload/step2', formData);
+  },
+
+  /**
+   * Step 3: Business hours and facilities
+   */
+  step3: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step3');
+    return apiCallWithFormData('/upload/step3', formData);
+  },
+
+  /**
+   * Step 4: Images and doctor information
+   */
+  step4: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step4');
+    return apiCallWithFormData('/upload/step4', formData);
+  },
+
+  /**
+   * Step 5: Treatment information
+   */
+  step5: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step5');
+    return apiCallWithFormData('/upload/step5', formData);
+  },
+
+  /**
+   * Step 6: Procedure/equipment information
+   */
+  step6: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step6');
+    return apiCallWithFormData('/upload/step6', formData);
+  },
+
+  /**
+   * Step Last: Language settings and feedback
+   */
+  step_last: async (formData: FormData): Promise<ApiResponse> => {
+    log.info('[API Client] Upload Step_last');
+    return apiCallWithFormData('/upload/step_last', formData);
+  }
+};
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+/**
+ * Format API error for display
+ */
 export function formatApiError(error: any): string {
-  log.info(`[API] formatApiError 호출됨:`, error);
-  log.info(`[API] error 타입:`, typeof error);
-  log.info(`[API] error.message:`, error?.message);
-  log.info(`[API] error.toString():`, error?.toString());
-  
+  log.info('[API Client] Formatting error:', error);
+
   if (error?.message) {
-    log.info(`[API] error.message 반환:`, error.message);
     return error.message;
   }
-  
+
   if (typeof error === 'string') {
-    log.info(`[API] string error 반환:`, error);
     return error;
   }
-  
-  const fallbackMessage = '알 수 없는 오류가 발생했습니다. api-client error: ' + error;
-  log.info(`[API] fallback 메시지 반환:`, fallbackMessage);
-  return fallbackMessage;
+
+  return 'An unknown error occurred';
 }
 
-// 성공 응답 확인
+/**
+ * Check if API response is successful
+ */
 export function isApiSuccess(response: ApiResponse): boolean {
-  const isSuccess = response.status === 'success';
-  log.info(`[API] isApiSuccess 체크:`, { response, isSuccess });
-  return isSuccess;
+  return response.status === 'success' || response.success === true;
 }
 
-// 에러 응답 확인
+/**
+ * Check if API response is an error
+ */
 export function isApiError(response: ApiResponse): boolean {
-  const isError = response.status === 'error';
-  log.info(`[API] isApiError 체크:`, { response, isError });
-  return isError;
-} 
+  return response.status === 'error' || response.success === false;
+}
+
+// =============================================================================
+// UNIFIED API EXPORT
+// =============================================================================
+
+/**
+ * Unified API object - Single import for all API calls
+ *
+ * Usage:
+ * import { api } from '@/lib/api-client';
+ *
+ * const result = await api.admin.verifyAuth(uid);
+ * const consultations = await api.consultation.getAll();
+ * const hospital = await api.hospital.getPreview(id);
+ */
+export const api = {
+  admin: adminApi,
+  consultation: consultationApi,
+  surgery: surgeryApi,
+  treatmentSelection: treatmentSelectionApi,
+  hospital: hospitalApi,
+  reservation: reservationApi,
+  treatmentCategories: treatmentCategoriesApi,
+  devices: devicesApi,
+  upload: uploadAPI
+};
+
+// Keep existing exports for backward compatibility

@@ -1,4 +1,4 @@
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 
 /**

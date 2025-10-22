@@ -15,26 +15,16 @@ import ClinicImageUploadSection from '@/components/ClinicImageUploadSection';
 import DoctorInfoSection from '@/components/DoctorInfoSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
-
+import { Surgery } from '@/models/surgery';
 import Divider from '@/components/Divider';
 
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
 import { supabase } from '@/lib/supabaseClient';
-import { ExistingHospitalData } from '@/types/hospital';
+import { ExistingHospitalData } from '@/models/hospital';
 import ClinicImageThumbnailUploadSection from '@/components/ClinicImageThumbnailUploadSection';
 import PageBottom from '@/components/PageBottom';
 import { toast } from 'sonner';
-
-interface Surgery {
-  created_at: string;
-  description: string;
-  id: number;
-  id_unique: number;
-  imageurls: string[];
-  name: string;
-  type: string;
-}
 
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;

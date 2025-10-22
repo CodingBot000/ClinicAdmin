@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useDaumPostcodePopup } from "react-daum-postcode";
-import { HospitalAddress } from "@/types/address";
+import { HospitalAddress } from "@/models/address";
 import { DaumAddressData, mapDaumPostDataToHospitalAddress } from "@/utils/address/mapDaumPostDataToHospitalAddress";
 
 interface DaumPostProps {

@@ -1,4 +1,4 @@
-import { CategoryNodeTag } from "@/types/category";
+import { CategoryNodeTag } from "@/models/category";
 
 
 export const SKIN_BEAUTY_CATEGORIES: CategoryNodeTag[] = [

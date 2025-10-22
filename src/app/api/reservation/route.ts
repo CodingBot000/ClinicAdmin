@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 // import { createClient } from "@/utils/supabase/server";
 import { supabase } from '@/lib/supabaseClient';
-import { ReservationInputDto } from "./reservation.dto"; // 또는 상대 경로
+import { ReservationInputDto } from "@/models/reservation.dto";
 import { TABLE_RESERVATIONS } from "@/constants/tables";
 
 export async function GET(req: NextRequest) {

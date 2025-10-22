@@ -1,25 +1,8 @@
-import { HospitalAddress } from "@/types/address";
+import { HospitalAddress, DaumAddressData } from "@/models/address";
 
-export type DaumAddressData = {
-    address: string;
-    addressEnglish: string;
-    addressType: string;
-    roadAddress: string;
-    roadAddressEnglish: string;
-    jibunAddress: string;
-    jibunAddressEnglish: string;
-    sido: string;
-    sidoEnglish: string;
-    sigungu: string;
-    sigunguEnglish: string;
-    bname: string;
-    bnameEnglish: string;
-    buildingName: string;
-    buildingNameEnglish: string;
-    zonecode: string;
-  };
-  
-  export const mapDaumPostDataToHospitalAddress = (
+export type { DaumAddressData };
+
+export const mapDaumPostDataToHospitalAddress = (
     data: DaumAddressData,
     coordinates?: { latitude: number; longitude: number },
   ): HospitalAddress => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '@/components/Button';
-import { ContactsInfo } from '@/types/basicinfo';
+import { ContactsInfo } from '@/models/basicinfo';
 
 
 interface ContactsInfoSectionProps {

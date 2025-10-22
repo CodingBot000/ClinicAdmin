@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { api } from "@/lib/api-client";
 
 interface ConsultationSubmission {
   id_uuid: string;
@@ -87,48 +88,24 @@ export default function ConsultationPage() {
   const fetchSubmissions = async () => {
     console.log('🔍 fetchSubmissions 시작');
     try {
-      console.log('📡 Supabase에서 데이터 조회 중...');
-      
-      // RLS 정책 문제로 인한 것으로 확인됨
+      console.log('📡 API로부터 데이터 조회 중...');
 
-      // 2. 데이터 조회 시도
-      const { data, error } = await supabase
-        .from('consultation_submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use API endpoint instead of direct Supabase access
+      const result = await api.consultation.getAll();
 
-      console.log('📊 Supabase 응답:', { data, error });
-      console.log('📊 데이터 개수:', data?.length || 0);
-      
-      // 3. 에러 상세 분석
-      if (error) {
-        console.error('❌ Error fetching submissions:', error);
-        console.error('❌ Error code:', error.code);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error details:', error.details);
-        console.error('❌ Error hint:', error.hint);
-        
-        // 테이블이 존재하지 않는 경우
-        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
-          console.log('🚫 consultation_submissions 테이블이 존재하지 않습니다.');
-        }
-        // 권한 문제인 경우
-        if (error.code === '42501' || error.message.includes('permission denied')) {
-          console.log('🔒 테이블 접근 권한이 없습니다.');
-        }
+      console.log('📊 API 응답:', result);
+
+      if (!result.success || !result.data) {
+        console.error('❌ Error fetching submissions:', result.error);
+        setSubmissions([]);
         return;
       }
 
+      const data = result.data.submissions;
+      console.log('📊 데이터 개수:', data?.length || 0);
+
       if (!data || data.length === 0) {
         console.log('⚠️ 데이터가 없습니다.');
-        console.log('💡 가능한 원인:');
-        console.log('   1. 테이블이 비어있음');
-        console.log('   2. RLS(Row Level Security) 정책으로 인한 접근 제한');
-        console.log('   3. 다른 스키마에 테이블이 있을 수 있음');
-        
-        console.log('🔒 RLS(Row Level Security) 정책이 없어서 데이터에 접근할 수 없습니다.');
-        console.log('💡 해결방법: Supabase 대시보드에서 consultation_submissions 테이블의 RLS Policy를 생성하세요.');
-        
         setSubmissions([]);
         return;
       }
@@ -136,25 +113,11 @@ export default function ConsultationPage() {
       console.log('✅ 데이터 조회 성공:', data.length, '개의 레코드');
       console.log('📝 첫 번째 레코드 샘플:', data[0]);
 
-      const sortedData = data.sort((a, b) => {
-        const statusOrder = { 'New': 0, 'Retry': 1, 'Done': 2 };
-        const statusA = a.status || 'New';
-        const statusB = b.status || 'New';
-        
-        const orderA = statusOrder[statusA as keyof typeof statusOrder] ?? 0;
-        const orderB = statusOrder[statusB as keyof typeof statusOrder] ?? 0;
-        
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-        
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-
-      console.log('🔄 정렬 후 데이터:', sortedData.length, '개');
-      setSubmissions(sortedData || []);
+      // Data is already sorted by the API
+      setSubmissions(data || []);
     } catch (error) {
       console.error('💥 fetchSubmissions 예외 발생:', error);
+      setSubmissions([]);
     } finally {
       setLoading(false);
       console.log('✅ fetchSubmissions 완료');
@@ -176,17 +139,14 @@ export default function ConsultationPage() {
     if (!editData) return;
 
     try {
-      const { error } = await supabase
-        .from('consultation_submissions')
-        .update({
-          doctor_notes: editData.doctor_notes,
-          status: editData.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id_uuid', id);
+      // Use API endpoint instead of direct Supabase UPDATE
+      const result = await api.consultation.update(id, {
+        doctor_notes: editData.doctor_notes,
+        status: editData.status
+      });
 
-      if (error) {
-        console.error('Update error:', error);
+      if (!result.success) {
+        console.error('Update error:', result.error);
         return;
       }
 

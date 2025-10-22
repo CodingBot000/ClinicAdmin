@@ -1,6 +1,6 @@
 // import { CountryCode } from "@/app/types/country-code.dto";
 
-import { CountryCode } from "@/types/country-code.dto";
+import { CountryCode } from "@/models/country-code.dto";
 
 // type CountryItem = {
 //   country_name: string;

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { Device } from '@/types/devices.dto';
+import { Device } from '@/models/devices.dto';
 import "@/utils/logger";
 
 export async function GET() {
