@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AdminPageClient from './AdminPageClient';
-import { useSupabaseSession } from '@/hooks/useSupabaseSession';
+import { useAuth } from '@/hooks/useAuth';
 import { useAlarmStore } from '@/stores/useHospitalUUIDStore';
 import { api } from '@/lib/api-client';
 
@@ -12,13 +12,13 @@ export default function AdminAuthWrapper() {
   const [hasClinicInfo, setHasClinicInfo] = useState(false);
   const [userEmail, setUserEmail] = useState<string>('');
 
-  const { session, isLoading: sessionLoading, error: sessionError } = useSupabaseSession();
+  const { user, isLoading: sessionLoading, error: sessionError } = useAuth();
 
   useEffect(() => {
     let mounted = true;
 
     const checkAdminStatus = async () => {
-      if (!session?.user) {
+      if (!user) {
         if (mounted) {
           router.push('/admin/login');
         }
@@ -26,11 +26,10 @@ export default function AdminAuthWrapper() {
       }
 
       try {
-        const { id: uid, email } = session.user;
-        setUserEmail(email || '');
+        setUserEmail(user.email || '');
 
         // Use API endpoint instead of direct Supabase access
-        const authResult = await api.admin.verifyAuth(uid);
+        const authResult = await api.admin.verifyAuth(user.id.toString());
 
         if (!authResult.success || !authResult.data) {
           throw new Error(authResult.error || 'Failed to verify admin');
@@ -42,7 +41,7 @@ export default function AdminAuthWrapper() {
 
         if (!adminExists) {
           // Create admin using API endpoint instead of direct INSERT
-          const createResult = await api.admin.createAdmin(uid, email || '');
+          const createResult = await api.admin.createAdmin(user.id.toString(), user.email || '');
 
           if (!createResult.success) {
             throw new Error(createResult.error || 'Failed to create admin');
@@ -71,7 +70,7 @@ export default function AdminAuthWrapper() {
     return () => {
       mounted = false;
     };
-  }, [session, sessionLoading, router]);
+  }, [user, sessionLoading, router]);
 
   if (sessionLoading) {
     return (
@@ -86,7 +85,7 @@ export default function AdminAuthWrapper() {
     );
   }
 
-  if (sessionError || !session) {
+  if (sessionError || !user) {
     router.push('/admin/login');
     return null;
   }

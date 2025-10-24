@@ -2,7 +2,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hooks/useAuth";
 import InputField from "./InputField";
 import { Button } from "./ui/button";
 import Image from "next/image";
@@ -10,11 +10,11 @@ import Image from "next/image";
 
 export default function AdminLoginForm() {
   const router = useRouter();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,32 +26,18 @@ export default function AdminLoginForm() {
       log.info('로그인 시도:', username);
       
       const emailModify = `${username}@beautylink.com`;
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: emailModify, 
-        password 
-      });
-      log.info('로그인 시도 email:', emailModify);
+      const result = await login(emailModify, password);
       
-      if (error) {
-        console.error('로그인 에러:', error);
-        setError(error.message);
-        setIsLoading(false);
-        return;
-      }
-      
-      if (data.user && data.session) {
-        log.info('로그인 성공:', data.user.email);
-        log.info('세션 생성됨:', data.session.access_token ? '토큰 존재' : '토큰 없음');
-        
-        // Next.js router 사용
+      if (result.success) {
+        log.info('로그인 성공:', emailModify);
         router.push('/admin');
       } else {
-        setError('로그인 정보가 올바르지 않습니다.');
-        setIsLoading(false);
+        setError(result.error || '로그인 정보가 올바르지 않습니다.');
       }
     } catch (err) {
       console.error('로그인 처리 중 오류:', err);
       setError('로그인 중 오류가 발생했습니다.');
+    } finally {
       setIsLoading(false);
     }
   };

@@ -1,11 +1,11 @@
 // components/AdminLogoutButton.tsx
 "use client";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminLogoutButton() {
-  const supabase = createClientComponentClient();
+  const { logout } = useAuth();
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await logout();
     window.location.href = "/admin/login";
   };
   return <button onClick={handleLogout}>Logout</button>;
