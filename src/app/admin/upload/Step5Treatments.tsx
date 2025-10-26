@@ -73,6 +73,7 @@ const Step5Treatments = ({
       const [uploadMethod, setUploadMethod] = useState('excel');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [existingFileNames, setExistingFileNames] = useState<string[]>([]);
+  const [existingFileKeys, setExistingFileKeys] = useState<string[]>([]); // S3 파일 키 저장
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -123,15 +124,18 @@ const Step5Treatments = ({
         log.info('기존 엑셀 파일 발견:', result.files.length, '개');
         setUploadMethod('excel');
         setExistingFileNames(result.files.map((item: any) => item.name));
+        setExistingFileKeys(result.files.map((item: any) => item.key)); // S3 키 저장
       } else {
         log.info('기존 엑셀 파일 없음');
         setUploadMethod('manual');
         setExistingFileNames([]);
+        setExistingFileKeys([]);
       }
     } catch (error) {
       console.error('기존 파일 확인 중 오류:', error);
       setUploadMethod('manual');
       setExistingFileNames([]);
+      setExistingFileKeys([]);
     }
   };
 
@@ -568,7 +572,7 @@ const Step5Treatments = ({
                   엑셀 작성 가이드보기
                 </button>
               </div>
-              <FileUploadSection 
+              <FileUploadSection
                   onFileChange={handleFileChange}
                   name="treatment_file"
                   title=""
@@ -576,6 +580,7 @@ const Step5Treatments = ({
                   fileType="excel"
                   maxFiles={EXCEL_MAX_FILES}
                   existingFileNames={existingFileNames}
+                  existingFileKeys={existingFileKeys}
                   onClearAllFiles={handleClearAllFiles}
               />
             </div>

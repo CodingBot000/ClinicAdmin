@@ -108,9 +108,27 @@ const PreviewClinicInfoModal: React.FC<PreviewClinicInfoModalProps> = ({
         throw new Error(result.error || 'Failed to fetch hospital data');
       }
 
-      const combinedData = result.data.hospital as CombinedHospitalData;
+      const nestedData = result.data.hospital;
 
-      log.info('Hospital preview data loaded:', combinedData);
+      // ✅ Nested 구조를 Flat 구조로 변환
+      const combinedData: CombinedHospitalData = {
+        // hospital 정보
+        ...nestedData.hospital,
+        // hospitalDetail 정보
+        ...nestedData.hospitalDetail,
+        // 나머지 top-level 정보
+        business_hours: nestedData.businessHours || [],
+        doctors: nestedData.doctors || [],
+        treatments: nestedData.treatments || [],
+        treatmentDetails: nestedData.treatmentDetails || [],
+        feedback: nestedData.feedback || '',
+        contacts: nestedData.contacts || [],
+        excelFileName: nestedData.excelFileName || '',
+        treatmentSelection: nestedData.treatmentSelection,
+        supportTreatmentFeedback: nestedData.supportTreatmentFeedback || '',
+      };
+
+      log.info('Hospital preview data loaded (flattened):', combinedData);
 
       setHospitalData(combinedData);
     } catch (err) {

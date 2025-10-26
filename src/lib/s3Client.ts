@@ -13,18 +13,24 @@ import {
 } from '@aws-sdk/client-s3';
 
 // Lightsail Object Storage 설정 (S3 호환)
+const BUCKET_NAME = process.env.LIGHTSAIL_BUCKET_NAME || 'beauty-bucket-public';
+
+// ⚠️ LIGHTSAIL_ENDPOINT에서 버킷 이름 제거
+const rawEndpoint = process.env.LIGHTSAIL_ENDPOINT || 'https://s3.us-west-2.amazonaws.com';
+
+// endpoint에서 버킷 이름이 포함되어 있으면 제거
+const cleanEndpoint = rawEndpoint.replace(`${BUCKET_NAME}.`, '');
+
 const s3Client = new S3Client({
   region: process.env.LIGHTSAIL_REGION || 'us-west-2',
-  endpoint: process.env.LIGHTSAIL_ENDPOINT,
+  endpoint: cleanEndpoint,
   credentials: {
     accessKeyId: process.env.LIGHTSAIL_ACCESS_KEY!,
     secretAccessKey: process.env.LIGHTSAIL_SECRET_KEY!,
   },
-  // Lightsail은 path-style을 사용
+  // ✅ endpoint에 버킷 이름 없이, virtual-hosted-style 사용
   forcePathStyle: false,
 });
-
-const BUCKET_NAME = process.env.LIGHTSAIL_BUCKET_NAME || 'beauty-bucket-public';
 
 /**
  * 파일 업로드

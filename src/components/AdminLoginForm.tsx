@@ -16,14 +16,13 @@ export default function AdminLoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setError("");
     setIsLoading(true);
-    
+
     try {
       log.info('로그인 시도:', username);
-      
+
       // 기존 로직: username, password 가 폼 state에 있다고 가정
       const email = `${username}@beautylink.com`;
 
@@ -56,6 +55,14 @@ export default function AdminLoginForm() {
     }
   };
 
+  // 엔터키 핸들러
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleLogin();
+    }
+  };
+
   return (
     <div className="flex flex-col justify-center items-center w-full min-h-screen bg-gray-50">
       <div className="text-center mb-8">
@@ -71,7 +78,7 @@ export default function AdminLoginForm() {
       
         <p className="text-lg text-gray-600">Please enter your ID and password</p>
       </div>
-      <form onSubmit={handleLogin} className="space-y-4 w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+      <div className="space-y-4 w-full max-w-md p-6 bg-white rounded-lg shadow-lg" onKeyDown={handleKeyDown}>
         <InputField
             label="Login ID"
             type="text"
@@ -83,9 +90,9 @@ export default function AdminLoginForm() {
             // onChange={e => setEmail(e.target.value)}
             required
           />
-        
+
         <InputField
-            label="Password"   
+            label="Password"
             type="password"
             name="password"
             placeholder="Password"
@@ -94,11 +101,11 @@ export default function AdminLoginForm() {
             required
           />
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="button" onClick={handleLogin} className="w-full" disabled={isLoading}>
           {isLoading ? '로그인 중...' : 'Login'}
         </Button>
         {error && <p className="text-red-500 text-center">{error}</p>}
-      </form>
+      </div>
       </div>
   );
 }

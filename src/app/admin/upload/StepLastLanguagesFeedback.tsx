@@ -99,28 +99,30 @@ const StepLastLanguagesFeedback = ({
       }
 
       // 가능 언어 정보 설정
-      if (existingData.hospitalDetail?.available_languages && selectedLanguages.length === 0) {
-        log.info('Step_Last - 언어 정보 원본:', existingData.hospitalDetail.available_languages);
-        
+      // ✅ existingData는 nested 구조 - hospitalDetail에서 접근
+      const availableLanguages = existingData.hospitalDetail?.available_languages;
+      if (availableLanguages && selectedLanguages.length === 0) {
+        log.info('Step_Last - 언어 정보 원본:', availableLanguages);
+
         let languages: string[] = [];
-        
+
         // JSON 문자열인 경우 파싱
-        if (typeof existingData.hospitalDetail.available_languages === 'string') {
+        if (typeof availableLanguages === 'string') {
           try {
-            languages = JSON.parse(existingData.hospitalDetail.available_languages);
+            languages = JSON.parse(availableLanguages);
             log.info('Step_Last - JSON 파싱된 언어 정보:', languages);
           } catch (error) {
             console.error('Step_Last - JSON 파싱 실패:', error);
             // 파싱 실패 시 원본 문자열을 배열로 처리
-            languages = [existingData.hospitalDetail.available_languages];
+            languages = [availableLanguages];
           }
-        } else if (Array.isArray(existingData.hospitalDetail.available_languages)) {
+        } else if (Array.isArray(availableLanguages)) {
           // 이미 배열인 경우
-          languages = existingData.hospitalDetail.available_languages;
+          languages = availableLanguages;
         } else {
-          log.info('Step_Last - 지원되지 않는 언어 정보 타입:', typeof existingData.hospitalDetail.available_languages);
+          log.info('Step_Last - 지원되지 않는 언어 정보 타입:', typeof availableLanguages);
         }
-        
+
         setSelectedLanguages(languages);
         log.info('Step_Last - 가능 언어 정보 설정 완료:', languages);
       }
@@ -175,7 +177,6 @@ const StepLastLanguagesFeedback = ({
   ) => {
     log.info('Step_Last - 폼에 기존 데이터 적용 시작');
     log.info('Step_Last - 받은 데이터:', {
-      hospitalDetail: existingData.hospitalDetail,
       feedback: existingData.feedback,
       availableLanguages: existingData.hospitalDetail?.available_languages
     });
@@ -197,7 +198,7 @@ const StepLastLanguagesFeedback = ({
         feedback: existingData.feedback,
         selectedLanguages: existingData.hospitalDetail?.available_languages
       });
-    
+
     } catch (error) {
       console.error('Step_Last - 기존 데이터 적용 중 오류:', error);
     }
@@ -335,8 +336,10 @@ const StepLastLanguagesFeedback = ({
 
   // 기존 데이터에서 언어 정보 가져오기
   const getInitialLanguages = (): string[] => {
-    if (existingData?.hospitalDetail?.available_languages) {
-      return parseLanguages(existingData.hospitalDetail.available_languages);
+    // ✅ existingData는 nested 구조 - hospitalDetail에서 접근
+    const availableLanguages = existingData?.hospitalDetail?.available_languages;
+    if (availableLanguages) {
+      return parseLanguages(availableLanguages);
     }
     return selectedLanguages;
   };

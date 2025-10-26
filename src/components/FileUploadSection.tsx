@@ -14,8 +14,10 @@ import {
   Upload,
   Image as ImageIcon,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { downloadFileFromS3 } from '@/utils/downloadFile';
 
 type FileType = 'image' | 'excel' | 'pdf';
 
@@ -28,6 +30,7 @@ interface FileUploadSectionProps {
   maxFiles?: number;
   initialFiles?: string[];
   existingFileNames?: string[];
+  existingFileKeys?: string[]; // S3 파일 키 (다운로드용)
   onExistingDataChange?: (data: any) => void;
   onDeletedFileChange?: (deletedUrl: string | null) => void;
   onCurrentFileChange?: (currentUrl: string | null) => void;
@@ -43,6 +46,7 @@ const FileUploadSection = ({
   maxFiles = 1,
   initialFiles = [],
   existingFileNames = [],
+  existingFileKeys = [],
   onExistingDataChange,
   onDeletedFileChange,
   onCurrentFileChange,
@@ -192,7 +196,7 @@ const FileUploadSection = ({
       if (onClearAllFiles) {
         await onClearAllFiles();
       }
-      
+
       // 로컬 상태 초기화
       setFiles([]);
       setFileNames([]);
@@ -200,6 +204,36 @@ const FileUploadSection = ({
       setIsExistingFiles(false);
     } catch (error) {
       console.error('전체 삭제 중 오류:', error);
+    }
+  };
+
+  // 파일 다운로드 핸들러
+  const handleDownload = async () => {
+    try {
+      if (existingFileKeys.length === 0) {
+        console.warn('다운로드할 파일이 없습니다.');
+        return;
+      }
+
+      log.info('파일 다운로드 시작:', existingFileKeys);
+
+      // 각 파일을 순차적으로 다운로드
+      for (let i = 0; i < existingFileKeys.length; i++) {
+        const fileKey = existingFileKeys[i];
+        const fileName = existingFileNames[i] || fileKey.split('/').pop() || 'download';
+
+        await downloadFileFromS3(fileKey, fileName);
+
+        // 브라우저 다운로드 제한 방지를 위한 지연
+        if (i < existingFileKeys.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      }
+
+      log.info('파일 다운로드 완료');
+    } catch (error) {
+      console.error('파일 다운로드 중 오류:', error);
+      setErrorMessage('파일 다운로드에 실패했습니다.');
     }
   };
 
@@ -254,14 +288,24 @@ const FileUploadSection = ({
         }
       </div>
       {existingFileNames.length > 0 && (
-            <button
-              type='button'
-              onClick={handleClearAll}
-              className='text-sm bg-red-400 text-white border rounded px-3 py-1 hover:bg-white-500 transition-colors'
-            >
-              전체 삭제
-            </button>
-          )}
+        <div className='flex gap-2'>
+          <button
+            type='button'
+            onClick={handleClearAll}
+            className='text-sm bg-red-400 text-white border rounded px-3 py-1 hover:bg-red-500 transition-colors'
+          >
+            전체 삭제
+          </button>
+          <button
+            type='button'
+            onClick={handleDownload}
+            className='text-sm bg-blue-500 text-white border rounded px-3 py-1 hover:bg-blue-600 transition-colors flex items-center gap-1'
+          >
+            <Download size={16} />
+            파일 다운로드
+          </button>
+        </div>
+      )}
       {/* 기존 파일 목록 표시 */}
       {existingFileNames.length > 0 && (
         <div className='mb-4'>

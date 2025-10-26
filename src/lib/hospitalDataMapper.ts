@@ -330,68 +330,68 @@ export function mapFacilitiesToForm(hospitalDetail: any | null | undefined) {
 /**
  * 모든 데이터를 통합해서 폼 초기값으로 변환
  *
- * ⚠️ 중요: API에서 반환하는 데이터는 flat한 구조입니다
- * data.hospital?.name이 아닌 data.name 형식으로 접근해야 합니다
+ * ✅ 중요: API에서 반환하는 데이터는 nested 구조입니다
+ * data.hospital.name, data.hospitalDetail.tel 형식으로 접근해야 합니다
  */
 export function mapExistingDataToFormValues(data: ExistingHospitalData) {
   log.info(' 기존 데이터를 폼 형식으로 변환 시작');
   log.info('입력 데이터 구조:', {
-    name: (data as any).name,
-    tel: (data as any).tel,
-    email: (data as any).email,
-    address_full_road: (data as any).address_full_road
+    hospital: data.hospital,
+    hospitalDetail: data.hospitalDetail,
+    feedback: data.feedback
   });
 
-  // API 반환값은 flat 구조이므로 직접 접근
-  const hospitalData = data as any;
+  // API 반환값은 nested 구조
+  const hospitalInfo = data.hospital;
+  const hospitalDetailInfo = data.hospitalDetail;
 
   const mapped = {
     // 병원 기본 정보
     hospital: {
-      name: hospitalData.name || '',
-      name_en: hospitalData.name_en || '',
-      directions: hospitalData.directions_to_clinic || '',
-      location: hospitalData.location || '',
-      images: hospitalData.imageurls || [],
-      kakao_talk: hospitalData.kakao_talk || '',
-      line: hospitalData.line || '',
-      we_chat: hospitalData.we_chat || '',
-      whats_app: hospitalData.whats_app || '',
-      telegram: hospitalData.telegram || '',
-      facebook_messenger: hospitalData.facebook_messenger || '',
-      instagram: hospitalData.instagram || '',
-      tiktok: hospitalData.tiktok || '',
-      youtube: hospitalData.youtube || '',
-      other_channel: hospitalData.other_channel || '',
+      name: hospitalInfo?.name || '',
+      name_en: hospitalInfo?.name_en || '',
+      directions: hospitalInfo?.directions_to_clinic || '',
+      location: hospitalInfo?.location || '',
+      images: hospitalInfo?.imageurls || [],
+      kakao_talk: hospitalDetailInfo?.kakao_talk || '',
+      line: hospitalDetailInfo?.line || '',
+      we_chat: hospitalDetailInfo?.we_chat || '',
+      whats_app: hospitalDetailInfo?.whats_app || '',
+      telegram: hospitalDetailInfo?.telegram || '',
+      facebook_messenger: hospitalDetailInfo?.facebook_messenger || '',
+      instagram: hospitalDetailInfo?.instagram || '',
+      tiktok: hospitalDetailInfo?.tiktok || '',
+      youtube: hospitalDetailInfo?.youtube || '',
+      other_channel: hospitalDetailInfo?.other_channel || '',
     },
 
     // 주소 정보
-    address: mapAddressToForm(hospitalData),
+    address: mapAddressToForm(hospitalInfo),
 
     // 병원 상세 정보
     hospitalDetail: {
-      tel: hospitalData.tel || '',
-      email: hospitalData.email || '',
-      map: hospitalData.map || '',
-      etc: hospitalData.etc || '',
-      sns_content_agreement: hospitalData.sns_content_agreement || null,
-      available_languages: hospitalData.available_languages || []
+      tel: hospitalDetailInfo?.tel || '',
+      email: hospitalDetailInfo?.email || '',
+      map: hospitalDetailInfo?.map || '',
+      etc: hospitalDetailInfo?.etc || '',
+      sns_content_agreement: hospitalDetailInfo?.sns_content_agreement || null,
+      available_languages: hospitalDetailInfo?.available_languages || []
     },
 
     // 편의시설
-    facilities: mapFacilitiesToForm(hospitalData),
+    facilities: mapFacilitiesToForm(hospitalDetailInfo),
 
     // 영업시간
-    businessHours: mapBusinessHoursToForm(hospitalData.business_hours),
+    businessHours: mapBusinessHoursToForm(data.businessHours),
 
     // 의사 정보
-    doctors: mapDoctorsToForm(hospitalData.doctors),
+    doctors: mapDoctorsToForm(data.doctors),
 
     // 시술 정보
-    treatments: mapTreatmentsToForm(hospitalData.treatments),
+    treatments: mapTreatmentsToForm(data.treatments),
 
     // 병원 이미지 URL 배열 (기존 이미지 표시용)
-    hospitalImages: hospitalData.imageurls || []
+    hospitalImages: hospitalInfo?.imageurls || []
   };
 
   log.info(' 데이터 변환 완료:', {

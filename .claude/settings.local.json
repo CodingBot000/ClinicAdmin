@@ -13,7 +13,10 @@
       "Bash(node --version:*)",
       "Bash(npm:*)",
       "Bash(git grep:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git config:*)",
+      "WebFetch(domain:docs.claude.com)",
+      "Bash(claude logout)"
     ],
     "deny": []
   }

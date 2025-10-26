@@ -228,26 +228,26 @@ const Step1BasicInfo = ({
       setHospitalLocation(formData.hospital.location);
       
       // SNS 채널 정보와 기본 정보 설정
-      // ⚠️ existingData는 flat한 구조이므로 직접 접근
-      const data = existingData as any;
+      // ✅ existingData는 nested 구조 - hospitalDetail에서 접근
+      const hospitalDetail = existingData.hospitalDetail;
       setBasicInfo({
         name: formData.hospital.name || '',
         name_en: formData.hospital.name_en || '',
-        email: data.email || '',
-        tel: data.tel || '',
-        introduction: data.introduction || '',
-        introduction_en: data.introduction_en || '',
-        kakao_talk: data.kakao_talk || '',
-        line: data.line || '',
-        we_chat: data.we_chat || '',
-        whats_app: data.whats_app || '',
-        telegram: data.telegram || '',
-        facebook_messenger: data.facebook_messenger || '',
-        instagram: data.instagram || '',
-        tiktok: data.tiktok || '',
-        youtube: data.youtube || '',
-        other_channel: data.other_channel || '',
-        sns_content_agreement: data.sns_content_agreement === null ? null : (data.sns_content_agreement as 1 | 0),
+        email: hospitalDetail?.email || '',
+        tel: hospitalDetail?.tel || '',
+        introduction: hospitalDetail?.introduction || '',
+        introduction_en: hospitalDetail?.introduction_en || '',
+        kakao_talk: hospitalDetail?.kakao_talk || '',
+        line: hospitalDetail?.line || '',
+        we_chat: hospitalDetail?.we_chat || '',
+        whats_app: hospitalDetail?.whats_app || '',
+        telegram: hospitalDetail?.telegram || '',
+        facebook_messenger: hospitalDetail?.facebook_messenger || '',
+        instagram: hospitalDetail?.instagram || '',
+        tiktok: hospitalDetail?.tiktok || '',
+        youtube: hospitalDetail?.youtube || '',
+        other_channel: hospitalDetail?.other_channel || '',
+        sns_content_agreement: hospitalDetail?.sns_content_agreement === null ? null : (hospitalDetail?.sns_content_agreement as 1 | 0),
       });
       log.info('Step1 - 기본 정보 및 SNS 채널 정보 설정 완료');
 
@@ -265,51 +265,52 @@ const Step1BasicInfo = ({
       );
 
       // 피드백 정보 설정
-      if (data.feedback) {
-        setFeedback(data.feedback);
-        log.info('Step1 - 피드백 정보 설정 완료:', data.feedback);
+      if (existingData.feedback) {
+        setFeedback(existingData.feedback);
+        log.info('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
       }
 
       // 3. 주소 정보 설정
-      if (data.address_full_road) {
-        setAddress(data.address_full_road);
+      const hospitalInfo = existingData.hospital;
+      if (hospitalInfo?.address_full_road) {
+        setAddress(hospitalInfo.address_full_road);
         setAddressForSendForm({
-          address_full_road: data.address_full_road,
-          address_full_road_en: data.address_full_road_en || '',
-          address_full_jibun: data.address_full_jibun,
-          address_full_jibun_en: data.address_full_jibun_en || '',
-          zipcode: data.zipcode,
-          address_si: data.address_si,
-          address_si_en: data.address_si_en || '',
-          address_gu: data.address_gu,
-          address_gu_en: data.address_gu_en || '',
-          address_dong: data.address_dong,
-          address_dong_en: data.address_dong_en || '',
-          bname: data.bname,
-          bname_en: data.bname_en || '',
-          building_name: data.building_name,
-          building_name_en: data.building_name_en || '',
-          address_detail: data.address_detail,
-          address_detail_en: data.address_detail_en,
-          directions_to_clinic: data.directions_to_clinic,
-          directions_to_clinic_en: data.directions_to_clinic_en,
-          latitude: data.latitude,
-          longitude: data.longitude,
+          address_full_road: hospitalInfo.address_full_road,
+          address_full_road_en: hospitalInfo.address_full_road_en || '',
+          address_full_jibun: hospitalInfo.address_full_jibun,
+          address_full_jibun_en: hospitalInfo.address_full_jibun_en || '',
+          zipcode: hospitalInfo.zipcode,
+          address_si: hospitalInfo.address_si,
+          address_si_en: hospitalInfo.address_si_en || '',
+          address_gu: hospitalInfo.address_gu,
+          address_gu_en: hospitalInfo.address_gu_en || '',
+          address_dong: hospitalInfo.address_dong,
+          address_dong_en: hospitalInfo.address_dong_en || '',
+          bname: hospitalInfo.bname,
+          bname_en: hospitalInfo.bname_en || '',
+          building_name: hospitalInfo.building_name,
+          building_name_en: hospitalInfo.building_name_en || '',
+          address_detail: hospitalInfo.address_detail,
+          address_detail_en: hospitalInfo.address_detail_en,
+          directions_to_clinic: hospitalInfo.directions_to_clinic,
+          directions_to_clinic_en: hospitalInfo.directions_to_clinic_en,
+          latitude: hospitalInfo.latitude,
+          longitude: hospitalInfo.longitude,
         });
 
         log.info('Step1 - 주소 정보 설정 완료');
       }
 
       // 6. 위치 정보 설정
-      if (data.location) {
+      if (hospitalInfo?.location) {
         try {
-            const locKey = data.location;
+            const locKey = hospitalInfo.location;
             log.info('Step1 - 위치 정보 조회 시작 key :', locKey);
             // if (locKey) {
               // key는 string -> number 변환
               const locationKey = parseInt(locKey, 10);
               const region = findRegionByKey(REGIONS, locationKey);
-        
+
               if (region) {
                 setSelectedLocation(region);
                 log.info('Step1 - 위치 정보 설정 완료:', region);
@@ -318,7 +319,7 @@ const Step1BasicInfo = ({
               }
             // }
           } catch (error) {
-            console.error('Step1 - 위치 정보 파싱 실패:', data.location, error);
+            console.error('Step1 - 위치 정보 파싱 실패:', hospitalInfo.location, error);
           }
       }
 

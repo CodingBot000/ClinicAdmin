@@ -120,24 +120,25 @@ const Step4ClinicImagesDoctorsInfo = ({
       const data = result.data.hospital;
       if (data) {
         log.info('Step4 - 로드된 데이터:', data);
-        // ⚠️ data는 이미 flat한 hospital 객체이므로 data.hospital이 아닌 data를 직접 사용
-        log.info('Step4 - 병원 이름:', data.name);
+        // ✅ data는 nested 구조 - hospital, hospitalDetail 등으로 구성됨
+        log.info('Step4 - 병원 이름:', data.hospital?.name);
         log.info('Step4 - doctors 데이터:', data.doctors);
+        log.info('Step4 - thumbnail_url:', data.hospital?.thumbnail_url);
 
         setExistingData(data);
 
         // 썸네일 이미지 상태 초기화
-        // ⚠️ data는 flat 구조이므로 data.thumbnail_url 사용
-        if (data.thumbnail_url) {
-          log.info('기존 썸네일 이미지 발견:', data.thumbnail_url);
-          setClinicThumbnail(data.thumbnail_url);
-          setOriginalThumbnailUrl(data.thumbnail_url);
+        // ✅ data는 nested 구조이므로 data.hospital.thumbnail_url 사용
+        if (data.hospital?.thumbnail_url) {
+          log.info('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
+          setClinicThumbnail(data.hospital.thumbnail_url);
+          setOriginalThumbnailUrl(data.hospital.thumbnail_url);
         } else {
           log.info('썸네일 이미지가 없습니다');
           setClinicThumbnail(null);
           setOriginalThumbnailUrl(null);
         }
-        
+
         // 의사 데이터 설정
         if (data.doctors && data.doctors.length > 0) {
           const existingDoctors = data.doctors.map((doctor: any) => ({
@@ -227,17 +228,21 @@ const Step4ClinicImagesDoctorsInfo = ({
   const handleNext = async () => {
     log.info('handleNext Step4');
     setIsSubmitting(true);
-    const result = await handleSave();
-    log.info('handleNext Step4 handlSave after result', result);
-    document.body.style.overflow = '';
-    setIsSubmitting(false);
-    if (result?.status === 'success') {
-        log.info('handleNext Step4 handlSave success');
+    // 임시로 그냥넘긴다
+    //TODO: 나중에 별도로 이작업을 지시해야한다 docs/imageupload_migration/imageupload_dirty_flag.md
+    onNext();
+
+    // const result = await handleSave();
+    // log.info('handleNext Step4 handlSave after result', result);
+    // document.body.style.overflow = '';
+    // setIsSubmitting(false);
+    // if (result?.status === 'success') {
+    //     log.info('handleNext Step4 handlSave success');
         
-        onNext();
-    } else {
-        log.info('handleNext Step4 handlSave what? :', result);
-    }
+    //     onNext();
+    // } else {
+    //     log.info('handleNext Step4 handlSave what? :', result);
+    // }
   };
  
   const generateFileName = (originalName: string, prefix: string = '') => {
@@ -572,7 +577,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           onFilesChange={setClinicImages}
           name='clinic_images'
           type='Banner'
-          initialImages={(existingData as any)?.imageurls || []}
+          initialImages={existingData?.hospital?.imageurls || []}
           onExistingDataChange={setExistingData}
           onDeletedImagesChange={setDeletedImageUrls}
           onCurrentImagesChange={setCurrentDisplayedUrls}

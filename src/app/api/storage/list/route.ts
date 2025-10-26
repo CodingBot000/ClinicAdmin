@@ -6,9 +6,11 @@ import { listFiles } from '@/lib/s3Client';
  * Body: { prefix: string, maxKeys?: number }
  */
 export async function POST(request: NextRequest) {
+  let prefix = '';
   try {
     const body = await request.json();
-    const { prefix, maxKeys } = body;
+    prefix = body.prefix;
+    const maxKeys = body.maxKeys;
 
     if (!prefix) {
       return NextResponse.json(
@@ -20,8 +22,21 @@ export async function POST(request: NextRequest) {
     const result = await listFiles(prefix, maxKeys);
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: any) {
     console.error('S3 list files error:', error);
+
+    // NoSuchKey 또는 폴더/파일이 없는 경우 빈 배열 반환
+    if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+      log.info('파일/폴더가 존재하지 않음 - 빈 배열 반환:', prefix);
+      return NextResponse.json({
+        success: true,
+        files: [],
+        count: 0,
+        isTruncated: false,
+      });
+    }
+
+    // 그 외의 에러는 500으로 처리
     return NextResponse.json(
       {
         success: false,
