@@ -7,11 +7,10 @@ import useModal from '@/hooks/useModal';
 
 import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 
 
 import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
@@ -146,18 +145,25 @@ const Step5Treatments = ({
     log.info(
       `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && id_admin) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, id_admin]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(id_admin, id_uuid_hospital, 4);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);

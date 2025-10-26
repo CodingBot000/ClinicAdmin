@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
       // 3. Doctors
       pool.query(
-        `SELECT * FROM ${TABLE_DOCTOR} WHERE id_uuid_hospital = $1 ORDER BY chief DESC`,
+        `SELECT * FROM ${TABLE_DOCTOR} WHERE id_uuid_hospital = $1 ORDER BY display_order ASC, id_uuid ASC`,
         [id_uuid_hospital]
       ),
 

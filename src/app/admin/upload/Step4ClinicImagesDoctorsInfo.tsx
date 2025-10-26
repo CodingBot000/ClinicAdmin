@@ -4,10 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/hooks/useAuth';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 // import { uploadHospitalImages, uploadDoctorImages } from '@/lib/clinicUploadApi';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import Button from '@/components/Button';
 import PageHeader from '@/components/PageHeader';
@@ -87,17 +86,18 @@ const Step4ClinicImagesDoctorsInfo = ({
     log.info(
       `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && id_admin) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       log.info('Step4 편집 모드 - 기존 데이터 로드');
       loadExistingDataForEdit();
     }
-  }, [isEditMode, id_admin]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   useEffect(() => {
     log.info('Step4 - existingData 변경됨:', existingData);
-    log.info('Step4 - hospital imageurls:', existingData?.hospital?.imageurls);
-    log.info('Step4 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
-    log.info('Step4 - doctors:', existingData?.doctors);
+    // ⚠️ existingData는 flat 구조이므로 직접 접근
+    log.info('Step4 - imageurls:', (existingData as any)?.imageurls);
+    log.info('Step4 - thumbnail_url:', (existingData as any)?.thumbnail_url);
+    log.info('Step4 - doctors:', (existingData as any)?.doctors);
   }, [existingData]);
 
   useEffect(() => {
@@ -109,20 +109,29 @@ const Step4ClinicImagesDoctorsInfo = ({
       setIsLoadingExistingData(true);
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(id_admin, id_uuid_hospital, 3);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         log.info('Step4 - 로드된 데이터:', data);
-        log.info('Step4 - hospital 데이터:', data.hospital);
+        // ⚠️ data는 이미 flat한 hospital 객체이므로 data.hospital이 아닌 data를 직접 사용
+        log.info('Step4 - 병원 이름:', data.name);
         log.info('Step4 - doctors 데이터:', data.doctors);
-        
+
         setExistingData(data);
-        
+
         // 썸네일 이미지 상태 초기화
-        if (data.hospital?.thumbnail_url) {
-          log.info('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
-          setClinicThumbnail(data.hospital.thumbnail_url);
-          setOriginalThumbnailUrl(data.hospital.thumbnail_url);
+        // ⚠️ data는 flat 구조이므로 data.thumbnail_url 사용
+        if (data.thumbnail_url) {
+          log.info('기존 썸네일 이미지 발견:', data.thumbnail_url);
+          setClinicThumbnail(data.thumbnail_url);
+          setOriginalThumbnailUrl(data.thumbnail_url);
         } else {
           log.info('썸네일 이미지가 없습니다');
           setClinicThumbnail(null);
@@ -554,7 +563,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           maxImages={clinicImageUploadLength}
           title='병원 상세페이지 슬라이드형 소개 이미지'
           description={`- 병원 메인 이미지는 가로로 긴 직사각형(권장 비율: 16:9 또는 3:1)으로 업로드해 주세요.
-   · 예시: 권장: 해상도 640 x 240 px 이상 (8:3) 2MB이하 권장 
+   · 예시: 권장: 해상도 640 x 240 px 이상 (8:3) 2MB이하 권장
   · 알림: 주어진 사진을 중앙을 기준으로 8:3  비율로 넘치는 부분이 자동으로 잘라집니다.
       사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
       * File 한개당 2MB 이하(권장)로 업로드 해주세요.
@@ -563,7 +572,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           onFilesChange={setClinicImages}
           name='clinic_images'
           type='Banner'
-          initialImages={existingData?.hospital?.imageurls || []}
+          initialImages={(existingData as any)?.imageurls || []}
           onExistingDataChange={setExistingData}
           onDeletedImagesChange={setDeletedImageUrls}
           onCurrentImagesChange={setCurrentDisplayedUrls}
@@ -580,6 +589,7 @@ const Step4ClinicImagesDoctorsInfo = ({
 - 기본 이미지를 사용하거나 직접 업로드할 수 있습니다.`}
           onDoctorsChange={setDoctors}
           initialDoctors={doctors}
+          id_uuid_hospital={id_uuid_hospital}
         />
         <Divider />
        </div>

@@ -14,6 +14,7 @@ interface DoctorInfoSectionProps {
   description?: string;
   onDoctorsChange: (doctors: DoctorInfo[]) => void;
   initialDoctors?: DoctorInfo[];
+  id_uuid_hospital?: string;
 }
 
 // 안전한 이미지 URL 검증 함수
@@ -48,6 +49,7 @@ const DoctorInfoSection: React.FC<
   description,
   onDoctorsChange,
   initialDoctors,
+  id_uuid_hospital = '',
 }) => {
   const [doctors, setDoctors] = useState<DoctorInfo[]>(
     initialDoctors || [],
@@ -252,6 +254,7 @@ const DoctorInfoSection: React.FC<
       {isOrderModalOpen && (
         <DoctorOrderModal
           doctors={doctors}
+          id_uuid_hospital={id_uuid_hospital}
           onCancel={() => setIsOrderModalOpen(false)}
           onComplete={handleOrderModalComplete}
         />

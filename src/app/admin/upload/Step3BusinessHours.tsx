@@ -12,10 +12,9 @@ import ExtraOptions, {
   ExtraOptionState,
 } from '@/components/ExtraOptions';
 import { Surgery } from '@/models/surgery';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 import Divider from '@/components/Divider';
 import PageBottom from '@/components/PageBottom';
 
@@ -82,10 +81,10 @@ const Step3BusinessHours = ({
     log.info(
       `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && id_admin) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, id_admin]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   useEffect(() => {
     log.info('Step2 - initialBusinessHours 변경됨:', initialBusinessHours);
@@ -104,8 +103,15 @@ const Step3BusinessHours = ({
       setIsLoadingExistingData(true);
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(id_admin, id_uuid_hospital, 2);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         log.info('steep2 BusinessHours data data.businessHours?.length: ', data.businessHours?.length);
         log.info('steep2 BusinessHours data data.hospital: ', data.hospital);

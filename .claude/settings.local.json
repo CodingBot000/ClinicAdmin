@@ -12,7 +12,8 @@
       "Bash(test:*)",
       "Bash(node --version:*)",
       "Bash(npm:*)",
-      "Bash(git grep:*)"
+      "Bash(git grep:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

@@ -14,6 +14,18 @@ const serverOnlyModules = [
 ];
 
 const nextConfig: NextConfig = {
+  // ✅ Next.js Image 컴포넌트를 위한 외부 도메인 설정
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'beauty-bucket-public.s3.us-west-2.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // 클라이언트 사이드에서 Node.js 모듈들을 빈 객체로 대체
@@ -46,6 +58,7 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+
   experimental: {
     serverComponentsExternalPackages: ['pg', 'argon2', 'pg-connection-string', 'pg-pool'],
   },

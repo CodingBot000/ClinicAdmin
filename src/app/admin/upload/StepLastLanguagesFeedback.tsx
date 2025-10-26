@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import useModal from '@/hooks/useModal';
 
 import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 import PageBottom from '@/components/PageBottom';
 import { toast } from "sonner";
 
@@ -83,10 +82,10 @@ const StepLastLanguagesFeedback = ({
     log.info(
       `Step_Last - isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && id_admin) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, id_admin]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
   useEffect(() => {
@@ -134,13 +133,20 @@ const StepLastLanguagesFeedback = ({
       setIsLoadingExistingData(true);
       log.info('Step_Last - 편집 모드 - 기존 데이터 로딩 시작');
 
-      // 마지막 단계로 모든 데이터를 다 불러온다 
-      // preview 화면에서 보여주기 위해서이다 
-      const data =
-        await loadExistingHospitalData(id_admin, id_uuid_hospital, 100);
-      
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      // 마지막 단계로 모든 데이터를 다 불러온다
+      // preview 화면에서 보여주기 위해서이다
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info('Step_Last - 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
+
       log.info('Step_Last - 로딩된 데이터:', data);
-      
+
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);

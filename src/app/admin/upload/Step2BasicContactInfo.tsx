@@ -13,7 +13,6 @@ import useModal from '@/hooks/useModal';
 
 import { useRouter } from 'next/navigation';
 
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
@@ -21,7 +20,7 @@ import Divider from '@/components/Divider';
 
 import ContactsInfoSection from '../../../components/ContactsInfoSection';
 
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 
 import { ContactsInfo } from '@/models/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
@@ -115,12 +114,15 @@ const Step2BasicContactInfo = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `Step2 - isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
+      `Step2 - isEditMode: ${isEditMode}, id_admin: ${id_admin}, id_uuid_hospital: ${id_uuid_hospital}`,
     );
-    if (isEditMode && id_admin) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
+      log.info('Step2 - 모든 조건 충족, 데이터 로딩 시작');
       loadExistingDataForEdit();
+    } else if (isEditMode && id_admin && !id_uuid_hospital) {
+      log.warn('Step2 - id_uuid_hospital을 기다리는 중...');
     }
-  }, [isEditMode, id_admin]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   // useEffect(() => {
@@ -132,8 +134,15 @@ const Step2BasicContactInfo = ({
       setIsLoadingExistingData(true);
       log.info('Step2 - 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(id_admin, id_uuid_hospital, 100);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info('Step2 - 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);

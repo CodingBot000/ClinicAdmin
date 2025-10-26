@@ -89,9 +89,9 @@ async function loadBusinessHours(hospitalUuid: string) {
  */
 async function loadDoctors(hospitalUuid: string) {
   log.info(' 의사 정보 로딩:', hospitalUuid);
-  
+
   const { rows } = await pool.query(
-    `SELECT * FROM ${TABLE_DOCTOR} WHERE id_uuid_hospital = $1`,
+    `SELECT * FROM ${TABLE_DOCTOR} WHERE id_uuid_hospital = $1 ORDER BY display_order ASC, id_uuid ASC`,
     [hospitalUuid]
   );
 
