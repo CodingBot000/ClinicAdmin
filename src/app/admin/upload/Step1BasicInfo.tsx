@@ -148,10 +148,15 @@ const Step1BasicInfo = ({
     log.info(
       `Step1 - isEditMode: ${isEditMode}, id_admin: ${id_admin}  id_uuid_hospital: ${id_uuid_hospital}`,
     );
-    if (isEditMode && id_admin) {
+
+    // id_uuid_hospital이 설정될 때까지 대기
+    if (isEditMode && id_admin && id_uuid_hospital) {
+      log.info('Step1 - 모든 조건 충족, 데이터 로딩 시작');
       loadExistingDataForEdit();
+    } else if (isEditMode && id_admin && !id_uuid_hospital) {
+      log.warn('Step1 - id_uuid_hospital을 기다리는 중...');
     }
-  }, [isEditMode, id_admin]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   useEffect(() => {
