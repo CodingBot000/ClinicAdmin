@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import InputField from "./InputField";
 import { Button } from "./ui/button";
 import Image from "next/image";
+import { Card, CardContent } from "./ui/card";
 
 
 export default function AdminLoginForm() {
@@ -75,6 +76,20 @@ export default function AdminLoginForm() {
              className="w-[200px] h-auto md:w-[300px] lg:w-[386px]"
             />
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Mimotok Admin</h1>
+        <Card className="w-full max-w-md p-2 bg-white rounded-lg shadow-lg mb-3">
+        <CardContent>
+        <p className="text-sm font-bold text-gray-800 mb-2">
+          최초 입력하시는 병원이라면.<br />
+        <span className="text-sm font-bold text-red-500 mb-2">-썸네일 이미지 1장</span><br />
+        <span className="text-sm font-bold text-red-500 mb-2">-병원 이미지 최소 3장에서 최대 7장까지</span><br />
+        <span className="text-sm font-bold text-red-500 mb-2">- 의사선생님 사진 각 1장씩 </span><br />
+        미리 준비 부탁드립니다.<br />
+        (의사선생님 사진은 선택이며 원하지않으시면 디폴트 이미지로 대체됩니다) <br />
+        정식 오픈전까지 언제든 수정가능하십니다 <br />
+        정식 오픈후에는 변경시 반영에 시간이 소요될수있음을 양해부탁드립니다 <br />
+        </p>
+        </CardContent>
+        </Card>
       
         <p className="text-lg text-gray-600">Please enter your ID and password</p>
       </div>
