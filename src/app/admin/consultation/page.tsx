@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api-client";
 
 interface ConsultationSubmission {
@@ -48,17 +48,17 @@ export default function ConsultationPage() {
   const [loading, setLoading] = useState(true);
   const [editingRows, setEditingRows] = useState<{[key: string]: {doctor_notes: string, status: StatusType}}>({});
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (user !== undefined) {
+      checkAuth();
+    }
+  }, [user]);
 
   const checkAuth = async () => {
     console.log('🔐 인증 체크 시작');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('👤 현재 사용자:', user?.email);
-      
       if (!user) {
         console.log('❌ 사용자가 로그인되어 있지 않음');
         router.push('/admin/login');

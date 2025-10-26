@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { 
   TABLE_CONTACTS,
 } from '@/constants/tables';
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
 
         // 기존 연락처 정보 삭제 (편집 모드인 경우)
         if (isEditMode) {
-          await supabase
-            .from(TABLE_CONTACTS)
-            .delete()
-            .eq('id_uuid_hospital', id_uuid_hospital);
+          await pool.query(
+            `DELETE FROM ${TABLE_CONTACTS} WHERE id_uuid_hospital = $1`,
+            [id_uuid_hospital]
+          );
         }
 
         const contactsToInsert: any[] = [];
@@ -107,12 +107,24 @@ export async function POST(request: NextRequest) {
 
         // 연락처 정보 저장
         if (contactsToInsert.length > 0) {
-          const { error: contactsError } = await supabase
-            .from(TABLE_CONTACTS)
-            .insert(contactsToInsert);
+          const values = contactsToInsert.map((contact, idx) => 
+            `($${idx * 4 + 1}, $${idx * 4 + 2}, $${idx * 4 + 3}, $${idx * 4 + 4})`
+          ).join(',');
 
-          if (contactsError) {
-            console.error('연락처 정보 저장 실패:', contactsError);
+          const flatParams = contactsToInsert.flatMap(contact => [
+            contact.id_uuid_hospital,
+            contact.type,
+            contact.value,
+            contact.sequence
+          ]);
+
+          try {
+            await pool.query(
+              `INSERT INTO ${TABLE_CONTACTS} (id_uuid_hospital, type, value, sequence) VALUES ${values}`,
+              flatParams
+            );
+          } catch (error) {
+            console.error('연락처 정보 저장 실패:', error);
           }
         }
       } catch (error) {
@@ -126,7 +138,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Step1 API 오류:', error);
+    console.error('Step2 API 오류:', error);
     return NextResponse.json({
       message: "서버 오류가 발생했습니다.",
       status: "error",

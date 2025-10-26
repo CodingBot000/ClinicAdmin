@@ -21,7 +21,7 @@ import PageBottom from '@/components/PageBottom';
 
 interface Step3BusinessHoursProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
@@ -30,7 +30,7 @@ interface Step3BusinessHoursProps {
 
 const Step3BusinessHours = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onNext,
@@ -80,12 +80,12 @@ const Step3BusinessHours = ({
 //   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin]);
 
   useEffect(() => {
     log.info('Step2 - initialBusinessHours 변경됨:', initialBusinessHours);
@@ -105,7 +105,7 @@ const Step3BusinessHours = ({
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 2);
+        await loadExistingHospitalData(id_admin, id_uuid_hospital, 2);
       if (data) {
         log.info('steep2 BusinessHours data data.businessHours?.length: ', data.businessHours?.length);
         log.info('steep2 BusinessHours data data.hospital: ', data.hospital);
@@ -214,7 +214,7 @@ const handleNext = async () => {
       // FormData 구성
       const formData = new FormData();
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('id_uuid_hospital', id_uuid_hospital);
       
       // 시설 정보
@@ -286,7 +286,7 @@ const handleNext = async () => {
 
   return (
     <main className="min-h-screen flex flex-col">
-      {/* <PageHeader name='병원 정보를 입력하세요' onPreview={handlePreview} onSave={handleSave} /> */}
+      
       <div
         className='my-8 mx-auto px-6 pb-24'
         style={{ width: '100vw', maxWidth: '1024px' }}

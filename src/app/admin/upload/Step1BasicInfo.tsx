@@ -15,7 +15,7 @@ import LocationSelect from '@/components/LocationSelect';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import { HospitalAddress } from '@/models/address';
 import { Surgery } from '@/models/surgery';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
+
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
@@ -31,7 +31,7 @@ import PageBottom from '@/components/PageBottom';
 interface Step1BasicInfoProps {
   id_uuid_hospital: string;
   setIdUUIDHospital: (id_uuid_hospital: string) => void;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onNext: () => void;
 }
@@ -40,7 +40,7 @@ const Step1BasicInfo = ({
   id_uuid_hospital,
   setIdUUIDHospital,
   onNext,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
 }: Step1BasicInfoProps) => {
   
@@ -146,12 +146,12 @@ const Step1BasicInfo = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `Step1 - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `Step1 - isEditMode: ${isEditMode}, id_admin: ${id_admin}  id_uuid_hospital: ${id_uuid_hospital}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   useEffect(() => {
@@ -162,9 +162,27 @@ const Step1BasicInfo = ({
     try {
       setIsLoadingExistingData(true);
       log.info('Step1 - 편집 모드 - 기존 데이터 로딩 시작');
+      log.info(
+        `Step1 - loadExistingDataForEdit :id_uuid_hospital : ${id_uuid_hospital}}`,
+      );
+      // Validate hospital ID before loading
+      if (!id_uuid_hospital || id_uuid_hospital.trim() === '' || id_uuid_hospital === 'undefined') {
+        log.warn('Step1 - 편집 모드 - Hospital ID가 유효하지 않습니다:', id_uuid_hospital);
+        setIsLoadingExistingData(false);
+        return;
+      }
 
-      const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
+      // API를 통해 기존 데이터 로드
+      const previewResult = await api.hospital.getPreview(id_uuid_hospital);
+      
+      if (!previewResult.success || !previewResult.data) {
+        log.info('Step1 - 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      } else {
+        log.info('Step1 - 편집 모드 - 데이터확인 for debugging:', previewResult.data);
+      }
+      
+      const data = previewResult.data.hospital;
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -191,7 +209,7 @@ const Step1BasicInfo = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    log.info('Step1 - 폼에 기존 데이터 적용 시작');
+    log.info('Step1 - 폼에 기존 데이터 적용 시작 existingData:', existingData);
 
     try {
       // 1. 데이터를 폼 형식으로 변환
@@ -205,28 +223,28 @@ const Step1BasicInfo = ({
       setHospitalLocation(formData.hospital.location);
       
       // SNS 채널 정보와 기본 정보 설정
-      if (existingData.hospitalDetail) {
-        setBasicInfo({
-          name: formData.hospital.name || '',
-          name_en: formData.hospital.name_en || '',
-          email: existingData.hospitalDetail.email || '',
-          tel: existingData.hospitalDetail.tel || '',
-          introduction: existingData.hospitalDetail.introduction || '',
-          introduction_en: existingData.hospitalDetail.introduction_en || '',
-          kakao_talk: existingData.hospitalDetail.kakao_talk || '',
-          line: existingData.hospitalDetail.line || '',
-          we_chat: existingData.hospitalDetail.we_chat || '',
-          whats_app: existingData.hospitalDetail.whats_app || '',
-          telegram: existingData.hospitalDetail.telegram || '',
-          facebook_messenger: existingData.hospitalDetail.facebook_messenger || '',
-          instagram: existingData.hospitalDetail.instagram || '',
-          tiktok: existingData.hospitalDetail.tiktok || '',
-          youtube: existingData.hospitalDetail.youtube || '',
-          other_channel: existingData.hospitalDetail.other_channel || '',
-          sns_content_agreement: existingData.hospitalDetail.sns_content_agreement === null ? null : (existingData.hospitalDetail.sns_content_agreement as 1 | 0),
-        });
-        log.info('Step1 - 기본 정보 및 SNS 채널 정보 설정 완료');
-      }
+      // ⚠️ existingData는 flat한 구조이므로 직접 접근
+      const data = existingData as any;
+      setBasicInfo({
+        name: formData.hospital.name || '',
+        name_en: formData.hospital.name_en || '',
+        email: data.email || '',
+        tel: data.tel || '',
+        introduction: data.introduction || '',
+        introduction_en: data.introduction_en || '',
+        kakao_talk: data.kakao_talk || '',
+        line: data.line || '',
+        we_chat: data.we_chat || '',
+        whats_app: data.whats_app || '',
+        telegram: data.telegram || '',
+        facebook_messenger: data.facebook_messenger || '',
+        instagram: data.instagram || '',
+        tiktok: data.tiktok || '',
+        youtube: data.youtube || '',
+        other_channel: data.other_channel || '',
+        sns_content_agreement: data.sns_content_agreement === null ? null : (data.sns_content_agreement as 1 | 0),
+      });
+      log.info('Step1 - 기본 정보 및 SNS 채널 정보 설정 완료');
 
       log.info(
         'Step1 - 병원 기본 정보 설정 완료:',
@@ -242,47 +260,45 @@ const Step1BasicInfo = ({
       );
 
       // 피드백 정보 설정
-      if (existingData.feedback) {
-        setFeedback(existingData.feedback);
-        log.info('Step1 - 피드백 정보 설정 완료:', existingData.feedback);
+      if (data.feedback) {
+        setFeedback(data.feedback);
+        log.info('Step1 - 피드백 정보 설정 완료:', data.feedback);
       }
 
-
       // 3. 주소 정보 설정
-      if (existingData.hospital?.address_full_road) {
-        setAddress(existingData.hospital?.address_full_road);
+      if (data.address_full_road) {
+        setAddress(data.address_full_road);
         setAddressForSendForm({
-          address_full_road: existingData.hospital?.address_full_road,
-          address_full_road_en: existingData.hospital?.address_full_road_en || '',
-          address_full_jibun: existingData.hospital?.address_full_jibun,
-          address_full_jibun_en: existingData.hospital?.address_full_jibun_en || '',
-          zipcode: existingData.hospital?.zipcode,
-          address_si: existingData.hospital?.address_si,
-          address_si_en: existingData.hospital?.address_si_en || '',
-          address_gu: existingData.hospital?.address_gu,
-          address_gu_en: existingData.hospital?.address_gu_en || '',
-          address_dong: existingData.hospital?.address_dong,
-          address_dong_en: existingData.hospital?.address_dong_en || '',
-          bname: existingData.hospital?.bname,
-          bname_en: existingData.hospital?.bname_en || '',
-          building_name: existingData.hospital?.building_name,
-          building_name_en: existingData.hospital?.building_name_en || '',
-          address_detail: existingData.hospital?.address_detail,
-          address_detail_en: existingData.hospital?.address_detail_en,
-          directions_to_clinic: existingData.hospital?.directions_to_clinic,
-          directions_to_clinic_en: existingData.hospital?.directions_to_clinic_en,
-          latitude: existingData.hospital?.latitude,
-          longitude: existingData.hospital?.longitude,
-
+          address_full_road: data.address_full_road,
+          address_full_road_en: data.address_full_road_en || '',
+          address_full_jibun: data.address_full_jibun,
+          address_full_jibun_en: data.address_full_jibun_en || '',
+          zipcode: data.zipcode,
+          address_si: data.address_si,
+          address_si_en: data.address_si_en || '',
+          address_gu: data.address_gu,
+          address_gu_en: data.address_gu_en || '',
+          address_dong: data.address_dong,
+          address_dong_en: data.address_dong_en || '',
+          bname: data.bname,
+          bname_en: data.bname_en || '',
+          building_name: data.building_name,
+          building_name_en: data.building_name_en || '',
+          address_detail: data.address_detail,
+          address_detail_en: data.address_detail_en,
+          directions_to_clinic: data.directions_to_clinic,
+          directions_to_clinic_en: data.directions_to_clinic_en,
+          latitude: data.latitude,
+          longitude: data.longitude,
         });
 
         log.info('Step1 - 주소 정보 설정 완료');
       }
 
       // 6. 위치 정보 설정
-      if (existingData.hospital?.location) {
+      if (data.location) {
         try {
-            const locKey = existingData.hospital?.location;
+            const locKey = data.location;
             log.info('Step1 - 위치 정보 조회 시작 key :', locKey);
             // if (locKey) {
               // key는 string -> number 변환
@@ -297,7 +313,7 @@ const Step1BasicInfo = ({
               }
             // }
           } catch (error) {
-            console.error('Step1 - 위치 정보 파싱 실패:', existingData.hospital.location, error);
+            console.error('Step1 - 위치 정보 파싱 실패:', data.location, error);
           }
       }
 
@@ -427,7 +443,7 @@ const Step1BasicInfo = ({
       selectedLocation,
       addressForSendForm,
       // contactsInfo,
-      currentUserUid,
+      id_admin,
       id_uuid_hospital,
       isEditMode
     });
@@ -456,7 +472,7 @@ const Step1BasicInfo = ({
       // FormData 구성
       log.info('Step1 - FormData 구성 시작');
       const formData = new FormData();
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
       
       // 기본 정보

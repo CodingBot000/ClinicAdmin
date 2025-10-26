@@ -4,8 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import SendbirdChat from '@sendbird/chat';
 import { GroupChannelModule } from '@sendbird/chat/groupChannel';
 import type { SendbirdGroupChat } from '@sendbird/chat/groupChannel';
-import { supabase } from '@/lib/supabaseClient';
-import { getUserHospitalUuid } from '@/lib/hospitalDataLoader';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SendbirdContextType {
   sb: SendbirdGroupChat | null;
@@ -36,8 +35,39 @@ interface SendbirdProviderProps {
 export function SendbirdProvider({ children }: SendbirdProviderProps) {
   const [sb, setSb] = useState<SendbirdGroupChat | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [adminId, setAdminId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+   // 1. 로그인된 admin의 id를 가져온다 (/api/auth/me)
+   useEffect(() => {
+    const fetchAdminSession = async () => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          // 세션 만료 등
+          setError("세션이 유효하지 않습니다.");
+          return;
+        }
+
+        const json = await res.json();
+        // json = { ok: true, user: { id, email } }
+        if (json.ok && json.user?.id) {
+          setAdminId(json.user.id); // <-- 이게 admin 테이블의 id
+        } else {
+          setError("사용자 정보를 불러올 수 없습니다.");
+        }
+      } catch (e) {
+        setError("세션 정보를 불러오는 중 오류가 발생했습니다.");
+      }
+    };
+
+    fetchAdminSession();
+  }, []);
 
   useEffect(() => {
     const initSendbird = async () => {
@@ -45,17 +75,21 @@ export function SendbirdProvider({ children }: SendbirdProviderProps) {
         setIsConnecting(true);
         setError(null);
 
-        // Get current authenticated user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const response = await fetch("/api/admin/hospital/uuid", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          cache: "no-store",
+          body: JSON.stringify({ userUid: adminId }),
+        });
 
-        if (authError || !user) {
-          setError('No authenticated user found');
-          setIsConnecting(false);
-          return;
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch hospital UUID");
         }
 
-        // Get hospital UUID for this admin
-        const hospitalUuid = await getUserHospitalUuid(user.id);
+        const { hospitalUuid } = await response.json();
 
         if (!hospitalUuid) {
           setError('No hospital UUID found for this user');
@@ -98,7 +132,7 @@ export function SendbirdProvider({ children }: SendbirdProviderProps) {
         sb.disconnect();
       }
     };
-  }, []);
+  }, [adminId]);
 
   return (
     <SendbirdContext.Provider value={{ sb, userId, isConnecting, error }}>

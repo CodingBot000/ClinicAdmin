@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
 
 
-import { supabase } from '@/lib/supabaseClient';
+
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
@@ -31,7 +31,7 @@ import PageBottom from '@/components/PageBottom';
 interface Step2BasicContactInfoProps {
   id_uuid_hospital: string;
   setIdUUIDHospital: (id_uuid_hospital: string) => void;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
@@ -42,7 +42,7 @@ const Step2BasicContactInfo = ({
   setIdUUIDHospital,
   onPrev,
   onNext,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
 }: Step2BasicContactInfoProps) => {
   
@@ -115,12 +115,12 @@ const Step2BasicContactInfo = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `Step1 - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `Step1 - isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   // useEffect(() => {
@@ -133,7 +133,7 @@ const Step2BasicContactInfo = ({
       log.info('Step1 - 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
+        await loadExistingHospitalData(id_admin, id_uuid_hospital, 100);
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -296,7 +296,7 @@ const Step2BasicContactInfo = ({
       // selectedLocation,
       // addressForSendForm,
       contactsInfo,
-      currentUserUid,
+      id_admin,
       id_uuid_hospital,
       isEditMode
     });
@@ -325,7 +325,7 @@ const Step2BasicContactInfo = ({
       // FormData 구성
       log.info('Step1 - FormData 구성 시작');
       const formData = new FormData();
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
       
       // 기본 정보

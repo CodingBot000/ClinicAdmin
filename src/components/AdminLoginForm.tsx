@@ -2,7 +2,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+
 import InputField from "./InputField";
 import { Button } from "./ui/button";
 import Image from "next/image";
@@ -10,7 +10,6 @@ import Image from "next/image";
 
 export default function AdminLoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,14 +24,29 @@ export default function AdminLoginForm() {
     try {
       log.info('로그인 시도:', username);
       
-      const emailModify = `${username}@beautylink.com`;
-      const result = await login(emailModify, password);
-      
-      if (result.success) {
-        log.info('로그인 성공:', emailModify);
-        router.push('/admin');
+      // 기존 로직: username, password 가 폼 state에 있다고 가정
+      const email = `${username}@beautylink.com`;
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        // 로그인 실패 처리 (에러 메시지 표시 등)
+        setError("아이디 또는 비밀번호를 확인해주세요.");
+        return;
+      }
+
+      const json = await res.json();
+      if (json.ok) {
+        // 성공: 서버가 HttpOnly 쿠키로 세션을 이미 심었다.
+        // 클라이언트에서는 /admin 으로 라우팅만 하면 된다.
+        log.info('로그인 성공:', email);
+        router.push("/admin");
       } else {
-        setError(result.error || '로그인 정보가 올바르지 않습니다.');
+        setError("아이디 또는 비밀번호를 확인해주세요.");
       }
     } catch (err) {
       console.error('로그인 처리 중 오류:', err);

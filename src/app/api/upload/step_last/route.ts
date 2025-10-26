@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { 
   TABLE_HOSPITAL_DETAIL,
   TABLE_FEEDBACKS
@@ -34,42 +34,30 @@ export async function POST(request: NextRequest) {
     log.info("uploadActionsStep5 id_uuid_hospital: ", id_uuid_hospital);
   
     // 1. 가능 언어 정보 업데이트
-    const { data: dataAvailableLanguages, error: availableLanguagesError } = await supabase
-      .from(TABLE_HOSPITAL_DETAIL)
-      .update({
-        available_languages: available_languages,
-      })
-      .eq('id_uuid_hospital', id_uuid_hospital);
-  
-    if (availableLanguagesError) {
-      log.info("uploadActions5 available_languages error:", availableLanguagesError);
-      return NextResponse.json({
-        message: `availableLanguagesError:${availableLanguagesError.code || availableLanguagesError.message}`,
-        status: "error",
-      }, { status: 500 });
-    }
+    await pool.query(
+      `UPDATE ${TABLE_HOSPITAL_DETAIL} SET available_languages = $1 WHERE id_uuid_hospital = $2`,
+      [JSON.stringify(available_languages), id_uuid_hospital]
+    );
   
     // 2. 피드백 정보 저장 (피드백이 있을 때만)
     if (feedback && feedback.trim()) {
       log.info("피드백 저장 시작:", feedback);
       
       // 피드백은 항상 새로운 레코드로 insert (id_uuid_hospital 중복 허용)
-      const { data: dataFeedback, error: feedbackError } = await supabase
-        .from(TABLE_FEEDBACKS)
-        .insert([{
-          id_uuid_hospital: id_uuid_hospital,
-          feedback_content: feedback.trim()
-        }]);
-      
-      if (feedbackError) {
+      try {
+        await pool.query(
+          `INSERT INTO ${TABLE_FEEDBACKS} (id_uuid_hospital, feedback_content) VALUES ($1, $2)`,
+          [id_uuid_hospital, feedback.trim()]
+        );
+        
+        log.info("피드백 저장 완료:", feedback);
+      } catch (feedbackError) {
         log.info("uploadActions5 feedback insert error:", feedbackError);
         return NextResponse.json({
-          message: `feedbackInsertError:${feedbackError.code || feedbackError.message}`,
+          message: `feedbackInsertError: ${(feedbackError as any).message}`,
           status: "error",
         }, { status: 500 });
       }
-      
-      log.info("피드백 저장 완료:", dataFeedback);
     } else {
       log.info("피드백이 없어서 저장하지 않음");
     }
@@ -82,7 +70,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Step5 API 오류:', error);
+    console.error('Step_last API 오류:', error);
     return NextResponse.json({
       message: "서버 오류가 발생했습니다.",
       status: "error",

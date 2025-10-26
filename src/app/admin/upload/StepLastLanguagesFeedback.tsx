@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 interface StepLastLanguagesFeedbackProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onComplete: () => void;
@@ -29,7 +29,7 @@ interface StepLastLanguagesFeedbackProps {
 
 const StepLastLanguagesFeedback = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onComplete,
@@ -81,12 +81,12 @@ const StepLastLanguagesFeedback = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `Step_Last - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `Step_Last - isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin]);
 
   // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
   useEffect(() => {
@@ -137,7 +137,7 @@ const StepLastLanguagesFeedback = ({
       // 마지막 단계로 모든 데이터를 다 불러온다 
       // preview 화면에서 보여주기 위해서이다 
       const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
+        await loadExistingHospitalData(id_admin, id_uuid_hospital, 100);
       
       log.info('Step_Last - 로딩된 데이터:', data);
       
@@ -224,7 +224,7 @@ const StepLastLanguagesFeedback = ({
       const formData = new FormData();
       formData.append('id_uuid_hospital', id_uuid_hospital);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       
       // 피드백
       if (feedback.trim()) {
@@ -239,7 +239,7 @@ const StepLastLanguagesFeedback = ({
         isEditMode,
         feedback: feedback.trim(),
         selectedLanguages,
-        currentUserUid
+        id_admin
       });
 
       log.info('Step_Last API 호출 시작');

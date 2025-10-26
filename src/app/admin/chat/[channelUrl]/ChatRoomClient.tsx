@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSendbird } from '@/contexts/SendbirdContext';
-import { supabase } from '@/lib/supabaseClient';
+import { api } from '@/lib/api-client';
 import { TABLE_HOSPITAL } from '@/constants/tables';
 import '@sendbird/uikit-react/dist/index.css';
 
@@ -40,19 +40,15 @@ export default function ChatRoomClient({ channelUrl }: ChatRoomClientProps) {
       if (!userId) return;
 
       try {
-        const { data, error: fetchError } = await supabase
-          .from(TABLE_HOSPITAL)
-          .select('name_en')
-          .eq('id_uuid', userId)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error('Failed to fetch hospital name:', fetchError);
+        const result = await api.hospital.getName(userId);
+        
+        if (!result.success) {
+          console.error('Failed to fetch hospital name:', result.error);
           return;
         }
 
-        if (data?.name_en) {
-          setHospitalName(data.name_en);
+        if (result.data?.name_en) {
+          setHospitalName(result.data.name_en);
         }
       } catch (err) {
         console.error('Error fetching hospital name:', err);

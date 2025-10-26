@@ -1,34 +1,49 @@
-import { NextResponse } from 'next/server';
-import { readSession } from '@/lib/auth';
-import { pool } from '@/lib/db';
+import { NextResponse } from "next/server";
+import { readSession } from "@/lib/auth";
+import { pool } from "@/lib/db";
 
 export async function GET() {
-  try {
-    const session = await readSession();
-    
-    if (!session) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+  console.log('[API /auth/me] 세션 확인 요청');
 
-    // 최신 사용자 정보 조회
+  const s = await readSession();
+
+  console.log('[API /auth/me] 세션 데이터:', s);
+
+  if (!s) {
+    console.log('[API /auth/me] ❌ 세션 없음 - 401 반환');
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  // Admin 테이블에서 id_uuid_hospital 조회
+  try {
     const { rows } = await pool.query(
-      'SELECT id, email, id_uuid_hospital, is_active FROM admin WHERE id = $1',
-      [session.id]
+      `SELECT id, email, id_uuid_hospital FROM admin WHERE id = $1`,
+      [s.sub]
     );
 
-    if (rows.length === 0 || !rows[0].is_active) {
-      return NextResponse.json({ error: 'User not found or inactive' }, { status: 401 });
+    console.log('[API /auth/me] DB 조회 결과:', rows);
+
+    if (rows.length === 0) {
+      console.log('[API /auth/me] ❌ Admin 테이블에 사용자 없음');
+      return NextResponse.json({ ok: false }, { status: 401 });
     }
 
+    const admin = rows[0];
+
+    const userData = {
+      id: admin.id,
+      email: admin.email,
+      id_uuid_hospital: admin.id_uuid_hospital || null,
+    };
+
+    console.log('[API /auth/me] ✅ 세션 확인 성공 (id_uuid_hospital 포함):', userData);
+
     return NextResponse.json({
-      user: {
-        id: rows[0].id,
-        email: rows[0].email,
-        id_uuid_hospital: rows[0].id_uuid_hospital
-      }
+      ok: true,
+      user: userData,
     });
   } catch (error) {
-    console.error('Session verification error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[API /auth/me] ❌ DB 조회 오류:', error);
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

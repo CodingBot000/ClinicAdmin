@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-import { 
+import { pool } from '@/lib/db';
+import { deleteFile } from '@/lib/s3Client';
+import {
   TABLE_HOSPITAL,
   TABLE_DOCTOR,
   STORAGE_IMAGES
@@ -20,7 +21,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
-  log.info('=== uploadStep3 START ===');
+  log.info('=== uploadStep4 START ===');
 
   try {
     const formData = await request.formData();
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     log.info('doctors length:', doctors.length);
     log.info('doctors type:', Array.isArray(doctors) ? 'array' : typeof doctors);
 
-    log.info('uploadStep3 디버그 정보:');
+    log.info('uploadStep4 디버그 정보:');
     log.info('- isEditMode:', isEditMode);
     log.info('- id_uuid_hospital:', id_uuid_hospital);
     log.info('- existingThumbnailUrl:', existingThumbnailUrl);
@@ -102,15 +103,13 @@ export async function POST(request: NextRequest) {
         const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
         
         log.info(`썸네일 이미지 파일 삭제: ${filePath}`);
-        
-        const { error: storageError } = await supabase.storage
-          .from(STORAGE_IMAGES)
-          .remove([filePath]);
 
-        if (storageError) {
-          console.error('썸네일 이미지 파일 삭제 실패:', storageError);
-        } else {
+        // AWS S3 Lightsail 삭제
+        const deleteResult = await deleteFile(filePath);
+        if (deleteResult.success) {
           log.info(`썸네일 이미지 파일 삭제 성공: ${filePath}`);
+        } else {
+          console.error('썸네일 이미지 파일 삭제 실패');
         }
       } catch (error) {
         console.error('썸네일 이미지 파일 삭제 중 오류:', error);
@@ -128,15 +127,13 @@ export async function POST(request: NextRequest) {
         const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
         
         log.info(`- 추가 썸네일 이미지 파일 제거: ${filePath}`);
-        
-        const { error: storageError } = await supabase.storage
-          .from(STORAGE_IMAGES)
-          .remove([filePath]);
 
-        if (storageError) {
-          console.error('추가 썸네일 이미지 파일 제거 실패:', storageError);
-        } else {
+        // AWS S3 Lightsail 삭제
+        const deleteResult = await deleteFile(filePath);
+        if (deleteResult.success) {
           log.info(`- 추가 썸네일 이미지 파일 제거 성공: ${filePath}`);
+        } else {
+          console.error('추가 썸네일 이미지 파일 제거 실패');
         }
       } catch (error) {
         console.error('추가 썸네일 이미지 파일 제거 중 오류:', error);
@@ -155,15 +152,13 @@ export async function POST(request: NextRequest) {
           const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
           
           log.info(`- 삭제된 병원 이미지 파일 제거: ${filePath}`);
-          
-          const { error: storageError } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .remove([filePath]);
 
-          if (storageError) {
-            console.error('삭제된 병원 이미지 파일 제거 실패:', storageError);
-          } else {
+          // AWS S3 Lightsail 삭제
+          const deleteResult = await deleteFile(filePath);
+          if (deleteResult.success) {
             log.info(`- 삭제된 병원 이미지 파일 제거 성공: ${filePath}`);
+          } else {
+            console.error('삭제된 병원 이미지 파일 제거 실패');
           }
         } catch (error) {
           console.error('삭제된 병원 이미지 파일 제거 중 오류:', error);
@@ -188,15 +183,13 @@ export async function POST(request: NextRequest) {
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
             
             log.info(`- 추가 병원 이미지 파일 삭제: ${filePath}`);
-            
-            const { error: storageError } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .remove([filePath]);
 
-            if (storageError) {
-              console.error('추가 병원 이미지 파일 삭제 실패:', storageError);
-            } else {
+            // AWS S3 Lightsail 삭제
+            const deleteResult = await deleteFile(filePath);
+            if (deleteResult.success) {
               log.info(`- 추가 병원 이미지 파일 삭제 성공: ${filePath}`);
+            } else {
+              console.error('추가 병원 이미지 파일 삭제 실패');
             }
           } catch (error) {
             console.error('추가 병원 이미지 파일 삭제 중 오류:', error);
@@ -212,24 +205,19 @@ export async function POST(request: NextRequest) {
       imageurls: finalClinicImageUrls
     });
     
-    const { data: hospitalUpdateData, error: hospitalUpdateError } = await supabase
-      .from(TABLE_HOSPITAL)
-      .update({ 
-        thumbnail_url: finalThumbnailUrl,
-        imageurls: finalClinicImageUrls 
-      })
-      .eq('id_uuid', id_uuid_hospital)
-      .select();
-
-    if (hospitalUpdateError) {
-      console.error('병원 테이블 업데이트 실패:', hospitalUpdateError);
+    try {
+      await pool.query(
+        `UPDATE ${TABLE_HOSPITAL} SET thumbnail_url=$1, imageurls=$2 WHERE id_uuid=$3`,
+        [finalThumbnailUrl, JSON.stringify(finalClinicImageUrls), id_uuid_hospital]
+      );
+      log.info('병원 테이블 업데이트 성공');
+    } catch (error) {
+      console.error('병원 테이블 업데이트 실패:', error);
       return NextResponse.json({
-        message: `병원 테이블 업데이트 실패: ${hospitalUpdateError.message}`,
+        message: `병원 테이블 업데이트 실패: ${(error as any).message}`,
         status: "error",
       }, { status: 500 });
     }
-
-    log.info('병원 테이블 업데이트 성공:', hospitalUpdateData);
 
     // 각 의사 정보 처리
     for (let i = 0; i < doctors.length; i++) {
@@ -260,34 +248,35 @@ export async function POST(request: NextRequest) {
         log.info(`  업데이트할 이미지 URL: ${doctorData.image_url}`);
 
         // 먼저 해당 의사가 존재하는지 확인
-        const { data: existingDoctor, error: checkError } = await supabase
-          .from(TABLE_DOCTOR)
-          .select('*')
-          .eq('id_uuid', doctor.id_uuid)
-          .single();
+        const { rows: existingDoctors } = await pool.query(
+          `SELECT * FROM ${TABLE_DOCTOR} WHERE id_uuid=$1`,
+          [doctor.id_uuid]
+        );
 
-        if (checkError) {
+        if (!existingDoctors || existingDoctors.length === 0) {
           log.info(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재하지 않음, 새로 추가`);
           
           // 존재하지 않으면 새로 추가
-          const { data: insertData, error: insertError } = await supabase
-            .from(TABLE_DOCTOR)
-            .insert([{ ...doctorData, id_uuid: doctor.id_uuid }])
-            .select();
-
-          if (insertError) {
-            console.error('의사 정보 추가 실패:', insertError);
+          try {
+            await pool.query(
+              `INSERT INTO ${TABLE_DOCTOR} (id_uuid, id_uuid_hospital, name, name_en, bio, bio_en, image_url, chief)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [doctor.id_uuid, doctorData.id_uuid_hospital, doctorData.name, doctorData.name_en, 
+               doctorData.bio, doctorData.bio_en, doctorData.image_url, doctorData.chief]
+            );
+            log.info(`- 새 의사 정보 추가 성공: ${doctor.name}`);
+          } catch (error) {
+            console.error('의사 정보 추가 실패:', error);
             return NextResponse.json({
-              message: `의사 정보 추가 실패: ${insertError.message}`,
+              message: `의사 정보 추가 실패: ${(error as any).message}`,
               status: "error",
             }, { status: 500 });
           }
-          
-          log.info(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
         } else {
           log.info(`- 의사 ${doctor.name} (${doctor.id_uuid}) 존재함, 업데이트 진행`);
 
           // 기존 이미지 URL 확인
+          const existingDoctor = existingDoctors[0];
           const existingImageUrl = existingDoctor.image_url;
           const newImageUrl = doctorData.image_url;
 
@@ -301,15 +290,13 @@ export async function POST(request: NextRequest) {
               const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
               
               log.info(`- 의사 이전 이미지 파일 삭제: ${filePath}`);
-              
-              const { error: storageError } = await supabase.storage
-                .from(STORAGE_IMAGES)
-                .remove([filePath]);
-          
-              if (storageError) {
-                console.error('의사 이전 이미지 파일 삭제 실패:', storageError);
-              } else {
+
+              // AWS S3 Lightsail 삭제
+              const deleteResult = await deleteFile(filePath);
+              if (deleteResult.success) {
                 log.info(`- 의사 이전 이미지 파일 삭제 성공: ${filePath}`);
+              } else {
+                console.error('의사 이전 이미지 파일 삭제 실패');
               }
             } catch (error) {
               console.error('의사 이전 이미지 파일 삭제 중 오류:', error);
@@ -317,39 +304,40 @@ export async function POST(request: NextRequest) {
           }
           
           // 존재하면 업데이트
-          const { data: updateData, error: updateError } = await supabase
-            .from(TABLE_DOCTOR)
-            .update(doctorData)
-            .eq('id_uuid', doctor.id_uuid)
-            .select();
-
-          if (updateError) {
-            console.error('의사 정보 업데이트 실패:', updateError);
+          try {
+            await pool.query(
+              `UPDATE ${TABLE_DOCTOR} SET name=$1, name_en=$2, bio=$3, bio_en=$4, image_url=$5, chief=$6 
+               WHERE id_uuid=$7`,
+              [doctorData.name, doctorData.name_en, doctorData.bio, doctorData.bio_en, 
+               doctorData.image_url, doctorData.chief, doctor.id_uuid]
+            );
+            log.info(`- 의사 정보 업데이트 성공: ${doctor.name}`);
+          } catch (error) {
+            console.error('의사 정보 업데이트 실패:', error);
             return NextResponse.json({
-              message: `의사 정보 업데이트 실패: ${updateError.message}`,
+              message: `의사 정보 업데이트 실패: ${(error as any).message}`,
               status: "error",
             }, { status: 500 });
           }
-          
-          log.info(`- 의사 정보 업데이트 성공: ${doctor.name}`, updateData);
         }
       } else {
         // 새 의사 정보 추가
         log.info(`- 새 의사 정보 추가: ${doctor.name}`);
-        const { data: insertData, error: insertError } = await supabase
-          .from(TABLE_DOCTOR)
-          .insert([{ ...doctorData, id_uuid: uuidv4() }])
-          .select();
-
-        if (insertError) {
-          console.error('의사 정보 추가 실패:', insertError);
+        try {
+          await pool.query(
+            `INSERT INTO ${TABLE_DOCTOR} (id_uuid, id_uuid_hospital, name, name_en, bio, bio_en, image_url, chief)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [uuidv4(), doctorData.id_uuid_hospital, doctorData.name, doctorData.name_en, 
+             doctorData.bio, doctorData.bio_en, doctorData.image_url, doctorData.chief]
+          );
+          log.info(`- 새 의사 정보 추가 성공: ${doctor.name}`);
+        } catch (error) {
+          console.error('의사 정보 추가 실패:', error);
           return NextResponse.json({
-            message: `의사 정보 추가 실패: ${insertError.message}`,
+            message: `의사 정보 추가 실패: ${(error as any).message}`,
             status: "error",
           }, { status: 500 });
         }
-        
-        log.info(`- 새 의사 정보 추가 성공: ${doctor.name}`, insertData);
       }
     }
 
@@ -371,15 +359,13 @@ export async function POST(request: NextRequest) {
             const filePath = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
             
             log.info(`- 의사 이미지 파일 삭제: ${filePath}`);
-            
-            const { error: storageError } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .remove([filePath]);
 
-            if (storageError) {
-              console.error('의사 이미지 파일 삭제 실패:', storageError);
-            } else {
+            // AWS S3 Lightsail 삭제
+            const deleteResult = await deleteFile(filePath);
+            if (deleteResult.success) {
               log.info(`- 의사 이미지 파일 삭제 성공: ${filePath}`);
+            } else {
+              console.error('의사 이미지 파일 삭제 실패');
             }
           } catch (error) {
             console.error('의사 이미지 파일 삭제 중 오류:', error);
@@ -387,24 +373,23 @@ export async function POST(request: NextRequest) {
         }
         
         // 의사 정보 삭제
-        const { error: deleteError } = await supabase
-          .from(TABLE_DOCTOR)
-          .delete()
-          .eq('id_uuid', deletedId);
-          
-        if (deleteError) {
-          console.error('의사 정보 삭제 실패:', deleteError);
+        try {
+          await pool.query(
+            `DELETE FROM ${TABLE_DOCTOR} WHERE id_uuid=$1`,
+            [deletedId]
+          );
+          log.info(`- 의사 정보 삭제 성공: ${deletedId}`);
+        } catch (error) {
+          console.error('의사 정보 삭제 실패:', error);
           return NextResponse.json({
-            message: `의사 정보 삭제 실패: ${deleteError.message}`,
+            message: `의사 정보 삭제 실패: ${(error as any).message}`,
             status: "error",
           }, { status: 500 });
         }
-        
-        log.info(`- 의사 정보 삭제 성공: ${deletedId}`);
       }
     }
 
-    log.info('=== uploadStep3 성공 완료 ===');
+    log.info('=== uploadStep4 성공 완료 ===');
   
     return NextResponse.json({
       message: "썸네일 이미지, 병원 이미지 및 의사 정보가 성공적으로 저장되었습니다.",
@@ -412,7 +397,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('uploadStep3 전체 오류:', error);
+    console.error('uploadStep4 전체 오류:', error);
     return NextResponse.json({
       message: `처리 중 오류가 발생했습니다: ${error}`,
       status: "error",

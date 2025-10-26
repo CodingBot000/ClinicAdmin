@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { TABLE_SURGERY_INFO } from '@/constants/tables';
 import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils';
 
@@ -12,21 +12,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
-    let query = supabase
-      .from(TABLE_SURGERY_INFO)
-      .select('*');
-
+    let queryText = `SELECT * FROM ${TABLE_SURGERY_INFO}`;
+    const queryParams: any[] = [];
+    
     // Apply category filter if provided
     if (category) {
-      query = query.eq('category', category);
+      queryText += ' WHERE category = $1';
+      queryParams.push(category);
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Surgery info fetch error:', error);
-      return createErrorResponse('Failed to fetch surgery information', 500);
-    }
+    const { rows: data } = await pool.query(queryText, queryParams);
 
     return createSuccessResponse({ surgeryInfo: data || [] });
 

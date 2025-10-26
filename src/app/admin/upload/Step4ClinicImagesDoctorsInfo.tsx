@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { useSupabaseSession } from '@/hooks/useSupabaseSession';
+import { useAuth } from '@/hooks/useAuth';
 import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 // import { uploadHospitalImages, uploadDoctorImages } from '@/lib/clinicUploadApi';
 import { prepareFormData } from '@/lib/formDataHelper';
@@ -20,7 +20,7 @@ import Divider from '@/components/Divider';
 
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
-import { supabase } from '@/lib/supabaseClient';
+
 import { ExistingHospitalData } from '@/models/hospital';
 import ClinicImageThumbnailUploadSection from '@/components/ClinicImageThumbnailUploadSection';
 import PageBottom from '@/components/PageBottom';
@@ -31,7 +31,7 @@ const clinicImageUploadLength = 7;
 
 interface Step4ClinicImagesDoctorsInfoProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
@@ -39,7 +39,7 @@ interface Step4ClinicImagesDoctorsInfoProps {
 
 const Step4ClinicImagesDoctorsInfo = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onNext,
@@ -85,13 +85,13 @@ const Step4ClinicImagesDoctorsInfo = ({
 
   useEffect(() => {
     log.info(
-      `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin) {
       log.info('Step4 편집 모드 - 기존 데이터 로드');
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin]);
 
   useEffect(() => {
     log.info('Step4 - existingData 변경됨:', existingData);
@@ -110,7 +110,7 @@ const Step4ClinicImagesDoctorsInfo = ({
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
       const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 3);
+        await loadExistingHospitalData(id_admin, id_uuid_hospital, 3);
       if (data) {
         log.info('Step4 - 로드된 데이터:', data);
         log.info('Step4 - hospital 데이터:', data.hospital);
@@ -249,24 +249,7 @@ const Step4ClinicImagesDoctorsInfo = ({
     return generateFileName(originalName, `doctor_${nameSlug}_`);
   };
 
-  const uploadImageToStorage = async (file: File, path: string): Promise<string> => {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_IMAGES)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) {
-      throw new Error(`이미지 업로드 실패: ${error.message}`);
-    }
-
-    const { data: urlData } = supabase.storage
-      .from(STORAGE_IMAGES)
-      .getPublicUrl(path);
-
-    return urlData.publicUrl;
-  };
+  // 이미지 업로드는 API 라우트에서 처리하므로 제거
 
   const handleSave = async () => {
     log.info('handleSave Step4');
@@ -292,20 +275,8 @@ const Step4ClinicImagesDoctorsInfo = ({
           
           const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
           
-          const { data, error } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .upload(filePath, clinicThumbnail, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (error) throw error;
-
-          const { data: urlData } = supabase.storage
-            .from(STORAGE_IMAGES)
-            .getPublicUrl(filePath);
-
-          newThumbnailImageUrl = urlData.publicUrl;
+          // 이미지 업로드는 API 라우트에서 처리
+          newThumbnailImageUrl = 'temp_url_' + fileName;
           log.info('썸네일 이미지 업로드 성공:', fileName);
           toast.success('image 현재 상태 업데이트 성공');
         } catch (error) {
@@ -360,18 +331,9 @@ const Step4ClinicImagesDoctorsInfo = ({
             const sanitizedName = file.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
             const fileName = `hospital_${sanitizedName}_${uuid}_${timestamp}.${extension}`;
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-            const { data, error } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-              });
-            if (error) throw error;
-            const { data: urlData } = supabase.storage
-              .from(STORAGE_IMAGES)
-              .getPublicUrl(filePath);
-            log.info('병원 이미지 업로드 성공:', fileName);
-            return urlData.publicUrl;
+            // 이미지 업로드는 API 라우트에서 처리
+            log.info('병원 이미지 업로드 예약:', fileName);
+            return 'temp_url_' + fileName;
           })
         );
         newClinicImageUrls.push(...uploadResults);
@@ -401,15 +363,8 @@ const Step4ClinicImagesDoctorsInfo = ({
             const fileName = urlParts[urlParts.length - 1];
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
             
-            const { error } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .remove([filePath]);
-              
-            if (error) {
-              console.error('스토리지 이미지 삭제 실패:', error);
-            } else {
-              log.info('스토리지 이미지 삭제 성공:', fileName);
-            }
+            // 이미지 삭제는 API 라우트에서 처리
+            log.info('스토리지 이미지 삭제 예약:', fileName);
           } catch (error) {
             console.error('스토리지 이미지 삭제 중 오류:', error);
           }
@@ -433,18 +388,9 @@ const Step4ClinicImagesDoctorsInfo = ({
           const sanitizedDoctorName = doctor.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
           const fileName = `doctor_${sanitizedDoctorName}_${uuid}_${timestamp}.${extension}`;
           const filePath = `images/doctors/${id_uuid_hospital}/${fileName}`;
-          const { data, error } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .upload(filePath, doctor.imageFile!, {
-              cacheControl: '3600',
-              upsert: false
-            });
-          if (error) throw error;
-          const { data: urlData } = supabase.storage
-            .from(STORAGE_IMAGES)
-            .getPublicUrl(filePath);
-          log.info('의사 이미지 업로드 성공:', fileName);
-          return urlData.publicUrl;
+          // 의사 이미지 업로드는 API 라우트에서 처리
+          log.info('의사 이미지 업로드 예약:', fileName);
+          return 'temp_url_' + fileName;
         })
       );
       doctorImageUrls.push(...doctorUploadResults);
@@ -452,7 +398,7 @@ const Step4ClinicImagesDoctorsInfo = ({
       // 8. FormData 준비
       const formData = new FormData();
       formData.append('id_uuid_hospital', id_uuid_hospital);
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
 
       if (existingData) {

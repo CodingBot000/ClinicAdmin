@@ -70,8 +70,8 @@ const PageHeader = ({
 
   // 스텝 클릭 가능 여부 확인
   const isStepClickable = (step: number) => {
-    console.log(`isStepClickable step: ${step}  currentStep:${currentStep}`);
-    console.log(`isStepClickable stepValidation:`, stepValidation);
+    // console.log(`isStepClickable step: ${step}  currentStep:${currentStep}`);
+    // console.log(`isStepClickable stepValidation:`, stepValidation);
     
     // 현재 단계는 클릭 불가
     if (step === currentStep) return false;
@@ -94,7 +94,7 @@ const PageHeader = ({
       return false;
     }
     
-    console.log(`Step ${step} 가능`);
+    // console.log(`Step ${step} 가능`);
     return true;
   };
 

@@ -8,7 +8,11 @@
       "Bash(cat:*)",
       "Bash(npm run build:*)",
       "Bash(tree:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(test:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(git grep:*)"
     ],
     "deny": []
   }

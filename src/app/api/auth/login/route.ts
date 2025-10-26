@@ -1,64 +1,65 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
-import { issueSession, COOKIE_NAME } from '@/lib/auth';
-import argon2 from 'argon2';
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { pool } from "@/lib/db";
+import { issueSession, COOKIE_NAME } from "@/lib/auth";
+import argon2 from "argon2";
 
-export async function POST(request: NextRequest) {
-  try {
-    const { email, password } = await request.json();
-    
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
-    }
+export async function POST(req: NextRequest) {
+  const { email, password } = await req.json();
+  console.log("[AUTH-LOGIN DEBUG] Step1 received credentials", { email, password });
 
-    // admin 테이블에서 사용자 조회
-    const { rows } = await pool.query(
-      'SELECT * FROM admin WHERE email = $1 AND is_active = true',
-      [email]
-    );
+  // 1) admin 테이블에서 유저 조회
+  const { rows } = await pool.query(
+    `SELECT id, email, password_hash, is_active
+     FROM public.admin
+     WHERE email = $1
+     LIMIT 1`,
+    [email]
+  );
+  console.log("[AUTH-LOGIN DEBUG] Step2 query result count", rows.length);
 
-    if (rows.length === 0) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
+  const user = rows[0];
+  console.log("[AUTH-LOGIN DEBUG] Step3 fetched user record", user);
 
-    const admin = rows[0];
-    
-    // 패스워드 검증
-    if (!admin.password_hash) {
-      return NextResponse.json({ error: 'Account not properly configured' }, { status: 401 });
-    }
-
-    const isValidPassword = await argon2.verify(admin.password_hash, password);
-    if (!isValidPassword) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
-
-    // JWT 토큰 생성
-    const token = await issueSession({
-      id: admin.id,
-      email: admin.email,
-      id_uuid_hospital: admin.id_uuid_hospital
-    });
-
-    // 쿠키 설정
-    const response = NextResponse.json({
-      user: {
-        id: admin.id,
-        email: admin.email,
-        id_uuid_hospital: admin.id_uuid_hospital
-      }
-    });
-
-    response.cookies.set(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 2 // 2 hours
-    });
-
-    return response;
-  } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  // 없는 계정 / 비활성 계정
+  if (!user || user.is_active === false) {
+    console.log("[AUTH-LOGIN DEBUG] Step4 user missing or inactive", { email, hasUser: !!user, isActive: user?.is_active });
+    return NextResponse.json({ ok: false }, { status: 401 });
   }
+
+  const inputPasswordHash = await argon2.hash(password);
+  console.log("[AUTH-LOGIN DEBUG] Step5 hashed input password", inputPasswordHash);
+  console.log("[AUTH-LOGIN DEBUG] Step6 stored password hash", user.password_hash);
+
+  // 2) 비밀번호 검증 (argon2.verify)
+  const passOk = await argon2.verify(user.password_hash, password);
+  console.log("[AUTH-LOGIN DEBUG] Step7 password verification result", passOk);
+  if (!passOk) {
+    console.log("[AUTH-LOGIN DEBUG] Step8 verification failed", { email });
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  // 3) JWT 발급
+  const token = await issueSession({
+    sub: user.id,
+    email: user.email,
+    role: "admin",
+  });
+  console.log("[AUTH-LOGIN DEBUG] Step9 issued session token");
+
+  // 4) HttpOnly 쿠키 설정
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+  });
+  console.log("[AUTH-LOGIN DEBUG] Step10 cookie stored");
+
+  // 5) 프런트에서 성공 여부만 보면 되게 최소 정보 반환
+  console.log("[AUTH-LOGIN DEBUG] Step11 login success response", { email });
+  return NextResponse.json({ ok: true });
 }

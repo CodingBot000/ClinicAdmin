@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { Device } from '@/models/devices.dto';
 import "@/utils/logger";
 
@@ -8,21 +8,16 @@ export async function GET() {
   log.info("Devices API 시작:", new Date().toISOString());
 
   const dbQueryStart = Date.now();
-  const { data, error } = await supabase
-    .from('device_catalog')
-    .select('id, ko, en, type, group, dept');
+  const { rows: data } = await pool.query(
+    'SELECT id, ko, en, type, "group", dept FROM device_catalog'
+  );
 
   const dbQueryEnd = Date.now();
   const dbQueryTime = dbQueryEnd - dbQueryStart;
   log.info(` DB 쿼리 시간: ${dbQueryTime}ms`);
   log.info(` 조회된 데이터 개수: ${data?.length || 0}`);
 
-  if (error) {
-    console.error(" DB 쿼리 에러:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const devices: Device[] = data.map(row => ({
+  const devices: Device[] = data.map((row: any) => ({
     id: row.id,
     ko: row.ko,
     en: row.en,

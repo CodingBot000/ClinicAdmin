@@ -57,26 +57,26 @@ export async function extractAndValidateUser(formData: FormData): Promise<{
   error?: string;
 }> {
   try {
-    const current_user_uid = formData.get("current_user_uid") as string;
-    
-    if (!current_user_uid) {
-      return { isValid: false, error: 'User ID not provided' };
+    const adminId = (formData.get("current_user_id") || formData.get("current_user_uid")) as string;
+
+    if (!adminId) {
+      return { isValid: false, error: 'Admin ID not provided' };
     }
 
-    // admin 테이블에서 사용자 확인
+    // admin 테이블에서 사용자 확인 (id 기준)
     const { rows } = await pool.query(
-      'SELECT id, id_auth_user FROM admin WHERE id_auth_user = $1',
-      [current_user_uid]
+      `SELECT id FROM ${TABLE_ADMIN} WHERE id = $1`,
+      [adminId]
     );
-    
+
     if (rows.length === 0) {
       return { isValid: false, error: 'Admin user not found' };
     }
 
-    return { 
-      isValid: true, 
-      userId: current_user_uid,
-      adminData: rows[0]
+    return {
+      isValid: true,
+      userId: adminId,
+      adminData: rows[0],
     };
   } catch (error) {
     return { isValid: false, error: 'User validation failed' };

@@ -329,67 +329,88 @@ export function mapFacilitiesToForm(hospitalDetail: any | null | undefined) {
 
 /**
  * 모든 데이터를 통합해서 폼 초기값으로 변환
+ *
+ * ⚠️ 중요: API에서 반환하는 데이터는 flat한 구조입니다
+ * data.hospital?.name이 아닌 data.name 형식으로 접근해야 합니다
  */
 export function mapExistingDataToFormValues(data: ExistingHospitalData) {
   log.info(' 기존 데이터를 폼 형식으로 변환 시작');
-  
+  log.info('입력 데이터 구조:', {
+    name: (data as any).name,
+    tel: (data as any).tel,
+    email: (data as any).email,
+    address_full_road: (data as any).address_full_road
+  });
+
+  // API 반환값은 flat 구조이므로 직접 접근
+  const hospitalData = data as any;
+
   const mapped = {
     // 병원 기본 정보
     hospital: {
-      name: data.hospital?.name || '',
-      name_en: data.hospital?.name_en || '',
-      directions: data.hospital?.directions_to_clinic || '',
-      location: data.hospital?.location || '',
-      images: data.hospital?.imageurls || [],
-      kakao_talk: data.hospitalDetail?.kakao_talk || '',
-      line: data.hospitalDetail?.line || '',
-      we_chat: data.hospitalDetail?.we_chat || '',
-      whats_app: data.hospitalDetail?.whats_app || '',
-      telegram: data.hospitalDetail?.telegram || '',
-      facebook_messenger: data.hospitalDetail?.facebook_messenger || '',
-      instagram: data.hospitalDetail?.instagram || '',
-      tiktok: data.hospitalDetail?.tiktok || '',
-      youtube: data.hospitalDetail?.youtube || '',
-      other_channel: data.hospitalDetail?.other_channel || '',
-    
+      name: hospitalData.name || '',
+      name_en: hospitalData.name_en || '',
+      directions: hospitalData.directions_to_clinic || '',
+      location: hospitalData.location || '',
+      images: hospitalData.imageurls || [],
+      kakao_talk: hospitalData.kakao_talk || '',
+      line: hospitalData.line || '',
+      we_chat: hospitalData.we_chat || '',
+      whats_app: hospitalData.whats_app || '',
+      telegram: hospitalData.telegram || '',
+      facebook_messenger: hospitalData.facebook_messenger || '',
+      instagram: hospitalData.instagram || '',
+      tiktok: hospitalData.tiktok || '',
+      youtube: hospitalData.youtube || '',
+      other_channel: hospitalData.other_channel || '',
     },
-    
+
     // 주소 정보
-    address: mapAddressToForm(data.hospital),
-    
+    address: mapAddressToForm(hospitalData),
+
     // 병원 상세 정보
     hospitalDetail: {
-      tel: data.hospitalDetail?.tel || '',
-      email: data.hospitalDetail?.email || '',
-      map: data.hospitalDetail?.map || '',
-      etc: data.hospitalDetail?.etc || '',
-      sns_content_agreement: data.hospitalDetail?.sns_content_agreement || null,
-      available_languages: data.hospitalDetail?.available_languages || []
+      tel: hospitalData.tel || '',
+      email: hospitalData.email || '',
+      map: hospitalData.map || '',
+      etc: hospitalData.etc || '',
+      sns_content_agreement: hospitalData.sns_content_agreement || null,
+      available_languages: hospitalData.available_languages || []
     },
-    
+
     // 편의시설
-    facilities: mapFacilitiesToForm(data.hospitalDetail),
-    
+    facilities: mapFacilitiesToForm(hospitalData),
+
     // 영업시간
-    businessHours: mapBusinessHoursToForm(data.businessHours),
-    
+    businessHours: mapBusinessHoursToForm(hospitalData.business_hours),
+
     // 의사 정보
-    doctors: mapDoctorsToForm(data.doctors),
-    
+    doctors: mapDoctorsToForm(hospitalData.doctors),
+
     // 시술 정보
-    treatments: mapTreatmentsToForm(data.treatments),
-    
+    treatments: mapTreatmentsToForm(hospitalData.treatments),
+
     // 병원 이미지 URL 배열 (기존 이미지 표시용)
-    hospitalImages: data.hospital?.imageurls || []
+    hospitalImages: hospitalData.imageurls || []
   };
-  
+
   log.info(' 데이터 변환 완료:', {
-    병원정보: '변환됨',
-    주소정보: '변환됨',
-    영업시간: `${data.businessHours?.length}건 변환`,
-    의사정보: `${data.doctors?.length}명 변환`,
-    시술정보: `${data.treatments?.length}건 변환`
+    병원정보: {
+      name: mapped.hospital.name,
+      name_en: mapped.hospital.name_en
+    },
+    주소정보: {
+      roadAddress: mapped.address.roadAddress,
+      sido: mapped.address.sido
+    },
+    병원상세: {
+      tel: mapped.hospitalDetail.tel,
+      email: mapped.hospitalDetail.email
+    },
+    영업시간: `${mapped.businessHours.length}건 변환`,
+    의사정보: `${mapped.doctors.length}명 변환`,
+    시술정보: `${mapped.treatments.selectedKeys?.length || 0}개 선택`
   });
-  
+
   return mapped;
 } 

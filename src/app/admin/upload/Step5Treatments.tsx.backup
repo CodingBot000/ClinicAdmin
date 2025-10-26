@@ -99,36 +99,36 @@ const Step5Treatments = ({
     }
   }, [formState, showFinalResult]);
 
-  // 기존 엑셀 파일 확인 (AWS S3 Lightsail)
+  // 기존 엑셀 파일 확인
+  // TODO: Migrate to AWS S3 SDK when file storage is fully migrated
   const checkExistingExcelFiles = async () => {
     try {
+      log.info('기존 엑셀 파일 확인 - 현재 비활성화 (AWS S3 migration 대기)');
+      // Excel file checking disabled during Supabase→AWS migration
+      // Default to manual input method
+      setUploadMethod('manual');
+      setExistingFileNames([]);
+
+      /* Original Supabase code - to be replaced with AWS S3 SDK
       const filePath = getTreatmentsFilePath(id_uuid_hospital);
-      log.info('기존 엑셀 파일 확인 시작:', filePath);
+      const { data, error } = await supabase.storage
+        .from(STORAGE_IMAGES)
+        .list(filePath);
 
-      const response = await fetch('/api/storage/list', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prefix: filePath }),
-      });
-
-      if (!response.ok) {
-        console.error('기존 파일 확인 실패:', response.statusText);
-        setUploadMethod('manual');
-        setExistingFileNames([]);
+      if (error) {
+        console.error('기존 파일 확인 실패:', error);
         return;
       }
 
-      const result = await response.json();
-
-      if (result.success && result.files && result.files.length > 0) {
-        log.info('기존 엑셀 파일 발견:', result.files.length, '개');
+      if (data && data.length > 0) {
+        log.info('기존 엑셀 파일 발견:', data.length, '개');
         setUploadMethod('excel');
-        setExistingFileNames(result.files.map((item: any) => item.name));
+        setExistingFileNames(data.map(item => item.name));
       } else {
         log.info('기존 엑셀 파일 없음');
-        setUploadMethod('manual');
         setExistingFileNames([]);
       }
+      */
     } catch (error) {
       console.error('기존 파일 확인 중 오류:', error);
       setUploadMethod('manual');
@@ -264,57 +264,44 @@ const Step5Treatments = ({
       setUploadedFiles(files);
   }
 
-  // 기존 파일 전체 삭제 (AWS S3 Lightsail)
+  // 기존 파일 전체 삭제
+  // TODO: Migrate to AWS S3 SDK when file storage is fully migrated
   const handleClearAllFiles = async () => {
     try {
+      log.info('파일 삭제 - 현재 비활성화 (AWS S3 migration 대기)');
+      // File deletion disabled during Supabase→AWS migration
+      setExistingFileNames([]);
+      setUploadMethod('manual');
+      toast.info('파일 삭제 기능은 현재 비활성화되어 있습니다.');
+
+      /* Original Supabase code - to be replaced with AWS S3 SDK
       const filePath = getTreatmentsFilePath(id_uuid_hospital);
-      log.info('기존 파일 전체 삭제 시작:', filePath);
+      const { data, error } = await supabase.storage
+        .from(STORAGE_IMAGES)
+        .list(filePath);
 
-      // 파일 목록 조회
-      const listResponse = await fetch('/api/storage/list', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prefix: filePath }),
-      });
-
-      if (!listResponse.ok) {
-        console.error('기존 파일 목록 조회 실패:', listResponse.statusText);
-        throw new Error('파일 목록 조회 실패');
+      if (error) {
+        console.error('기존 파일 목록 조회 실패:', error);
+        throw error;
       }
 
-      const listResult = await listResponse.json();
+      if (data && data.length > 0) {
+        const filesToDelete = data.map(item => `${filePath}${item.name}`);
+        const { error: deleteError } = await supabase.storage
+          .from(STORAGE_IMAGES)
+          .remove(filesToDelete);
 
-      if (listResult.success && listResult.files && listResult.files.length > 0) {
-        const filesToDelete = listResult.files.map((item: any) => item.key);
-
-        log.info('삭제할 파일들:', filesToDelete);
-
-        // 파일들 삭제
-        const deleteResponse = await fetch('/api/storage/delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keys: filesToDelete }),
-        });
-
-        if (!deleteResponse.ok) {
-          console.error('파일 삭제 실패:', deleteResponse.statusText);
-          throw new Error('파일 삭제 실패');
+        if (deleteError) {
+          console.error('파일 삭제 실패:', deleteError);
+          throw deleteError;
         }
 
-        const deleteResult = await deleteResponse.json();
-
-        if (deleteResult.success) {
-          log.info('기존 파일 전체 삭제 완료:', listResult.files.length, '개');
-          setExistingFileNames([]);
-          setUploadMethod('manual');
-          toast.success('기존 파일이 모두 삭제되었습니다.');
-        } else {
-          throw new Error(deleteResult.error || '파일 삭제 실패');
-        }
-      } else {
-        log.info('삭제할 파일이 없습니다.');
-        toast.info('삭제할 파일이 없습니다.');
+        log.info('기존 파일 전체 삭제 완료:', data.length, '개');
+        setExistingFileNames([]);
+        setUploadMethod('manual');
+        toast.success('기존 파일이 모두 삭제되었습니다.');
       }
+      */
     } catch (error) {
       console.error('전체 파일 삭제 중 오류:', error);
       toast.error('파일 삭제 중 오류가 발생했습니다.');
@@ -398,31 +385,28 @@ const Step5Treatments = ({
                 message: '파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요.'
               };
             }
-            // AWS S3 Lightsail 업로드
+            // TODO: Migrate to AWS S3 SDK when file storage is fully migrated
+            // Excel file upload disabled during Supabase→AWS migration
+            log.warn('엑셀 파일 업로드 - 현재 비활성화 (AWS S3 migration 대기)');
+
+            /* Original Supabase code - to be replaced with AWS S3 SDK
             const filePath = getTreatmentsFilePath(id_uuid_hospital, fileName);
+            const { data, error } = await supabase.storage
+              .from(STORAGE_IMAGES)
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
 
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', file);
-            uploadFormData.append('key', filePath);
-            uploadFormData.append('contentType', file.type);
+            if (error) throw error;
 
-            const uploadResponse = await fetch('/api/storage/upload', {
-              method: 'POST',
-              body: uploadFormData,
-            });
+            const { data: urlData } = supabase.storage
+              .from(STORAGE_IMAGES)
+              .getPublicUrl(filePath);
 
-            if (!uploadResponse.ok) {
-              throw new Error('파일 업로드 실패');
-            }
-
-            const uploadResult = await uploadResponse.json();
-
-            if (uploadResult.success) {
-              uploadedFileUrls.push(uploadResult.url);
-              log.info('엑셀 파일 업로드 성공:', fileName, uploadResult.url);
-            } else {
-              throw new Error(uploadResult.error || '파일 업로드 실패');
-            }
+            uploadedFileUrls.push(urlData.publicUrl);
+            log.info('엑셀 파일 업로드 성공:', fileName);
+            */
           } catch (error) {
             console.error('엑셀 파일 업로드 실패:', error);
             throw error;
