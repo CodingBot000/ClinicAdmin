@@ -144,6 +144,7 @@ export default function ClinicInfoInsertClient(
     };
 
     initializeHospitalUuid();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id_admin, isEditMode]);
 
   

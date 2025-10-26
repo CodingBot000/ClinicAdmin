@@ -13,4 +13,3 @@ export function makeUploadImageFileName(id_uuid: string, name: string, originalN
     const safeName = name.replace(/[^a-zA-Z0-9_]/g, '');
     return `${id_uuid}_${safeName}_${timestamp}.${fileExt}`;
   }
-  ``
