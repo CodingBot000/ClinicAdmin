@@ -97,11 +97,20 @@ export async function POST(request: NextRequest) {
     // Upsert skin category
     try {
       await pool.query(
-        `INSERT INTO ${TABLE_HOSPITAL_TREATMENT_SELECTION} (id_uuid_hospital, category, ids, device_ids, updated_at)
-         VALUES ($1, $2, $3, $4, now())
-         ON CONFLICT (id_uuid_hospital, category) 
-         DO UPDATE SET ids = $3, device_ids = $4, updated_at = now()`,
-        [skinData.id_uuid_hospital, skinData.category, JSON.stringify(skinData.ids), JSON.stringify(skinData.device_ids)]
+        `INSERT INTO ${TABLE_HOSPITAL_TREATMENT_SELECTION}
+          (id_uuid_hospital, category, ids, device_ids, updated_at)
+         VALUES ($1, $2, $3::text[], $4::text[], now())
+         ON CONFLICT (id_uuid_hospital, category)
+         DO UPDATE SET
+           ids = EXCLUDED.ids,
+           device_ids = EXCLUDED.device_ids,
+           updated_at = now()`,
+        [
+          skinData.id_uuid_hospital,
+          skinData.category,
+          skinData.ids,          // <-- 배열 ['S3CCE','S3CCJ',...]
+          skinData.device_ids    // <-- 배열
+        ]
       );
     } catch (error) {
       log.error("Step6 API - Skin upsert error:", error);
@@ -113,12 +122,22 @@ export async function POST(request: NextRequest) {
 
     // Upsert plastic category
     try {
+    
       await pool.query(
-        `INSERT INTO ${TABLE_HOSPITAL_TREATMENT_SELECTION} (id_uuid_hospital, category, ids, device_ids, updated_at)
-         VALUES ($1, $2, $3, $4, now())
-         ON CONFLICT (id_uuid_hospital, category) 
-         DO UPDATE SET ids = $3, device_ids = $4, updated_at = now()`,
-        [plasticData.id_uuid_hospital, plasticData.category, JSON.stringify(plasticData.ids), JSON.stringify(plasticData.device_ids)]
+        `INSERT INTO ${TABLE_HOSPITAL_TREATMENT_SELECTION}
+          (id_uuid_hospital, category, ids, device_ids, updated_at)
+          VALUES ($1, $2, $3::text[], $4::text[], now())
+          ON CONFLICT (id_uuid_hospital, category)
+          DO UPDATE SET
+            ids = EXCLUDED.ids,
+            device_ids = EXCLUDED.device_ids,
+            updated_at = now()`,
+        [
+          plasticData.id_uuid_hospital,
+          plasticData.category,
+          plasticData.ids,        // ['P3FEA', 'P3FEB'] 형태의 배열
+          plasticData.device_ids  // ['D123', 'D456'] 등
+        ]
       );
     } catch (error) {
       log.error("Step6 API - Plastic upsert error:", error);
