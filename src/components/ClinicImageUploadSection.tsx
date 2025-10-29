@@ -33,6 +33,7 @@ interface ClinicImageUploadSectionProps {
   onExistingDataChange?: (data: any) => void;
   onDeletedImagesChange?: (deletedUrls: string[]) => void;
   onCurrentImagesChange?: (currentUrls: string[]) => void;
+  onUserChanged?: (kind: 'gallery:add' | 'gallery:replace' | 'gallery:remove' | 'gallery:reorder') => void;
 }
 
 /**
@@ -62,6 +63,7 @@ const ClinicImageUploadSection = ({
   onExistingDataChange,
   onDeletedImagesChange,
   onCurrentImagesChange,
+  onUserChanged,
 }: ClinicImageUploadSectionProps) => {
   const [preview, setPreview] = useState<
     Array<string | undefined>
@@ -197,16 +199,19 @@ const ClinicImageUploadSection = ({
           setPreview((prev) => prev.concat(result));
           setIsExistingImage((prev) => prev.concat(false));
         };
-        // 새로 추가한 이미지는 base64 데이터로 생성 
+        // 새로 추가한 이미지는 base64 데이터로 생성
         fileReader.readAsDataURL(file);
       });
+
+      // Dirty Flag: 갤러리 파일 추가
+      onUserChanged?.('gallery:add');
 
       // Avatar의 경우 슬롯 수 증가
       if (type === 'Avatar') {
         setAvatarCount((prev) => prev + fileList.length);
       }
     },
-    [disableUpload, type, maxImages, preview.length],
+    [disableUpload, type, maxImages, preview.length, onUserChanged],
   );
 
   // dropzone 설정
@@ -239,6 +244,9 @@ const ClinicImageUploadSection = ({
       log.info('기존 이미지 삭제됨:', preview[i]);
     }
 
+    // Dirty Flag: 갤러리 삭제
+    onUserChanged?.('gallery:remove');
+
     setPreview((prev) =>
       prev.filter((_, idx) => i !== idx),
     );
@@ -270,6 +278,9 @@ const ClinicImageUploadSection = ({
       setDeletedImageUrls(prev => [...prev, ...existingImageUrls]);
       log.info('전체 삭제 - 기존 이미지들:', existingImageUrls);
     }
+
+    // Dirty Flag: 갤러리 전체 삭제
+    onUserChanged?.('gallery:remove');
 
     setPreview([]);
     setFiles([]);
@@ -376,6 +387,9 @@ const ClinicImageUploadSection = ({
   const handleOrderModalComplete = (newOrder: string[]) => {
     setPreview(newOrder);
     setIsOrderModalOpen(false);
+
+    // Dirty Flag: 갤러리 순서변경
+    onUserChanged?.('gallery:reorder');
   };
 
   return (

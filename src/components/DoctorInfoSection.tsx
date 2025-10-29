@@ -15,6 +15,7 @@ interface DoctorInfoSectionProps {
   onDoctorsChange: (doctors: DoctorInfo[]) => void;
   initialDoctors?: DoctorInfo[];
   id_uuid_hospital?: string;
+  onUserChanged?: (kind: 'doctors:addOrDelete' | 'doctors:reorder' | 'doctors:text' | 'doctors:photo') => void;
 }
 
 // 안전한 이미지 URL 검증 함수
@@ -50,6 +51,7 @@ const DoctorInfoSection: React.FC<
   onDoctorsChange,
   initialDoctors,
   id_uuid_hospital = '',
+  onUserChanged,
 }) => {
   const [doctors, setDoctors] = useState<DoctorInfo[]>(
     initialDoctors || [],
@@ -106,8 +108,9 @@ const DoctorInfoSection: React.FC<
         ),
       );
     } else {
-      // 추가
+      // 추가 - Dirty Flag
       setDoctors((prev) => [...prev, doctorInfo]);
+      onUserChanged?.('doctors:addOrDelete');
     }
 
     setEditingDoctor(undefined);
@@ -119,6 +122,8 @@ const DoctorInfoSection: React.FC<
       setDoctors((prev) =>
         prev.filter((doctor) => doctor.id !== id),
       );
+      // Dirty Flag: 의사 삭제
+      onUserChanged?.('doctors:addOrDelete');
     }
   };
 
@@ -156,6 +161,9 @@ const DoctorInfoSection: React.FC<
   const handleOrderModalComplete = (newOrder: DoctorInfo[]) => {
     setDoctors(newOrder);
     setIsOrderModalOpen(false);
+
+    // Dirty Flag: 의사 순서변경
+    onUserChanged?.('doctors:reorder');
   };
 
   return (
@@ -248,6 +256,10 @@ const DoctorInfoSection: React.FC<
         initialData={editingDoctor}
         onClose={handleCloseForm}
         onSave={handleSaveDoctor}
+        onUserChanged={(kind) => {
+          if (kind === 'doctors:text') onUserChanged?.('doctors:text');
+          if (kind === 'doctors:photo') onUserChanged?.('doctors:photo');
+        }}
       />
 
       {/* 의사 순서변경 모달 */}

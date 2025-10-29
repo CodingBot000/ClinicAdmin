@@ -26,6 +26,7 @@ interface ClinicImageThumbnailUploadSectionProps {
   onExistingDataChange?: (data: any) => void;
   onDeletedImageChange?: (deletedUrl: string | null) => void;
   onCurrentImageChange?: (currentUrl: string | null) => void;
+  onUserChanged?: (kind: 'thumbnail:replace' | 'thumbnail:delete') => void;
 }
 
 const ClinicImageThumbnailUploadSection = ({
@@ -37,6 +38,7 @@ const ClinicImageThumbnailUploadSection = ({
   onExistingDataChange,
   onDeletedImageChange,
   onCurrentImageChange,
+  onUserChanged,
 }: ClinicImageThumbnailUploadSectionProps) => {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -86,16 +88,19 @@ const ClinicImageThumbnailUploadSection = ({
       setFile(selectedFile);
       onFileChange(selectedFile); // 새 파일 선택 시 부모에게 알림
 
+      // Dirty Flag: 썸네일 교체
+      onUserChanged?.('thumbnail:replace');
+
       const fileReader = new FileReader();
       fileReader.onload = () => {
         const result = fileReader.result as string;
         setPreview(result);
         setIsExistingImage(false);
       };
-      // 새로 추가한 이미지는 base64 데이터로 생성 
+      // 새로 추가한 이미지는 base64 데이터로 생성
       fileReader.readAsDataURL(selectedFile);
     },
-    [onFileChange],
+    [onFileChange, onUserChanged],
   );
 
   // dropzone 설정
@@ -124,11 +129,14 @@ const ClinicImageThumbnailUploadSection = ({
       log.info('기존 이미지 삭제됨:', preview);
     }
 
+    // Dirty Flag: 썸네일 삭제
+    onUserChanged?.('thumbnail:delete');
+
     setPreview(null);
     setFile(null);
     setIsExistingImage(false);
     onFileChange(null);
-    
+
     // existingData 수정 부분 제거 - 원본 데이터는 그대로 유지
   };
 

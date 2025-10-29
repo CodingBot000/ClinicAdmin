@@ -7,7 +7,8 @@ import {
   STORAGE_IMAGES
 } from '@/constants/tables';
 import { v4 as uuidv4 } from 'uuid';
-import "@/utils/logger"; 
+import "@/utils/logger";
+import { hasTempUrls, filterOutTempUrls } from '@/utils/guards/tempUrlGuard'; 
 
 // CORS 헤더 정의
 const corsHeaders = {
@@ -140,28 +141,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. 클라이언트에서 명시적으로 삭제된 병원 이미지 파일들 처리
+    // 3. 클라이언트에서 명시적으로 삭제된 병원 이미지 파일들 처리 (안전 삭제)
+    const deletedHospitalImages: string[] = [];
     if (deletedClinicUrls.length > 0) {
       log.info('- 클라이언트에서 삭제된 병원 이미지 URL들:', deletedClinicUrls);
-      
+
       for (const deletedUrl of deletedClinicUrls) {
         try {
+          // temp_url 제외 및 유효한 경로만 삭제 대상에 추가
+          if (deletedUrl.includes('temp_url_')) {
+            log.warn('temp_url 삭제 요청 무시:', deletedUrl);
+            continue;
+          }
+
           // Storage에서 파일 경로 추출
           const urlParts = deletedUrl.split('/');
           const fileName = urlParts[urlParts.length - 1];
           const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-          
-          log.info(`- 삭제된 병원 이미지 파일 제거: ${filePath}`);
 
-          // AWS S3 Lightsail 삭제
-          const deleteResult = await deleteFile(filePath);
-          if (deleteResult.success) {
-            log.info(`- 삭제된 병원 이미지 파일 제거 성공: ${filePath}`);
-          } else {
-            console.error('삭제된 병원 이미지 파일 제거 실패');
+          // 삭제 대상 키 저장 (실제 삭제는 DB 커밋 후)
+          if (filePath.startsWith('images/')) {
+            deletedHospitalImages.push(filePath);
+            log.info(`- 병원 이미지 삭제 예약: ${filePath}`);
           }
         } catch (error) {
-          console.error('삭제된 병원 이미지 파일 제거 중 오류:', error);
+          log.warn('병원 이미지 삭제 준비 중 오류 (무시됨):', error);
         }
       }
     }
@@ -171,28 +175,30 @@ export async function POST(request: NextRequest) {
       const additionalDeletedImageUrls = existingClinicUrls.filter(
         (url: string) => !finalClinicImageUrls.includes(url) && !deletedClinicUrls.includes(url)
       );
-      
+
       if (additionalDeletedImageUrls.length > 0) {
         log.info('- 추가로 삭제할 병원 이미지 URL들:', additionalDeletedImageUrls);
-        
+
         for (const deletedUrl of additionalDeletedImageUrls) {
           try {
+            // temp_url 제외
+            if (deletedUrl.includes('temp_url_')) {
+              log.warn('temp_url 추가 삭제 요청 무시:', deletedUrl);
+              continue;
+            }
+
             // Storage에서 파일 경로 추출
             const urlParts = deletedUrl.split('/');
             const fileName = urlParts[urlParts.length - 1];
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-            
-            log.info(`- 추가 병원 이미지 파일 삭제: ${filePath}`);
 
-            // AWS S3 Lightsail 삭제
-            const deleteResult = await deleteFile(filePath);
-            if (deleteResult.success) {
-              log.info(`- 추가 병원 이미지 파일 삭제 성공: ${filePath}`);
-            } else {
-              console.error('추가 병원 이미지 파일 삭제 실패');
+            // 삭제 대상 키 저장 (실제 삭제는 DB 커밋 후)
+            if (filePath.startsWith('images/') && !deletedHospitalImages.includes(filePath)) {
+              deletedHospitalImages.push(filePath);
+              log.info(`- 추가 병원 이미지 삭제 예약: ${filePath}`);
             }
           } catch (error) {
-            console.error('추가 병원 이미지 파일 삭제 중 오류:', error);
+            log.warn('추가 병원 이미지 삭제 준비 중 오류 (무시됨):', error);
           }
         }
       }
@@ -204,19 +210,75 @@ export async function POST(request: NextRequest) {
       thumbnail_url: finalThumbnailUrl,
       imageurls: finalClinicImageUrls
     });
-    
-    try {
-      await pool.query(
-        `UPDATE ${TABLE_HOSPITAL} SET thumbnail_url=$1, imageurls=$2 WHERE id_uuid=$3`,
-        [finalThumbnailUrl, JSON.stringify(finalClinicImageUrls), id_uuid_hospital]
+
+    // === temp_url 방어 로직 추가 ===
+    const imageArray = Array.isArray(finalClinicImageUrls) ? finalClinicImageUrls.filter(Boolean) : [];
+
+    // (1) temp_url 포함 여부 검사
+    if (hasTempUrls(imageArray)) {
+      log.error('temp_url 상태의 이미지 감지:', imageArray);
+      return NextResponse.json(
+        {
+          error: 'PENDING_UPLOADS',
+          message: '임시 temp_url 상태의 이미지가 포함되어 있습니다. 실제 업로드 완료 후 다시 시도하세요.',
+          debugUrls: imageArray,
+        },
+        { status: 422 }
       );
-      log.info('병원 테이블 업데이트 성공');
+    }
+
+    // (2) temp_url 제거 후 정제된 URL만 사용
+    const cleanedUrls = filterOutTempUrls(imageArray);
+    log.info('temp_url 제거 후 정제된 URLs:', cleanedUrls);
+
+    // (3) 트랜잭션 시작
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      log.info('트랜잭션 시작');
+
+      await client.query(
+        `UPDATE ${TABLE_HOSPITAL}
+           SET thumbnail_url = $1,
+               imageurls     = COALESCE($2::text[], ARRAY[]::text[])
+         WHERE id_uuid = $3`,
+        [finalThumbnailUrl ?? null, cleanedUrls, id_uuid_hospital]
+      );
+
+      await client.query('COMMIT');
+      log.info('병원 테이블 업데이트 성공 (트랜잭션 커밋)');
     } catch (error) {
-      console.error('병원 테이블 업데이트 실패:', error);
+      await client.query('ROLLBACK');
+      log.error('병원 테이블 업데이트 실패 (트랜잭션 롤백):', error);
+      client.release();
       return NextResponse.json({
+        error: 'DB_UPDATE_FAILED',
         message: `병원 테이블 업데이트 실패: ${(error as any).message}`,
         status: "error",
       }, { status: 500 });
+    } finally {
+      client.release();
+    }
+
+    // === DB 커밋 성공 후에만 S3 삭제 실행 ===
+    // temp_url이 아니고 images/로 시작하는 키만 필터링
+    const willDeleteKeys = deletedHospitalImages.filter(
+      (k) => !k.includes('temp_url_') && k.startsWith('images/')
+    );
+
+    log.info('S3 삭제 실행:', { count: willDeleteKeys.length, keys: willDeleteKeys });
+
+    for (const key of willDeleteKeys) {
+      try {
+        const deleteResult = await deleteFile(key);
+        if (deleteResult.success) {
+          log.info('삭제된 병원 이미지 파일 제거 성공:', key);
+        } else {
+          log.warn('S3 삭제 실패 (무시됨):', key);
+        }
+      } catch (err) {
+        log.warn('S3 삭제 실패 (무시됨):', key, err);
+      }
     }
 
     // 각 의사 정보 처리

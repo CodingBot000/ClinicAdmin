@@ -66,7 +66,8 @@ export default function AdminLoginForm() {
 
   return (
     <div className="flex flex-col justify-center items-center w-full min-h-screen bg-gray-50">
-      <div className="text-center mb-8">
+      <p>현재 개선작업 중입니다.</p>
+      {/* <div className="text-center mb-8">
           <Image
               src="/logo/logo_mimotok.svg"
               alt="logo"
@@ -120,7 +121,7 @@ export default function AdminLoginForm() {
           {isLoading ? '로그인 중...' : 'Login'}
         </Button>
         {error && <p className="text-red-500 text-center">{error}</p>}
-      </div>
+      </div> */}
       </div>
   );
 }
