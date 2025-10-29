@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AdminPageClient from './AdminPageClient';
-import { useSupabaseSession } from '@/hooks/useSupabaseSession';
+import { useAuth } from '@/hooks/useAuth';
 import { useAlarmStore } from '@/stores/useHospitalUUIDStore';
 import { api } from '@/lib/api-client';
 
@@ -12,13 +12,13 @@ export default function AdminAuthWrapper() {
   const [hasClinicInfo, setHasClinicInfo] = useState(false);
   const [userEmail, setUserEmail] = useState<string>('');
 
-  const { session, isLoading: sessionLoading, error: sessionError } = useSupabaseSession();
+  const { user, isLoading: sessionLoading, error: sessionError } = useAuth();
 
   useEffect(() => {
     let mounted = true;
 
     const checkAdminStatus = async () => {
-      if (!session?.user) {
+      if (!user) {
         if (mounted) {
           router.push('/admin/login');
         }
@@ -26,38 +26,51 @@ export default function AdminAuthWrapper() {
       }
 
       try {
-        const { id: uid, email } = session.user;
-        setUserEmail(email || '');
+        console.log('[AdminAuthWrapper] 사용자 정보:', user);
+        setUserEmail(user.email || '');
+
+        // user.id_uuid_hospital이 있으면 이미 병원 정보가 있는 것
+        if (user.id_uuid_hospital) {
+          console.log('[AdminAuthWrapper] ✅ id_uuid_hospital 발견:', user.id_uuid_hospital);
+          if (mounted) {
+            setHasClinicInfo(true);
+          }
+          return;
+        }
+
+        console.log('[AdminAuthWrapper] id_uuid_hospital 없음 - API로 확인');
 
         // Use API endpoint instead of direct Supabase access
-        const authResult = await api.admin.verifyAuth(uid);
+        const authResult = await api.admin.verifyAuth(user.id);
+
+        console.log('[AdminAuthWrapper] API 응답:', authResult);
 
         if (!authResult.success || !authResult.data) {
           throw new Error(authResult.error || 'Failed to verify admin');
         }
 
-        const { adminExists, hasClinicInfo: hasClinic, admin } = authResult.data;
+        const { adminExists, hasClinicInfo: hasClinic, admin, hospital } = authResult.data;
 
-        let clinicInfo = false;
+        console.log('[AdminAuthWrapper] Admin 존재:', adminExists);
+        console.log('[AdminAuthWrapper] Hospital 정보:', hospital);
+        console.log('[AdminAuthWrapper] hasClinic:', hasClinic);
 
         if (!adminExists) {
-          // Create admin using API endpoint instead of direct INSERT
-          const createResult = await api.admin.createAdmin(uid, email || '');
+          throw new Error('Admin account not found');
+        }
 
-          if (!createResult.success) {
-            throw new Error(createResult.error || 'Failed to create admin');
-          }
-        } else if (admin && admin.id_uuid_hospital) {
-          clinicInfo = hasClinic;
-          // Subscribe to reservation updates
-          useAlarmStore.setState(admin.id_uuid_hospital);
+        if (hospital?.id_uuid_admin) {
+          const { setAlarmInfo } = useAlarmStore.getState();
+          setAlarmInfo({ id_uuid_hospital: hospital.id_uuid_admin });
         }
 
         if (mounted) {
-          setHasClinicInfo(clinicInfo);
+          const hasInfo = Boolean(hospital) || hasClinic;
+          console.log('[AdminAuthWrapper] hasClinicInfo 설정:', hasInfo);
+          setHasClinicInfo(hasInfo);
         }
       } catch (error) {
-        console.error('Admin status check error:', error);
+        console.error('[AdminAuthWrapper] ❌ Admin status check error:', error);
         if (mounted) {
           router.push('/admin/login');
         }
@@ -71,7 +84,7 @@ export default function AdminAuthWrapper() {
     return () => {
       mounted = false;
     };
-  }, [session, sessionLoading, router]);
+  }, [user, sessionLoading, router]);
 
   if (sessionLoading) {
     return (
@@ -86,7 +99,7 @@ export default function AdminAuthWrapper() {
     );
   }
 
-  if (sessionError || !session) {
+  if (sessionError || !user) {
     router.push('/admin/login');
     return null;
   }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { TABLE_HOSPITAL } from '@/constants/tables';
 import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils';
 
@@ -16,20 +16,16 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('Hospital ID is required', 400);
     }
 
-    const { data, error } = await supabase
-      .from(TABLE_HOSPITAL)
-      .select('name, name_en')
-      .eq('id_uuid', id_uuid)
-      .single();
+    const { rows } = await pool.query(
+      `SELECT name, name_en FROM ${TABLE_HOSPITAL} WHERE id_uuid = $1`,
+      [id_uuid]
+    );
 
-    if (error) {
-      console.error('Hospital name fetch error:', error);
-      return createErrorResponse('Failed to fetch hospital name', 500);
-    }
-
-    if (!data) {
+    if (rows.length === 0) {
       return createErrorResponse('Hospital not found', 404);
     }
+    
+    const data = rows[0];
 
     return createSuccessResponse({
       name: data.name,

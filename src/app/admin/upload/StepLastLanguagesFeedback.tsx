@@ -7,19 +7,18 @@ import { Button } from '@/components/ui/button';
 import useModal from '@/hooks/useModal';
 
 import PreviewClinicInfoModal from '@/components/modal/PreviewClinicInfoModal';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
 import Divider from '@/components/Divider';
 import AvailableLanguageSection from '@/components/AvailableLanguageSection';
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 import PageBottom from '@/components/PageBottom';
 import { toast } from "sonner";
 
 interface StepLastLanguagesFeedbackProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onComplete: () => void;
@@ -29,7 +28,7 @@ interface StepLastLanguagesFeedbackProps {
 
 const StepLastLanguagesFeedback = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onComplete,
@@ -81,12 +80,12 @@ const StepLastLanguagesFeedback = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `Step_Last - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `Step_Last - isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   // 기존 데이터가 로딩되었을 때 각 필드 상태 업데이트
   useEffect(() => {
@@ -100,28 +99,30 @@ const StepLastLanguagesFeedback = ({
       }
 
       // 가능 언어 정보 설정
-      if (existingData.hospitalDetail?.available_languages && selectedLanguages.length === 0) {
-        log.info('Step_Last - 언어 정보 원본:', existingData.hospitalDetail.available_languages);
-        
+      // ✅ existingData는 nested 구조 - hospitalDetail에서 접근
+      const availableLanguages = existingData.hospitalDetail?.available_languages;
+      if (availableLanguages && selectedLanguages.length === 0) {
+        log.info('Step_Last - 언어 정보 원본:', availableLanguages);
+
         let languages: string[] = [];
-        
+
         // JSON 문자열인 경우 파싱
-        if (typeof existingData.hospitalDetail.available_languages === 'string') {
+        if (typeof availableLanguages === 'string') {
           try {
-            languages = JSON.parse(existingData.hospitalDetail.available_languages);
+            languages = JSON.parse(availableLanguages);
             log.info('Step_Last - JSON 파싱된 언어 정보:', languages);
           } catch (error) {
             console.error('Step_Last - JSON 파싱 실패:', error);
             // 파싱 실패 시 원본 문자열을 배열로 처리
-            languages = [existingData.hospitalDetail.available_languages];
+            languages = [availableLanguages];
           }
-        } else if (Array.isArray(existingData.hospitalDetail.available_languages)) {
+        } else if (Array.isArray(availableLanguages)) {
           // 이미 배열인 경우
-          languages = existingData.hospitalDetail.available_languages;
+          languages = availableLanguages;
         } else {
-          log.info('Step_Last - 지원되지 않는 언어 정보 타입:', typeof existingData.hospitalDetail.available_languages);
+          log.info('Step_Last - 지원되지 않는 언어 정보 타입:', typeof availableLanguages);
         }
-        
+
         setSelectedLanguages(languages);
         log.info('Step_Last - 가능 언어 정보 설정 완료:', languages);
       }
@@ -134,13 +135,20 @@ const StepLastLanguagesFeedback = ({
       setIsLoadingExistingData(true);
       log.info('Step_Last - 편집 모드 - 기존 데이터 로딩 시작');
 
-      // 마지막 단계로 모든 데이터를 다 불러온다 
-      // preview 화면에서 보여주기 위해서이다 
-      const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
-      
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      // 마지막 단계로 모든 데이터를 다 불러온다
+      // preview 화면에서 보여주기 위해서이다
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info('Step_Last - 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
+
       log.info('Step_Last - 로딩된 데이터:', data);
-      
+
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -169,7 +177,6 @@ const StepLastLanguagesFeedback = ({
   ) => {
     log.info('Step_Last - 폼에 기존 데이터 적용 시작');
     log.info('Step_Last - 받은 데이터:', {
-      hospitalDetail: existingData.hospitalDetail,
       feedback: existingData.feedback,
       availableLanguages: existingData.hospitalDetail?.available_languages
     });
@@ -191,7 +198,7 @@ const StepLastLanguagesFeedback = ({
         feedback: existingData.feedback,
         selectedLanguages: existingData.hospitalDetail?.available_languages
       });
-    
+
     } catch (error) {
       console.error('Step_Last - 기존 데이터 적용 중 오류:', error);
     }
@@ -224,7 +231,7 @@ const StepLastLanguagesFeedback = ({
       const formData = new FormData();
       formData.append('id_uuid_hospital', id_uuid_hospital);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       
       // 피드백
       if (feedback.trim()) {
@@ -239,7 +246,7 @@ const StepLastLanguagesFeedback = ({
         isEditMode,
         feedback: feedback.trim(),
         selectedLanguages,
-        currentUserUid
+        id_admin
       });
 
       log.info('Step_Last API 호출 시작');
@@ -329,8 +336,10 @@ const StepLastLanguagesFeedback = ({
 
   // 기존 데이터에서 언어 정보 가져오기
   const getInitialLanguages = (): string[] => {
-    if (existingData?.hospitalDetail?.available_languages) {
-      return parseLanguages(existingData.hospitalDetail.available_languages);
+    // ✅ existingData는 nested 구조 - hospitalDetail에서 접근
+    const availableLanguages = existingData?.hospitalDetail?.available_languages;
+    if (availableLanguages) {
+      return parseLanguages(availableLanguages);
     }
     return selectedLanguages;
   };

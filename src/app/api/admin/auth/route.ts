@@ -1,32 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
+import { readSession } from '@/lib/auth';
 import { TABLE_ADMIN, TABLE_HOSPITAL } from '@/constants/tables';
 import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils';
 
 /**
  * GET /api/admin/auth - Verify admin authentication and fetch hospital data
- * Query params: uid (auth user ID)
+ * Query params: id or uid (admin user ID) - optional, will use session if not provided
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const uid = searchParams.get('uid');
+    let adminId = searchParams.get('id') || searchParams.get('uid');
 
-    if (!uid) {
-      return createErrorResponse('User ID is required', 400);
+    // If no ID in query params or invalid, try to get from session
+    if (!adminId || adminId === '' || adminId === 'undefined' || adminId === 'null') {
+      const session = await readSession();
+
+      if (!session || !session.sub) {
+        return createErrorResponse('Admin ID is required and no valid session found', 401);
+      }
+
+      adminId = session.sub.toString();
+      console.log('[ADMIN-AUTH] Using ID from session:', adminId);
     }
 
-    // Check admin table
-    const { data: admin, error: adminError } = await supabase
-      .from(TABLE_ADMIN)
-      .select('id, id_uuid_hospital, email, is_active')
-      .eq('id_auth_user', uid)
-      .maybeSingle();
+    // Check admin table (using primary id) - MUST include id_uuid_hospital
+    const { rows: adminRows } = await pool.query(
+      `SELECT id, email, is_active, id_uuid_hospital FROM ${TABLE_ADMIN} WHERE id = $1`,
+      [adminId]
+    );
 
-    if (adminError) {
-      console.error('Admin query error:', adminError);
-      return createErrorResponse('Failed to fetch admin data', 500);
-    }
+    const admin = adminRows[0] || null;
+    console.log('[ADMIN-AUTH] Admin 데이터:', admin);
 
     // If admin doesn't exist, return appropriate response
     if (!admin) {
@@ -42,20 +48,12 @@ export async function GET(request: NextRequest) {
     let hasClinicInfo = false;
     let hospitalData = null;
 
-    if (admin.id_uuid_hospital) {
-      const { data: hospital, error: hospitalError } = await supabase
-        .from(TABLE_HOSPITAL)
-        .select('id_uuid_admin')
-        .eq('id_uuid_admin', admin.id)
-        .limit(1);
-
-      if (hospitalError) {
-        console.error('Hospital query error:', hospitalError);
-      } else {
-        hasClinicInfo = hospital && hospital.length > 0;
-        hospitalData = hospital;
-      }
-    }
+    const { rows: hospitalRows } = await pool.query(
+      `SELECT id_uuid, id_uuid_admin FROM ${TABLE_HOSPITAL} WHERE id_uuid_admin = $1 LIMIT 1`,
+      [admin.id]
+    );
+    hasClinicInfo = hospitalRows.length > 0;
+    hospitalData = hospitalRows[0] ?? null;
 
     return createSuccessResponse({
       adminExists: true,
@@ -77,45 +75,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { uid, email } = body;
+    const { email, passwordHash = null } = body;
 
-    if (!uid || !email) {
-      return createErrorResponse('User ID and email are required', 400);
+    if (!email) {
+      return createErrorResponse('Email is required', 400);
     }
 
-    // Check if admin already exists
-    const { data: existingAdmin, error: checkError } = await supabase
-      .from(TABLE_ADMIN)
-      .select('id')
-      .eq('id_auth_user', uid)
-      .maybeSingle();
+    const { rows: existingEmailRows } = await pool.query(
+      `SELECT id FROM ${TABLE_ADMIN} WHERE email = $1`,
+      [email]
+    );
 
-    if (checkError) {
-      console.error('Admin check error:', checkError);
-      return createErrorResponse('Failed to check existing admin', 500);
-    }
-
-    if (existingAdmin) {
+    if (existingEmailRows.length > 0) {
       return createErrorResponse('Admin already exists', 409);
     }
 
-    // Create new admin
-    const { data: newAdmin, error: insertError } = await supabase
-      .from(TABLE_ADMIN)
-      .insert({
-        id_auth_user: uid,
-        email: email,
-        is_active: true,
-        password_hash: null,
-        id_uuid_hospital: null,
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Admin insert error:', insertError);
-      return createErrorResponse('Failed to create admin', 500);
-    }
+    const { rows: newAdminRows } = await pool.query(
+      `INSERT INTO ${TABLE_ADMIN} (id_auth_user, email, is_active, password_hash, id_uuid_hospital)
+       VALUES (NULL, $1, $2, $3, $4)
+       RETURNING *`,
+      [email, true, passwordHash, null]
+    );
+    
+    const newAdmin = newAdminRows[0];
 
     return createSuccessResponse(
       { admin: newAdmin },

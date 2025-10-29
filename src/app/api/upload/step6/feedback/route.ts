@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { TABLE_FEEDBACKS } from '@/constants/tables';
 import "@/utils/logger";
 
@@ -30,31 +30,19 @@ export async function GET(request: NextRequest) {
     log.info("Feedback GET API - id_uuid_hospital:", id_uuid_hospital);
 
     // type이 'support_treatment'이고 updated_at이 최신인 피드백 조회
-    const { data, error } = await supabase
-      .from(TABLE_FEEDBACKS)
-      .select('*')
-      .eq('id_uuid_hospital', id_uuid_hospital)
-      .eq('type', 'support_treatment')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
+    const { rows } = await pool.query(
+      `SELECT * FROM ${TABLE_FEEDBACKS} WHERE id_uuid_hospital = $1 AND type = $2 ORDER BY updated_at DESC LIMIT 1`,
+      [id_uuid_hospital, 'support_treatment']
+    );
 
-    if (error) {
-      // 데이터가 없는 경우는 에러가 아님
-      if (error.code === 'PGRST116') {
-        log.info("Feedback GET API - No feedback found");
-        return NextResponse.json({
-          feedback_content: '',
-        }, { status: 200, headers: corsHeaders });
-      }
-
-      log.error("Feedback GET API - Query error:", error);
+    if (!rows || rows.length === 0) {
+      log.info("Feedback GET API - No feedback found");
       return NextResponse.json({
-        message: `Query error: ${error.message}`,
-        status: "error",
-      }, { status: 500, headers: corsHeaders });
+        feedback_content: '',
+      }, { status: 200, headers: corsHeaders });
     }
 
+    const data = rows[0];
     log.info("Feedback GET API - Result:", data);
 
     return NextResponse.json({
@@ -87,25 +75,21 @@ export async function POST(request: NextRequest) {
     log.info("Feedback POST API - feedback_content:", feedback_content);
 
     // 새 피드백 삽입
-    const { data, error } = await supabase
-      .from(TABLE_FEEDBACKS)
-      .insert([{
-        id_uuid_hospital,
-        feedback_content: feedback_content.trim(),
-        type: 'support_treatment',
-        updated_at: new Date().toISOString(),
-      }])
-      .select()
-      .single();
+    const { rows } = await pool.query(
+      `INSERT INTO ${TABLE_FEEDBACKS} (id_uuid_hospital, feedback_content, type, updated_at) 
+       VALUES ($1, $2, $3, now()) RETURNING *`,
+      [id_uuid_hospital, feedback_content.trim(), 'support_treatment']
+    );
 
-    if (error) {
-      log.error("Feedback POST API - Insert error:", error);
+    if (!rows || rows.length === 0) {
+      log.error("Feedback POST API - Insert error: No rows returned");
       return NextResponse.json({
-        message: `Insert error: ${error.message}`,
+        message: "Insert error: Failed to insert feedback",
         status: "error",
       }, { status: 500, headers: corsHeaders });
     }
 
+    const data = rows[0];
     log.info("Feedback POST API - Success:", data);
 
     return NextResponse.json({

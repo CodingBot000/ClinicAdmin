@@ -1,4 +1,3 @@
-import { createBrowserClient } from '@supabase/ssr';
 import { ExistingHospitalData } from '@/models/hospital';
 import {
   TABLE_HOSPITAL,
@@ -6,37 +5,30 @@ import {
   TABLE_HOSPITAL_DETAIL,
   TABLE_HOSPITAL_TREATMENT,
   TABLE_HOSPITAL_BUSINESS_HOUR,
-  TABLE_ADMIN,
   TABLE_TREATMENT_INFO,
   TABLE_FEEDBACKS,
   TABLE_CONTACTS
 } from '@/constants/tables';
 
-import { supabase } from "@/lib/supabaseClient";
+import { pool } from '@/lib/db';
 /**
  * 현재 사용자의 병원 UUID를 가져옵니다
  */
-export async function getUserHospitalUuid(userUid: string): Promise<string | null> {
-  log.info(' 사용자 병원 UUID 조회 시작 auth userUid:', userUid);
+export async function getUserHospitalUuid(adminId: string): Promise<string | null> {
+  log.info(' 사용자 병원 UUID 조회 시작 adminId:', adminId);
   
-  const { data: admin, error } = await supabase
-    .from(TABLE_ADMIN)
-    .select('id_uuid_hospital')
-    .eq('id_auth_user', userUid)
-    .maybeSingle();
+  const { rows } = await pool.query(
+    `SELECT id_uuid FROM ${TABLE_HOSPITAL} WHERE id_uuid_admin = $1 LIMIT 1`,
+    [adminId]
+  );
 
-  if (error) {
-    console.error(' Admin 정보 조회 실패:', error);
-    return null;
-  }
-
-  if (!admin?.id_uuid_hospital) {
+  if (rows.length === 0 || !rows[0].id_uuid) {
     log.info(' 연결된 병원이 없습니다');
     return null;
   }
 
-  log.info(' 병원 UUID 찾음:', admin.id_uuid_hospital);
-  return admin.id_uuid_hospital;
+  log.info(' 병원 UUID 찾음:', rows[0].id_uuid);
+  return rows[0].id_uuid;
 }
 
 /**
@@ -45,23 +37,17 @@ export async function getUserHospitalUuid(userUid: string): Promise<string | nul
 export async function loadHospitalData(hospitalUuid: string) {
   log.info(' 병원 기본 정보 로딩 hospitalUuid:', hospitalUuid);
   
-  const { data, error } = await supabase
-    .from(TABLE_HOSPITAL)
-    .select('*')
-    .eq('id_uuid', hospitalUuid)
-    .maybeSingle();
+  const { rows } = await pool.query(
+    `SELECT * FROM ${TABLE_HOSPITAL} WHERE id_uuid = $1`,
+    [hospitalUuid]
+  );
 
-  if (error) {
-    console.error(' 병원 정보 로딩 실패:', error);
-    throw new Error(`병원 정보 로딩 실패: ${error.message}`);
-  }
-
-  if (!data) {
+  if (rows.length === 0) {
     throw new Error('병원 정보를 찾을 수 없습니다');
   }
 
   log.info(' 병원 정보 로딩 완료');
-  return data;
+  return rows[0];
 }
 
 /**
@@ -70,17 +56,12 @@ export async function loadHospitalData(hospitalUuid: string) {
 async function loadHospitalDetailData(hospitalUuid: string) {
   log.info(' 병원 상세 정보 로딩:', hospitalUuid);
   
-  const { data, error } = await supabase
-    .from(TABLE_HOSPITAL_DETAIL)
-    .select('*')
-    .eq('id_uuid_hospital', hospitalUuid)
-    .maybeSingle();
+  const { rows } = await pool.query(
+    `SELECT * FROM ${TABLE_HOSPITAL_DETAIL} WHERE id_uuid_hospital = $1`,
+    [hospitalUuid]
+  );
 
-  if (error) {
-    console.error('병원 상세 정보 로딩 실패:', error);
-    throw new Error(`병원 상세 정보 로딩 실패: ${error.message}`);
-  }
-
+  const data = rows[0] || null;
   log.info(' 병원 상세 정보 로딩 완료:', data);
   log.info(' available_languages 필드:', data?.available_languages);
   log.info(' available_languages 타입:', typeof data?.available_languages);
@@ -94,19 +75,13 @@ async function loadHospitalDetailData(hospitalUuid: string) {
 async function loadBusinessHours(hospitalUuid: string) {
   log.info(' 영업시간 정보 로딩:', hospitalUuid);
   
-  const { data, error } = await supabase
-    .from(TABLE_HOSPITAL_BUSINESS_HOUR)
-    .select('*')
-    .eq('id_uuid_hospital', hospitalUuid)
-    .order('day_of_week');
+  const { rows } = await pool.query(
+    `SELECT * FROM ${TABLE_HOSPITAL_BUSINESS_HOUR} WHERE id_uuid_hospital = $1 ORDER BY day_of_week`,
+    [hospitalUuid]
+  );
 
-  if (error) {
-    console.error('영업시간 정보 로딩 실패:', error);
-    throw new Error(`영업시간 정보 로딩 실패: ${error.message}`);
-  }
-
-  log.info(' 영업시간 정보 로딩 완료:', data?.length || 0, '건');
-  return data || [];
+  log.info(' 영업시간 정보 로딩 완료:', rows.length, '건');
+  return rows;
 }
 
 /**
@@ -114,19 +89,14 @@ async function loadBusinessHours(hospitalUuid: string) {
  */
 async function loadDoctors(hospitalUuid: string) {
   log.info(' 의사 정보 로딩:', hospitalUuid);
-  
-  const { data, error } = await supabase
-    .from(TABLE_DOCTOR)
-    .select('*')
-    .eq('id_uuid_hospital', hospitalUuid);
 
-  if (error) {
-    console.error(' 의사 정보 로딩 실패:', error);
-    throw new Error(`의사 정보 로딩 실패: ${error.message}`);
-  }
+  const { rows } = await pool.query(
+    `SELECT * FROM ${TABLE_DOCTOR} WHERE id_uuid_hospital = $1 ORDER BY display_order ASC, id_uuid ASC`,
+    [hospitalUuid]
+  );
 
-  log.info(' 의사 정보 로딩 완료:', data?.length || 0, '명');
-  return data || [];
+  log.info(' 의사 정보 로딩 완료:', rows.length, '명');
+  return rows;
 }
 
 /**
@@ -136,17 +106,12 @@ async function loadTreatments(hospitalUuid: string) {
   log.info(' 시술 정보 로딩:', hospitalUuid);
   
   // 1. hospital_treatment 데이터 먼저 가져오기
-  const { data: hospitalTreatments, error: hospitalTreatmentError } = await supabase
-    .from(TABLE_HOSPITAL_TREATMENT)
-    .select('*')
-    .eq('id_uuid_hospital', hospitalUuid);
+  const { rows: hospitalTreatments } = await pool.query(
+    `SELECT * FROM ${TABLE_HOSPITAL_TREATMENT} WHERE id_uuid_hospital = $1`,
+    [hospitalUuid]
+  );
 
-  if (hospitalTreatmentError) {
-    console.error(' 병원 시술 정보 로딩 실패:', hospitalTreatmentError);
-    throw new Error(`병원 시술 정보 로딩 실패: ${hospitalTreatmentError.message}`);
-  }
-
-  if (!hospitalTreatments || hospitalTreatments.length === 0) {
+  if (hospitalTreatments.length === 0) {
     log.info(' 시술 정보가 없습니다');
     return [];
   }
@@ -155,31 +120,27 @@ async function loadTreatments(hospitalUuid: string) {
 
   // 2. NULL이 아닌 id_uuid_treatment들만 추출
   const treatmentUuids = hospitalTreatments
-    .filter(ht => ht.id_uuid_treatment !== null)
-    .map(ht => ht.id_uuid_treatment);
+    .filter((ht: any) => ht.id_uuid_treatment !== null)
+    .map((ht: any) => ht.id_uuid_treatment);
 
   log.info(' 매칭할 시술 UUID들:', treatmentUuids);
 
   // 3. treatment 정보 가져오기 (UUID가 있는 경우만)
   let treatments: any[] = [];
   if (treatmentUuids.length > 0) {
-    const { data: treatmentData, error: treatmentError } = await supabase
-      .from(TABLE_TREATMENT_INFO)
-      .select('id_uuid, code, name')
-      .in('id_uuid', treatmentUuids);
+    const placeholders = treatmentUuids.map((_, i) => `$${i + 1}`).join(',');
+    const { rows: treatmentData } = await pool.query(
+      `SELECT id_uuid, code, name FROM ${TABLE_TREATMENT_INFO} WHERE id_uuid IN (${placeholders})`,
+      treatmentUuids
+    );
 
-    if (treatmentError) {
-      console.error(' 시술 정보 로딩 실패:', treatmentError);
-      throw new Error(`시술 정보 로딩 실패: ${treatmentError.message}`);
-    }
-
-    treatments = treatmentData || [];
+    treatments = treatmentData;
   }
 
   log.info(' 시술 마스터 정보 로딩 완료:', treatments.length, '건');
 
   // 4. hospital_treatment와 treatment 매칭
-  const result = hospitalTreatments.map(hospitalTreatment => {
+  const result = hospitalTreatments.map((hospitalTreatment: any) => {
     if (hospitalTreatment.id_uuid_treatment === null) {
       // 기타 항목인 경우
       return {
@@ -188,7 +149,7 @@ async function loadTreatments(hospitalUuid: string) {
       };
     } else {
       // 일반 시술인 경우 treatment 정보 매칭
-      const matchedTreatment = treatments.find(t => t.id_uuid === hospitalTreatment.id_uuid_treatment);
+      const matchedTreatment = treatments.find((t: any) => t.id_uuid === hospitalTreatment.id_uuid_treatment);
       return {
         ...hospitalTreatment,
         treatment: matchedTreatment || null
@@ -204,21 +165,13 @@ async function loadTreatments(hospitalUuid: string) {
 async function loadFeedback(hospitalUuid: string) {
   log.info(' 피드백 정보 로딩:', hospitalUuid);
   
-  const { data, error } = await supabase
-    .from(TABLE_FEEDBACKS)
-    .select('feedback_content')
-    .eq('id_uuid_hospital', hospitalUuid)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error('피드백 정보 로딩 실패:', error);
-    return null;
-  }
+  const { rows } = await pool.query(
+    `SELECT feedback_content FROM ${TABLE_FEEDBACKS} WHERE id_uuid_hospital = $1 ORDER BY created_at DESC LIMIT 1`,
+    [hospitalUuid]
+  );
 
   log.info(' 피드백 정보 로딩 완료');
-  return data?.feedback_content || '';
+  return rows[0]?.feedback_content || '';
 }
 
 /**
@@ -227,19 +180,13 @@ async function loadFeedback(hospitalUuid: string) {
 async function loadContacts(hospitalUuid: string) {
   log.info(' 연락처 정보 로딩:', hospitalUuid);
   
-  const { data, error } = await supabase
-    .from(TABLE_CONTACTS)
-    .select('*')
-    .eq('id_uuid_hospital', hospitalUuid)
-    .order('type, sequence');
+  const { rows } = await pool.query(
+    `SELECT * FROM ${TABLE_CONTACTS} WHERE id_uuid_hospital = $1 ORDER BY type, sequence`,
+    [hospitalUuid]
+  );
 
-  if (error) {
-    console.error('연락처 정보 로딩 실패:', error);
-    return [];
-  }
-
-  log.info(' 연락처 정보 로딩 완료:', data?.length || 0, '개');
-  return data || [];
+  log.info(' 연락처 정보 로딩 완료:', rows.length, '개');
+  return rows;
 }
 
 /**
@@ -391,4 +338,3 @@ export async function loadExistingHospitalData(
     throw error;
   }
 }
-

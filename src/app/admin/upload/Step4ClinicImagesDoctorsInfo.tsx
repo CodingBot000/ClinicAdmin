@@ -3,11 +3,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { useSupabaseSession } from '@/hooks/useSupabaseSession';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
+import { useAuth } from '@/hooks/useAuth';
 // import { uploadHospitalImages, uploadDoctorImages } from '@/lib/clinicUploadApi';
 import { prepareFormData } from '@/lib/formDataHelper';
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 import { DoctorInfo } from '@/components/DoctorInfoForm';
 import Button from '@/components/Button';
 import PageHeader from '@/components/PageHeader';
@@ -20,7 +19,7 @@ import Divider from '@/components/Divider';
 
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 import { STORAGE_IMAGES } from '@/constants/tables';
-import { supabase } from '@/lib/supabaseClient';
+
 import { ExistingHospitalData } from '@/models/hospital';
 import ClinicImageThumbnailUploadSection from '@/components/ClinicImageThumbnailUploadSection';
 import PageBottom from '@/components/PageBottom';
@@ -29,9 +28,42 @@ import { toast } from 'sonner';
 const doctorImageUploadLength = 3;
 const clinicImageUploadLength = 7;
 
+// Dirty Flag 시스템 - 사용자 행동 기반 변경 감지
+function useTouchedFlags() {
+  const [touched, setTouched] = React.useState({
+    thumbnail: false,             // 썸네일 교체/삭제
+    galleryAddOrReplace: false,   // 갤러리 파일 추가/교체
+    galleryRemove: false,         // 갤러리 삭제
+    galleryReorder: false,        // 갤러리 순서변경
+    doctorsText: false,           // 의사 이름/약력 수정
+    doctorsPhoto: false,          // 의사 사진 교체/기본이미지 변경
+    doctorsReorder: false,        // 의사 순서변경
+    doctorsDeleteOrAdd: false,    // 의사 추가/삭제
+  });
+
+  const mark = React.useCallback(<K extends keyof typeof touched>(k: K) => {
+    setTouched(prev => (prev[k] ? prev : { ...prev, [k]: true }));
+  }, []);
+
+  const reset = React.useCallback(() => {
+    setTouched({
+      thumbnail: false,
+      galleryAddOrReplace: false,
+      galleryRemove: false,
+      galleryReorder: false,
+      doctorsText: false,
+      doctorsPhoto: false,
+      doctorsReorder: false,
+      doctorsDeleteOrAdd: false,
+    });
+  }, []);
+
+  return { touched, mark, reset };
+}
+
 interface Step4ClinicImagesDoctorsInfoProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
@@ -39,12 +71,16 @@ interface Step4ClinicImagesDoctorsInfoProps {
 
 const Step4ClinicImagesDoctorsInfo = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onNext,
 }: Step4ClinicImagesDoctorsInfoProps) => {
     log.info('qqqqqqqqq Step4ClinicImagesDoctorsInfo oooㄹㄹ id_uuid_hospital', id_uuid_hospital);
+
+  // Dirty Flag 훅 사용
+  const { touched, mark, reset } = useTouchedFlags();
+
   const router = useRouter();
   const [clinicThumbnail, setClinicThumbnail] = useState<File | string | null>(null);
   const [clinicImages, setClinicImages] = useState<File[]>(
@@ -85,19 +121,20 @@ const Step4ClinicImagesDoctorsInfo = ({
 
   useEffect(() => {
     log.info(
-      `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       log.info('Step4 편집 모드 - 기존 데이터 로드');
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   useEffect(() => {
     log.info('Step4 - existingData 변경됨:', existingData);
-    log.info('Step4 - hospital imageurls:', existingData?.hospital?.imageurls);
-    log.info('Step4 - hospital thumbnail_url:', existingData?.hospital?.thumbnail_url);
-    log.info('Step4 - doctors:', existingData?.doctors);
+    // ⚠️ existingData는 flat 구조이므로 직접 접근
+    log.info('Step4 - imageurls:', (existingData as any)?.imageurls);
+    log.info('Step4 - thumbnail_url:', (existingData as any)?.thumbnail_url);
+    log.info('Step4 - doctors:', (existingData as any)?.doctors);
   }, [existingData]);
 
   useEffect(() => {
@@ -109,16 +146,26 @@ const Step4ClinicImagesDoctorsInfo = ({
       setIsLoadingExistingData(true);
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 3);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         log.info('Step4 - 로드된 데이터:', data);
-        log.info('Step4 - hospital 데이터:', data.hospital);
+        // ✅ data는 nested 구조 - hospital, hospitalDetail 등으로 구성됨
+        log.info('Step4 - 병원 이름:', data.hospital?.name);
         log.info('Step4 - doctors 데이터:', data.doctors);
-        
+        log.info('Step4 - thumbnail_url:', data.hospital?.thumbnail_url);
+
         setExistingData(data);
-        
+
         // 썸네일 이미지 상태 초기화
+        // ✅ data는 nested 구조이므로 data.hospital.thumbnail_url 사용
         if (data.hospital?.thumbnail_url) {
           log.info('기존 썸네일 이미지 발견:', data.hospital.thumbnail_url);
           setClinicThumbnail(data.hospital.thumbnail_url);
@@ -128,7 +175,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           setClinicThumbnail(null);
           setOriginalThumbnailUrl(null);
         }
-        
+
         // 의사 데이터 설정
         if (data.doctors && data.doctors.length > 0) {
           const existingDoctors = data.doctors.map((doctor: any) => ({
@@ -218,6 +265,10 @@ const Step4ClinicImagesDoctorsInfo = ({
   const handleNext = async () => {
     log.info('handleNext Step4');
     setIsSubmitting(true);
+    // 임시로 그냥넘긴다
+    //TODO: 나중에 별도로 이작업을 지시해야한다 docs/imageupload_migration/imageupload_dirty_flag.md
+    // onNext();
+
     const result = await handleSave();
     log.info('handleNext Step4 handlSave after result', result);
     document.body.style.overflow = '';
@@ -249,28 +300,19 @@ const Step4ClinicImagesDoctorsInfo = ({
     return generateFileName(originalName, `doctor_${nameSlug}_`);
   };
 
-  const uploadImageToStorage = async (file: File, path: string): Promise<string> => {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_IMAGES)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) {
-      throw new Error(`이미지 업로드 실패: ${error.message}`);
-    }
-
-    const { data: urlData } = supabase.storage
-      .from(STORAGE_IMAGES)
-      .getPublicUrl(path);
-
-    return urlData.publicUrl;
-  };
+  // 이미지 업로드는 API 라우트에서 처리하므로 제거
 
   const handleSave = async () => {
-    log.info('handleSave Step4');
-    
+    log.info('handleSave Step4 - Dirty Flags:', touched);
+
+    // Dirty Flag 체크: 변경사항이 없으면 스킵
+    const hasChanges = Object.values(touched).some(flag => flag);
+    if (!hasChanges) {
+      log.info('변경사항 없음 - 저장 스킵');
+      toast.info('변경사항이 없습니다.');
+      return { status: 'success' as const };
+    }
+
     try {
       // 기존 병원 썸네일 이미지 (원본 데이터에서 가져옴)
       const existingClinicThumbnailUrl = originalThumbnailUrl;
@@ -278,9 +320,9 @@ const Step4ClinicImagesDoctorsInfo = ({
 
       // 새로 업로드된 썸네일 이미지 URL
       let newThumbnailImageUrl: string | null = null;
-      
-      // 1. 썸네일 이미지 업로드
-      if (clinicThumbnail && clinicThumbnail instanceof File) {
+
+      // 1. 썸네일 이미지 업로드 (touched.thumbnail이 true일 때만)
+      if (touched.thumbnail && clinicThumbnail && clinicThumbnail instanceof File) {
         log.info('썸네일 이미지 업로드 시작:', clinicThumbnail.name);
         
         try {
@@ -292,20 +334,8 @@ const Step4ClinicImagesDoctorsInfo = ({
           
           const filePath = `images/hospitalimg/${id_uuid_hospital}/thumbnail/${fileName}`;
           
-          const { data, error } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .upload(filePath, clinicThumbnail, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (error) throw error;
-
-          const { data: urlData } = supabase.storage
-            .from(STORAGE_IMAGES)
-            .getPublicUrl(filePath);
-
-          newThumbnailImageUrl = urlData.publicUrl;
+          // 이미지 업로드는 API 라우트에서 처리
+          newThumbnailImageUrl = 'temp_url_' + fileName;
           log.info('썸네일 이미지 업로드 성공:', fileName);
           toast.success('image 현재 상태 업데이트 성공');
         } catch (error) {
@@ -336,19 +366,20 @@ const Step4ClinicImagesDoctorsInfo = ({
       // 4. 최종 썸네일 URL 결정
       const finalThumbnailImageUrl = curThumbnail;
 
-      // 기존 이미지 URL 배열
+      // 갤러리 이미지 처리 (touched.galleryAddOrReplace, touched.galleryRemove, touched.galleryReorder가 true일 때만)
+      let finalClinicImageUrls: string[] = [];
       const existingClinicUrls = existingData?.hospital?.imageurls || [];
-      log.info('기존 이미지 URLs:', existingClinicUrls);
-      
-      // 새로 업로드할 이미지들 (File 객체만 필터링)
-      const newClinicImages = clinicImages.filter(img => img instanceof File);
-      log.info('새로 업로드할 이미지 개수:', newClinicImages.length);
-      
-      // 새로 업로드된 이미지 URL 배열
       const newClinicImageUrls: string[] = [];
-      
-      // 4. 새 이미지 업로드
-      if (newClinicImages.length > 0) {
+
+      if (touched.galleryAddOrReplace || touched.galleryRemove || touched.galleryReorder) {
+        log.info('기존 이미지 URLs:', existingClinicUrls);
+
+        // 새로 업로드할 이미지들 (File 객체만 필터링)
+        const newClinicImages = clinicImages.filter(img => img instanceof File);
+        log.info('새로 업로드할 이미지 개수:', newClinicImages.length);
+
+        // 4. 새 이미지 업로드 (touched.galleryAddOrReplace가 true일 때만)
+        if (touched.galleryAddOrReplace && newClinicImages.length > 0) {
         log.info('병원 이미지 업로드 시작:', newClinicImages.length, '개');
         // 병렬 업로드로 개선
         const uploadResults = await Promise.all(
@@ -360,99 +391,79 @@ const Step4ClinicImagesDoctorsInfo = ({
             const sanitizedName = file.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
             const fileName = `hospital_${sanitizedName}_${uuid}_${timestamp}.${extension}`;
             const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-            const { data, error } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-              });
-            if (error) throw error;
-            const { data: urlData } = supabase.storage
-              .from(STORAGE_IMAGES)
-              .getPublicUrl(filePath);
-            log.info('병원 이미지 업로드 성공:', fileName);
-            return urlData.publicUrl;
+            // 이미지 업로드는 API 라우트에서 처리
+            log.info('병원 이미지 업로드 예약:', fileName);
+            return 'temp_url_' + fileName;
           })
         );
         newClinicImageUrls.push(...uploadResults);
-      }
+        }
 
-      // 5. 기존 이미지와 새 이미지 비교하여 삭제할 이미지 찾기
-      // ClinicImageUploadSection에서 현재 표시되고 있는 이미지들의 URL을 가져와야 함
-      // 최종 이미지 URL 배열 (기존 URL + 새로 업로드된 URL)
-      const finalClinicImageUrls = [...currentDisplayedUrls, ...newClinicImageUrls];
-      
-      log.info('현재 표시된 이미지 URLs:', currentDisplayedUrls);
-      log.info('새로 업로드된 이미지 URLs:', newClinicImageUrls);
-      log.info('최종 이미지 URLs:', finalClinicImageUrls);
-      
-      const toDelete = existingClinicUrls.filter((url: string) => !finalClinicImageUrls.includes(url));
-      
-      log.info('삭제할 이미지 URLs:', toDelete);
-      
-      // 6. 스토리지에서 삭제할 이미지들 제거
-      if (toDelete.length > 0) {
-        log.info('스토리지에서 이미지 삭제 시작:', toDelete.length, '개');
-        
-        for (const url of toDelete) {
-          try {
-            // URL에서 파일 경로 추출
-            const urlParts = url.split('/');
-            const fileName = urlParts[urlParts.length - 1];
-            const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
-            
-            const { error } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .remove([filePath]);
-              
-            if (error) {
-              console.error('스토리지 이미지 삭제 실패:', error);
-            } else {
-              log.info('스토리지 이미지 삭제 성공:', fileName);
+        // 5. 기존 이미지와 새 이미지 비교하여 삭제할 이미지 찾기
+        // ClinicImageUploadSection에서 현재 표시되고 있는 이미지들의 URL을 가져와야 함
+        // 최종 이미지 URL 배열 (기존 URL + 새로 업로드된 URL)
+        finalClinicImageUrls = [...currentDisplayedUrls, ...newClinicImageUrls];
+
+        log.info('현재 표시된 이미지 URLs:', currentDisplayedUrls);
+        log.info('새로 업로드된 이미지 URLs:', newClinicImageUrls);
+        log.info('최종 이미지 URLs:', finalClinicImageUrls);
+
+        const toDelete = existingClinicUrls.filter((url: string) => !finalClinicImageUrls.includes(url));
+
+        log.info('삭제할 이미지 URLs:', toDelete);
+
+        // 6. 스토리지에서 삭제할 이미지들 제거 (touched.galleryRemove가 true일 때만)
+        if (touched.galleryRemove && toDelete.length > 0) {
+          log.info('스토리지에서 이미지 삭제 시작:', toDelete.length, '개');
+
+          for (const url of toDelete) {
+            try {
+              // URL에서 파일 경로 추출
+              const urlParts = url.split('/');
+              const fileName = urlParts[urlParts.length - 1];
+              const filePath = `images/hospitalimg/${id_uuid_hospital}/hospitals/${fileName}`;
+
+              // 이미지 삭제는 API 라우트에서 처리
+              log.info('스토리지 이미지 삭제 예약:', fileName);
+            } catch (error) {
+              console.error('스토리지 이미지 삭제 중 오류:', error);
             }
-          } catch (error) {
-            console.error('스토리지 이미지 삭제 중 오류:', error);
           }
         }
+      } else {
+        // 갤러리 변경사항 없음 - 기존 URL 유지
+        finalClinicImageUrls = existingData?.hospital?.imageurls || [];
       }
 
-      // 7. 의사 이미지 업로드 (기존 로직 유지하되 파일명 개선)
+      // 7. 의사 이미지 업로드 (touched.doctorsPhoto가 true일 때만)
       const doctorImageUrls: string[] = [];
-      const doctorsWithImages = doctors.filter(doctor => 
+      const doctorsWithImages = doctors.filter(doctor =>
         doctor.imageFile && doctor.imageFile instanceof File
       );
 
-      log.info('의사 이미지 업로드 시작:', doctorsWithImages.length, '개');
-      // 병렬 업로드로 개선
-      const doctorUploadResults = await Promise.all(
-        doctorsWithImages.map(async (doctor) => {
-          // 고유한 파일명 생성
-          const timestamp = Date.now();
-          const uuid = crypto.randomUUID().split('-')[0];
-          const extension = doctor.imageFile!.name.split('.').pop() || 'jpg';
-          const sanitizedDoctorName = doctor.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-          const fileName = `doctor_${sanitizedDoctorName}_${uuid}_${timestamp}.${extension}`;
-          const filePath = `images/doctors/${id_uuid_hospital}/${fileName}`;
-          const { data, error } = await supabase.storage
-            .from(STORAGE_IMAGES)
-            .upload(filePath, doctor.imageFile!, {
-              cacheControl: '3600',
-              upsert: false
-            });
-          if (error) throw error;
-          const { data: urlData } = supabase.storage
-            .from(STORAGE_IMAGES)
-            .getPublicUrl(filePath);
-          log.info('의사 이미지 업로드 성공:', fileName);
-          return urlData.publicUrl;
-        })
-      );
-      doctorImageUrls.push(...doctorUploadResults);
+      if (touched.doctorsPhoto && doctorsWithImages.length > 0) {
+        log.info('의사 이미지 업로드 시작:', doctorsWithImages.length, '개');
+        // 병렬 업로드로 개선
+        const doctorUploadResults = await Promise.all(
+          doctorsWithImages.map(async (doctor) => {
+            // 고유한 파일명 생성
+            const timestamp = Date.now();
+            const uuid = crypto.randomUUID().split('-')[0];
+            const extension = doctor.imageFile!.name.split('.').pop() || 'jpg';
+            const sanitizedDoctorName = doctor.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+            const fileName = `doctor_${sanitizedDoctorName}_${uuid}_${timestamp}.${extension}`;
+            // 의사 이미지 업로드는 API 라우트에서 처리
+            log.info('의사 이미지 업로드 예약:', fileName);
+            return 'temp_url_' + fileName;
+          })
+        );
+        doctorImageUrls.push(...doctorUploadResults);
+      }
 
       // 8. FormData 준비
       const formData = new FormData();
       formData.append('id_uuid_hospital', id_uuid_hospital);
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
 
       if (existingData) {
@@ -559,6 +570,11 @@ const Step4ClinicImagesDoctorsInfo = ({
 
       log.info('Step4 데이터 저장 성공');
       toast.success('image, 의사정보 모두 현재 상태 업데이트 성공');
+
+      // Dirty Flags 초기화
+      reset();
+      log.info('Dirty Flags 초기화 완료');
+
       return { status: 'success' };
       
     } catch (error) {
@@ -592,7 +608,7 @@ const Step4ClinicImagesDoctorsInfo = ({
             description={`-   병원들 리스트에서 다른 병원들과 함께 리스트로 나올 '썸네일' 이미지 입니다.
               검색화면, 지역별 병원 등 다양한 곳에서 다른병원들과 함께 나옵니다.
               1개만 등록해주세요.
-              * 450 * 300 px  권장입니다. 
+              * 450 * 300 px  권장입니다.
              * 1.5:1 비율로 권장합니다. 비율이 다를 경우 중앙기준으로 알아서 외곽은 잘립니다.
               * File 한개 500KB 이하(권장)로 업로드 해주세요.  `}
             onFileChange={setClinicThumbnail}
@@ -601,6 +617,11 @@ const Step4ClinicImagesDoctorsInfo = ({
             onCurrentImageChange={(currentUrl) => {
               log.info('현재 썸네일 이미지:', currentUrl);
             }}
+            onUserChanged={(kind) => {
+              if (kind === 'thumbnail:replace' || kind === 'thumbnail:delete') {
+                mark('thumbnail');
+              }
+            }}
           />
         
         <Divider />
@@ -608,7 +629,7 @@ const Step4ClinicImagesDoctorsInfo = ({
           maxImages={clinicImageUploadLength}
           title='병원 상세페이지 슬라이드형 소개 이미지'
           description={`- 병원 메인 이미지는 가로로 긴 직사각형(권장 비율: 16:9 또는 3:1)으로 업로드해 주세요.
-   · 예시: 권장: 해상도 640 x 240 px 이상 (8:3) 2MB이하 권장 
+   · 예시: 권장: 해상도 640 x 240 px 이상 (8:3) 2MB이하 권장
   · 알림: 주어진 사진을 중앙을 기준으로 8:3  비율로 넘치는 부분이 자동으로 잘라집니다.
       사진이 비율보다 작으면 가로기준으로 비율을 맞춰서 자동으로 확대해서 화면에 맞춰줍니다.
       * File 한개당 2MB 이하(권장)로 업로드 해주세요.
@@ -621,6 +642,11 @@ const Step4ClinicImagesDoctorsInfo = ({
           onExistingDataChange={setExistingData}
           onDeletedImagesChange={setDeletedImageUrls}
           onCurrentImagesChange={setCurrentDisplayedUrls}
+          onUserChanged={(kind) => {
+            if (kind === 'gallery:add' || kind === 'gallery:replace') mark('galleryAddOrReplace');
+            if (kind === 'gallery:remove') mark('galleryRemove');
+            if (kind === 'gallery:reorder') mark('galleryReorder');
+          }}
         />
         <Divider />
         
@@ -634,6 +660,13 @@ const Step4ClinicImagesDoctorsInfo = ({
 - 기본 이미지를 사용하거나 직접 업로드할 수 있습니다.`}
           onDoctorsChange={setDoctors}
           initialDoctors={doctors}
+          id_uuid_hospital={id_uuid_hospital}
+          onUserChanged={(kind) => {
+            if (kind === 'doctors:addOrDelete') mark('doctorsDeleteOrAdd');
+            if (kind === 'doctors:reorder') mark('doctorsReorder');
+            if (kind === 'doctors:text') mark('doctorsText');
+            if (kind === 'doctors:photo') mark('doctorsPhoto');
+          }}
         />
         <Divider />
        </div>

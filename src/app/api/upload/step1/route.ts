@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { 
   TABLE_HOSPITAL, 
   TABLE_HOSPITAL_DETAIL, 
@@ -58,41 +58,34 @@ export async function POST(request: NextRequest) {
 
     const location = formData.get("location") as string;
 
-    const lastUnique = await supabase
-      .from(TABLE_HOSPITAL)
-      .select("id_unique")
-      .order("id_unique", { ascending: false })
-      .limit(1);
-  
-    if (!lastUnique.data || lastUnique.error) {
-      return NextResponse.json({
-        message: lastUnique.error?.code || lastUnique.error?.message || "ID 조회 실패",
-        status: "error",
-      }, { status: 500 });
-    }
-  
-    const nextIdUnique = (lastUnique.data && lastUnique.data.length > 0)
-      ? lastUnique.data[0].id_unique + 1
+    // Get the last id_unique
+    const { rows: lastUniqueRows } = await pool.query(
+      `SELECT id_unique FROM ${TABLE_HOSPITAL} ORDER BY id_unique DESC LIMIT 1`
+    );
+
+    const nextIdUnique = (lastUniqueRows && lastUniqueRows.length > 0)
+      ? lastUniqueRows[0].id_unique + 1
       : 0;
-  
-    // admin uuid 가져오기
-    const { data: adminData, error: adminError } = await supabase
-      .from(TABLE_ADMIN)
-      .select('id')
-      .eq('id_auth_user', current_user_uid)
-      .single();
-  
-    if (adminError) {
+
+    // Get admin id
+    const { rows: adminRows } = await pool.query(
+      `SELECT id FROM ${TABLE_ADMIN} WHERE id = $1`,
+      [current_user_uid]
+    );
+
+    if (!adminRows || adminRows.length === 0) {
       return NextResponse.json({
-        message: adminError.code || adminError.message,
+        message: "Admin user not found",
         status: "error",
       }, { status: 500 });
     }
-  
+
+    const adminId = adminRows[0].id;
+
     const form_hospital = {
       id_unique: nextIdUnique,
       id_uuid: id_uuid_hospital,
-      id_uuid_admin: adminData.id,
+      id_uuid_admin: adminId,
       name,
       name_en,
       searchkey,
@@ -121,256 +114,122 @@ export async function POST(request: NextRequest) {
       location,
     };
 
-    let hospitalOperation;
+    // Insert or update hospital
+    let hospitalId: number;
     if (isEditMode) {
-      hospitalOperation = await supabase
-        .from(TABLE_HOSPITAL)
-        .update(form_hospital)
-        .eq('id_uuid', id_uuid_hospital)
-        .select("*");
+      const { rows: updateRows } = await pool.query(
+        `UPDATE ${TABLE_HOSPITAL} SET 
+          id_unique=$1, id_uuid_admin=$2, name=$3, name_en=$4, searchkey=$5, search_key=$6,
+          address_full_road=$7, address_full_road_en=$8, address_full_jibun=$9, address_full_jibun_en=$10,
+          address_si=$11, address_si_en=$12, address_gu=$13, address_gu_en=$14, address_dong=$15, address_dong_en=$16,
+          bname=$17, bname_en=$18, building_name=$19, building_name_en=$20, zipcode=$21,
+          latitude=$22, longitude=$23, address_detail=$24, address_detail_en=$25, directions_to_clinic=$26, directions_to_clinic_en=$27, location=$28
+         WHERE id_uuid = $29 RETURNING id_unique`,
+        [nextIdUnique, adminId, name, name_en, searchkey, search_key,
+         address_full_road, address_full_road_en, address_full_jibun, address_full_jibun_en,
+         address_si, address_si_en, address_gu, address_gu_en, address_dong, address_dong_en,
+         bname, bname_en, building_name, building_name_en, zipcode,
+         latitude, longitude, address_detail, address_detail_en, directions_to_clinic, directions_to_clinic_en, location, id_uuid_hospital]
+      );
+      hospitalId = updateRows[0]?.id_unique;
     } else {
-      hospitalOperation = await supabase
-        .from(TABLE_HOSPITAL)
-        .insert(form_hospital)
-        .select("*");
+      const { rows: insertRows } = await pool.query(
+        `INSERT INTO ${TABLE_HOSPITAL} 
+          (id_unique, id_uuid, id_uuid_admin, name, name_en, searchkey, search_key,
+           address_full_road, address_full_road_en, address_full_jibun, address_full_jibun_en,
+           address_si, address_si_en, address_gu, address_gu_en, address_dong, address_dong_en,
+           bname, bname_en, building_name, building_name_en, zipcode,
+           latitude, longitude, address_detail, address_detail_en, directions_to_clinic, directions_to_clinic_en, location)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
+         RETURNING id_unique`,
+        [nextIdUnique, id_uuid_hospital, adminId, name, name_en, searchkey, search_key,
+         address_full_road, address_full_road_en, address_full_jibun, address_full_jibun_en,
+         address_si, address_si_en, address_gu, address_gu_en, address_dong, address_dong_en,
+         bname, bname_en, building_name, building_name_en, zipcode,
+         latitude, longitude, address_detail, address_detail_en, directions_to_clinic, directions_to_clinic_en, location]
+      );
+      hospitalId = insertRows[0]?.id_unique;
     }
-  
-    if (hospitalOperation.error) {
-      return NextResponse.json({
-        message: hospitalOperation.error.code || hospitalOperation.error.message,
-        status: "error",
-      }, { status: 500 });
-    }
-  
-    // hospital_details 테이블 입력
+
+    // hospital_details 데이터 생성
     const sns_content_agreement_raw = formData.get("sns_content_agreement") as string;
     const sns_content_agreement = sns_content_agreement_raw === 'null' ? null : Number(sns_content_agreement_raw) as 1 | 0;
-  
-    const createHospitalDetailData = (formData: FormData, id_uuid: string, id_hospital: number) => {
-      const introduction = formData.get("introduction") as string || '';
-      const introduction_en = formData.get("introduction_en") as string || '';
-      return {
-        id_hospital: id_hospital,
-        id_uuid_hospital: id_uuid,
-        email: formData.get("email") as string || '',
-        tel: formData.get("tel") as string || '',
-        kakao_talk: formData.get("kakao_talk") as string || '',
-        line: formData.get("line") as string || '',
-        we_chat: formData.get("we_chat") as string || '',
-        whats_app: formData.get("whats_app") as string || '',
-        telegram: formData.get("telegram") as string || '',
-        facebook_messenger: formData.get("facebook_messenger") as string || '',
-        instagram: formData.get("instagram") as string || '',
-        tiktok: formData.get("tiktok") as string || '',
-        youtube: formData.get("youtube") as string || '',
-        other_channel: formData.get("other_channel") as string || '',
-        map: '',
-        etc: '',
-        sns_content_agreement: sns_content_agreement,
-        introduction: introduction,
-        introduction_en: introduction_en,
-      };
+
+    const introduction = formData.get("introduction") as string || '';
+    const introduction_en = formData.get("introduction_en") as string || '';
+    
+    const hospitalDetailData = {
+      id_hospital: hospitalId,
+      id_uuid_hospital: id_uuid_hospital,
+      email: formData.get("email") as string || '',
+      tel: formData.get("tel") as string || '',
+      kakao_talk: formData.get("kakao_talk") as string || '',
+      line: formData.get("line") as string || '',
+      we_chat: formData.get("we_chat") as string || '',
+      whats_app: formData.get("whats_app") as string || '',
+      telegram: formData.get("telegram") as string || '',
+      facebook_messenger: formData.get("facebook_messenger") as string || '',
+      instagram: formData.get("instagram") as string || '',
+      tiktok: formData.get("tiktok") as string || '',
+      youtube: formData.get("youtube") as string || '',
+      other_channel: formData.get("other_channel") as string || '',
+      map: '',
+      etc: '',
+      sns_content_agreement: sns_content_agreement,
+      introduction: introduction,
+      introduction_en: introduction_en,
     };
-  
-    // 먼저 기존 데이터가 있는지 확인
-    const { data: existingDetail, error: checkError } = await supabase
-      .from(TABLE_HOSPITAL_DETAIL)
-      .select('*')
-      .eq('id_uuid_hospital', id_uuid_hospital)
-      .maybeSingle();
-  
-    if (checkError) {
-      return NextResponse.json({
-        message: checkError.code || checkError.message,
-        status: "error",
-      }, { status: 500 });
-    }
-  
-    const { data: hospitalData, error: hospitalError } = await supabase
-      .from(TABLE_HOSPITAL)
-      .select("id_unique")
-      .eq('id_uuid', id_uuid_hospital)
-      .single();
 
-    if (hospitalError) {
-      return NextResponse.json({
-        message: hospitalError.code || hospitalError.message,
-        status: "error",
-      }, { status: 500 });
-    }
-  
-    const id_hospital = hospitalData.id_unique;
+    // 기존 데이터 확인
+    const { rows: existingRows } = await pool.query(
+      `SELECT id FROM ${TABLE_HOSPITAL_DETAIL} WHERE id_uuid_hospital = $1`,
+      [id_uuid_hospital]
+    );
 
-    let detailOperation;
-    if (isEditMode && existingDetail) {
-      const updateData = createHospitalDetailData(formData, id_uuid_hospital, id_hospital);
-      
-      detailOperation = await supabase
-        .from(TABLE_HOSPITAL_DETAIL)
-        .update(updateData)
-        .eq('id_uuid_hospital', id_uuid_hospital);
+    // Insert or update hospital details
+    if (isEditMode && existingRows && existingRows.length > 0) {
+      await pool.query(
+        `UPDATE ${TABLE_HOSPITAL_DETAIL} SET 
+          email=$1, tel=$2, kakao_talk=$3, line=$4, we_chat=$5, whats_app=$6, telegram=$7,
+          facebook_messenger=$8, instagram=$9, tiktok=$10, youtube=$11, other_channel=$12,
+          sns_content_agreement=$13, introduction=$14, introduction_en=$15
+         WHERE id_uuid_hospital = $16`,
+        [hospitalDetailData.email, hospitalDetailData.tel, hospitalDetailData.kakao_talk, hospitalDetailData.line,
+         hospitalDetailData.we_chat, hospitalDetailData.whats_app, hospitalDetailData.telegram,
+         hospitalDetailData.facebook_messenger, hospitalDetailData.instagram, hospitalDetailData.tiktok,
+         hospitalDetailData.youtube, hospitalDetailData.other_channel,
+         hospitalDetailData.sns_content_agreement, hospitalDetailData.introduction, hospitalDetailData.introduction_en,
+         id_uuid_hospital]
+      );
     } else {
-      const insertData = createHospitalDetailData(formData, id_uuid_hospital, id_hospital);
+      await pool.query(
+        `INSERT INTO ${TABLE_HOSPITAL_DETAIL} 
+          (id_hospital, id_uuid_hospital, email, tel, kakao_talk, line, we_chat, whats_app, telegram,
+           facebook_messenger, instagram, tiktok, youtube, other_channel, sns_content_agreement, introduction, introduction_en)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        [hospitalDetailData.id_hospital, hospitalDetailData.id_uuid_hospital, hospitalDetailData.email, hospitalDetailData.tel,
+         hospitalDetailData.kakao_talk, hospitalDetailData.line, hospitalDetailData.we_chat, hospitalDetailData.whats_app,
+         hospitalDetailData.telegram, hospitalDetailData.facebook_messenger, hospitalDetailData.instagram, hospitalDetailData.tiktok,
+         hospitalDetailData.youtube, hospitalDetailData.other_channel, hospitalDetailData.sns_content_agreement,
+         hospitalDetailData.introduction, hospitalDetailData.introduction_en]
+      );
+    }
 
-      detailOperation = await supabase
-        .from(TABLE_HOSPITAL_DETAIL)
-        .insert([insertData]);
-    }
-  
-    if (detailOperation.error) {
-      let userMessage = "병원 정보 저장 중 오류가 발생했습니다.";
-      
-      if (detailOperation.error.code === '23505') {
-        userMessage = "이미 등록된 병원 정보입니다. 중복된 데이터가 있는지 확인해주세요.";
-      } else if (detailOperation.error.code === '23503') {
-        userMessage = "연결된 데이터에 문제가 있습니다. 관리자에게 문의해주세요.";
-      } else if (detailOperation.error.code === '22P02') {
-        userMessage = "입력된 데이터 형식이 올바르지 않습니다. 숫자 필드를 확인해주세요.";
-      } else if (detailOperation.error.message.includes('latitude') || detailOperation.error.message.includes('longitude')) {
-        userMessage = "위치 정보(위도/경도) 형식이 올바르지 않습니다. 주소를 다시 검색해주세요.";
-      } else if (detailOperation.error.message.includes('double precision')) {
-        userMessage = "숫자 형식 데이터에 오류가 있습니다. 입력값을 확인해주세요.";
-      }
-      
-      return NextResponse.json({
-        message: userMessage,
-        status: "error",
-        errorDetails: {
-          code: detailOperation.error.code,
-          message: detailOperation.error.message,
-          operation: isEditMode && existingDetail ? "업데이트" : "신규 등록"
-        }
-      }, { status: 500 });
-    }
-  
     // admin 테이블의 id_uuid_hospital 업데이트
     if (current_user_uid) {
-      const { data: currentAdmin, error: adminSelectError } = await supabase
-        .from(TABLE_ADMIN)
-        .select("id, id_uuid_hospital")
-        .eq("id_auth_user", current_user_uid)
-        .maybeSingle();
-      
-      if (adminSelectError) {
-        console.error("Admin 정보 조회 실패:", adminSelectError);
-      } else if (currentAdmin && !currentAdmin.id_uuid_hospital) {
-        const { error: adminUpdateError } = await supabase
-          .from(TABLE_ADMIN)
-          .update({ id_uuid_hospital: id_uuid_hospital })
-          .eq("id_auth_user", current_user_uid);
-        
-        if (adminUpdateError) {
-          console.error("Admin 테이블 업데이트 실패:", adminUpdateError);
-        }
+      const { rows: currentAdminRows } = await pool.query(
+        `SELECT id_uuid_hospital FROM ${TABLE_ADMIN} WHERE id = $1`,
+        [current_user_uid]
+      );
+
+      if (currentAdminRows && currentAdminRows.length > 0 && !currentAdminRows[0].id_uuid_hospital) {
+        await pool.query(
+          `UPDATE ${TABLE_ADMIN} SET id_uuid_hospital = $1 WHERE id = $2`,
+          [id_uuid_hospital, current_user_uid]
+        );
       }
     }
-  
-    // // 피드백이 있는 경우 저장
-    // const feedback = formData.get('feedback');
-    // if (feedback) {
-    //   const { error: feedbackError } = await supabase
-    //     .from(TABLE_FEEDBACKS)
-    //     .insert([
-    //       {
-    //         feedback_content: feedback,
-    //         id_uuid_hospital: id_uuid_hospital,
-    //       },
-    //     ]);
-    
-    //   if (feedbackError) {
-    //     console.error('피드백 저장 실패:', feedbackError);
-    //   }
-    // }
 
-    // 연락처 정보 저장
-    // const contactsInfoRaw = formData.get('contacts_info') as string;
-    // if (contactsInfoRaw) {
-    //   try {
-    //     const contactsInfo = JSON.parse(contactsInfoRaw);
-
-    //     // 기존 연락처 정보 삭제 (편집 모드인 경우)
-    //     if (isEditMode) {
-    //       await supabase
-    //         .from(TABLE_CONTACTS)
-    //         .delete()
-    //         .eq('id_uuid_hospital', id_uuid_hospital);
-    //     }
-
-    //     const contactsToInsert: any[] = [];
-
-    //     // 진료문의 전화 번호 
-    //     if (contactsInfo.consultationPhone && contactsInfo.consultationPhone.trim() !== '') {
-    //       contactsToInsert.push({
-    //         id_uuid_hospital: id_uuid_hospital,
-    //         type: 'consultation_phone',
-    //         value: contactsInfo.consultationPhone.trim(),
-    //         sequence: 1
-    //       });
-    //     }
-
-    //     // 상담 관리자 전화번호 (배열)
-    //     if (contactsInfo.consultationManagerPhones && Array.isArray(contactsInfo.consultationManagerPhones)) {
-    //       contactsInfo.consultationManagerPhones.forEach((phone: string, index: number) => {
-    //         if (phone && phone.trim() !== '') {
-    //           contactsToInsert.push({
-    //             id_uuid_hospital: id_uuid_hospital,
-    //             type: 'consult_manager_phone',
-    //             value: phone.trim(),
-    //             sequence: index
-    //           });
-    //         }
-    //       });
-    //     }
-        
-    //     // SMS 발신 번호
-    //     if (contactsInfo.smsPhone && contactsInfo.smsPhone.trim() !== '') {
-    //       contactsToInsert.push({
-    //         id_uuid_hospital: id_uuid_hospital,
-    //         type: 'sms_phone',
-    //         value: contactsInfo.smsPhone.trim(),
-    //         sequence: 1
-    //       });
-    //     }
-
-    //     // 이벤트 관리자 번호
-    //     if (contactsInfo.eventManagerPhone && contactsInfo.eventManagerPhone.trim() !== '') {
-    //       contactsToInsert.push({
-    //         id_uuid_hospital: id_uuid_hospital,
-    //         type: 'event_manager_phone',
-    //         value: contactsInfo.eventManagerPhone.trim(),
-    //         sequence: 1
-    //       });
-    //     }
-
-    //     // 마케팅 이메일 (배열)
-    //     if (contactsInfo.marketingEmails && Array.isArray(contactsInfo.marketingEmails)) {
-    //       contactsInfo.marketingEmails.forEach((email: string, index: number) => {
-    //         if (email && email.trim() !== '') {
-    //           contactsToInsert.push({
-    //             id_uuid_hospital: id_uuid_hospital,
-    //             type: 'marketing_email',
-    //             value: email.trim(),
-    //             sequence: index
-    //           });
-    //         }
-    //       });
-    //     }
-
-    //     // 연락처 정보 저장
-    //     if (contactsToInsert.length > 0) {
-    //       const { error: contactsError } = await supabase
-    //         .from(TABLE_CONTACTS)
-    //         .insert(contactsToInsert);
-
-    //       if (contactsError) {
-    //         console.error('연락처 정보 저장 실패:', contactsError);
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error('연락처 정보 파싱 실패:', error);
-    //   }
-    // }
-  
     return NextResponse.json({
       message: "성공적으로 등록되었습니다.",
       status: "success",
@@ -378,8 +237,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Step1 API 오류:', error);
+    let userMessage = "서버 오류가 발생했습니다.";
+    
+    const errorMessage = (error as any)?.message || '';
+    
+    if (errorMessage.includes('23505')) {
+      userMessage = "이미 등록된 병원 정보입니다. 중복된 데이터가 있는지 확인해주세요.";
+    } else if (errorMessage.includes('23503')) {
+      userMessage = "연결된 데이터에 문제가 있습니다. 관리자에게 문의해주세요.";
+    } else if (errorMessage.includes('22P02')) {
+      userMessage = "입력된 데이터 형식이 올바르지 않습니다. 숫자 필드를 확인해주세요.";
+    } else if (errorMessage.includes('latitude') || errorMessage.includes('longitude')) {
+      userMessage = "위치 정보(위도/경도) 형식이 올바르지 않습니다. 주소를 다시 검색해주세요.";
+    }
+    
     return NextResponse.json({
-      message: "서버 오류가 발생했습니다.",
+      message: userMessage,
       status: "error",
     }, { status: 500, headers: corsHeaders });
   }

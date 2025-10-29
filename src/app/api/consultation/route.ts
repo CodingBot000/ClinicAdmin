@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { TABLE_CONSULTATION_SUBMISSIONS } from '@/constants/tables';
 import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils';
 
@@ -13,26 +13,23 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const limit = searchParams.get('limit');
 
-    let query = supabase
-      .from(TABLE_CONSULTATION_SUBMISSIONS)
-      .select('*')
-      .order('created_at', { ascending: false });
-
+    let queryText = `SELECT * FROM ${TABLE_CONSULTATION_SUBMISSIONS}`;
+    const queryParams: any[] = [];
+    
     // Apply filters
     if (status) {
-      query = query.eq('status', status);
+      queryText += ' WHERE status = $1';
+      queryParams.push(status);
     }
-
+    
+    queryText += ' ORDER BY created_at DESC';
+    
     if (limit) {
-      query = query.limit(parseInt(limit, 10));
+      queryText += ` LIMIT $${queryParams.length + 1}`;
+      queryParams.push(parseInt(limit, 10));
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Consultation fetch error:', error);
-      return createErrorResponse('Failed to fetch consultations', 500);
-    }
+    const { rows: data } = await pool.query(queryText, queryParams);
 
     // Sort data by status priority (New > Retry > Done) and then by date
     const sortedData = (data || []).sort((a, b) => {
@@ -89,17 +86,20 @@ export async function PATCH(request: NextRequest) {
       updateData.status = status;
     }
 
-    const { data, error } = await supabase
-      .from(TABLE_CONSULTATION_SUBMISSIONS)
-      .update(updateData)
-      .eq('id_uuid', id_uuid)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Consultation update error:', error);
-      return createErrorResponse('Failed to update consultation', 500);
+    const entries = Object.entries(updateData);
+    const sets = entries.map(([k], i) => `${k} = $${i + 1}`).join(', ');
+    const params = entries.map(([, v]) => v);
+    
+    const { rows } = await pool.query(
+      `UPDATE ${TABLE_CONSULTATION_SUBMISSIONS} SET ${sets} WHERE id_uuid = $${params.length + 1} RETURNING *`,
+      [...params, id_uuid]
+    );
+    
+    if (rows.length === 0) {
+      return createErrorResponse('Consultation not found', 404);
     }
+    
+    const data = rows[0];
 
     return createSuccessResponse(
       { consultation: data },

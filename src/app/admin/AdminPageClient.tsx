@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { useSendbirdUnreadCount } from '@/hooks/useSendbirdUnreadCount';
 
@@ -9,24 +9,33 @@ interface AdminPageClientProps {
   hasClinicInfo: boolean;
 }
 
+const SUPER_ADMIN_EMAIL = 'billionaireadmin@beautylink.com';
+
 export default function AdminPageClient({
   hasClinicInfo,
 }: AdminPageClientProps) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const { totalUnreadCount } = useSendbirdUnreadCount();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
-    getCurrentUser();
-  }, []);
+    if (user) {
+      getCurrentUser();
+    }
+  }, [user]);
 
   const getCurrentUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
         const username = user.email.split('@')[0];
         console.log('username:', username);
         setCurrentUser(username);
+
+        // 슈퍼관리자 확인
+        setIsSuperAdmin(user.email === SUPER_ADMIN_EMAIL);
+        console.log('[AdminPageClient] 슈퍼관리자 여부:', user.email === SUPER_ADMIN_EMAIL);
       }
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -52,8 +61,12 @@ export default function AdminPageClient({
     router.push('/admin/chat');
   };
 
+  const handleCreateAccount = () => {
+    router.push('/admin/create-account');
+  };
+
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await logout();
     router.push('/admin/login');
   };
 
@@ -100,6 +113,15 @@ export default function AdminPageClient({
           className="w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 bg-purple-600 hover:bg-purple-700 text-white"
         >
           문진표 요청 조회하기
+        </button>
+      )}
+
+      {isSuperAdmin && (
+        <button
+          onClick={handleCreateAccount}
+          className="w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          병원 계정 신규 발급
         </button>
       )}
 

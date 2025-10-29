@@ -37,6 +37,7 @@ interface DoctorInfoFormProps {
   initialData?: DoctorInfo;
   onClose: () => void;
   onSave: (doctorInfo: DoctorInfo) => void;
+  onUserChanged?: (kind: 'doctors:text' | 'doctors:photo') => void;
 }
 
 const DEFAULT_IMAGES = [
@@ -57,6 +58,7 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   initialData,
   onClose,
   onSave,
+  onUserChanged,
 }) => {
   const [name, setName] = useState('');
   const [nameEn, setNameEn] = useState('');
@@ -123,15 +125,18 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
 
       setImageFile(file);
 
+      // Dirty Flag: 의사 사진 변경
+      onUserChanged?.('doctors:photo');
+
       const fileReader = new FileReader();
       fileReader.onload = () => {
         const result = fileReader.result as string;
         setImagePreview(result);
       };
-      // 새로 추가한 이미지는 base64 데이터로 생성 
+      // 새로 추가한 이미지는 base64 데이터로 생성
       fileReader.readAsDataURL(file);
     },
-    [useDefaultImage],
+    [useDefaultImage, onUserChanged],
   );
 
   // dropzone 설정
@@ -156,11 +161,14 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
+    // Dirty Flag: 의사 사진 삭제
+    onUserChanged?.('doctors:photo');
+
     // 업로드된 이미지와 미리보기 제거
     setImageFile(null);
     setImagePreview('');
-    
+
     // 디폴트 이미지 상태도 초기화 (체크박스 해제와 같은 상태)
     setUseDefaultImage(false);
     setDefaultImageType(undefined);
@@ -171,6 +179,12 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
     (type: 'man' | 'woman') =>
     (e: ChangeEvent<HTMLInputElement>) => {
       const checked = e.target.checked;
+
+      // Dirty Flag: 기본 이미지 선택
+      if (checked) {
+        onUserChanged?.('doctors:photo');
+      }
+
       setUseDefaultImage(checked);
       setDefaultImageType(type);
 
@@ -424,7 +438,10 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
             <input
               type='text'
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                onUserChanged?.('doctors:text');
+              }}
               placeholder='의사 이름을 입력하세요'
               className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
             />
@@ -436,7 +453,10 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
             <input
               type='text'
               value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
+              onChange={(e) => {
+                setNameEn(e.target.value);
+                onUserChanged?.('doctors:text');
+              }}
               placeholder='insert doctor name in English'
               className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
             />
@@ -452,7 +472,10 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
               </label>
               <textarea
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  onUserChanged?.('doctors:text');
+                }}
                 placeholder="의사 소개를 입력하세요"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-y min-h-40"
                 style={{ whiteSpace: "pre-wrap" }}
@@ -466,7 +489,10 @@ const DoctorInfoForm: React.FC<DoctorInfoFormProps> = ({
               </label>
               <textarea
                 value={bioEn}
-                onChange={(e) => setBioEn(e.target.value)}
+                onChange={(e) => {
+                  setBioEn(e.target.value);
+                  onUserChanged?.('doctors:text');
+                }}
                 placeholder="insert bio in English"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-y min-h-40"
                 style={{ whiteSpace: "pre-wrap" }}

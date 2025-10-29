@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { 
   TABLE_HOSPITAL,
   TABLE_HOSPITAL_DETAIL
@@ -41,47 +41,21 @@ export async function GET(request: NextRequest) {
     log.info('유효성 검사 시작:', { id_uuid });
 
     // 1. TABLE_HOSPITAL에서 id_uuid로 데이터 존재 여부 확인
-    const { data: hospitalData, error: hospitalError } = await supabase
-      .from(TABLE_HOSPITAL)
-      .select('id_uuid')
-      .eq('id_uuid', id_uuid)
-      .single();
+    const { rows: hospitalRows } = await pool.query(
+      `SELECT id_uuid FROM ${TABLE_HOSPITAL} WHERE id_uuid = $1`,
+      [id_uuid]
+    );
 
-    if (hospitalError && hospitalError.code !== 'PGRST116') { // PGRST116은 "not found" 에러
-      console.error('병원 테이블 조회 실패:', hospitalError);
-      return NextResponse.json({
-        message: `병원 테이블 조회 실패: ${hospitalError.message}`,
-        status: "error",
-        data: {
-          hospital_exists: false,
-          hospital_detail_exists: false
-        }
-      }, { status: 500, headers: corsHeaders });
-    }
-
-    const hospitalExists = !!hospitalData;
+    const hospitalExists = hospitalRows.length > 0;
     log.info('병원 테이블 존재 여부:', hospitalExists);
 
     // 2. TABLE_HOSPITAL_DETAIL에서 id_uuid_hospital로 데이터 존재 여부 확인
-    const { data: hospitalDetailData, error: hospitalDetailError } = await supabase
-      .from(TABLE_HOSPITAL_DETAIL)
-      .select('id_uuid_hospital')
-      .eq('id_uuid_hospital', id_uuid)
-      .single();
+    const { rows: hospitalDetailRows } = await pool.query(
+      `SELECT id_uuid_hospital FROM ${TABLE_HOSPITAL_DETAIL} WHERE id_uuid_hospital = $1`,
+      [id_uuid]
+    );
 
-    if (hospitalDetailError && hospitalDetailError.code !== 'PGRST116') { // PGRST116은 "not found" 에러
-      console.error('병원 상세 테이블 조회 실패:', hospitalDetailError);
-      return NextResponse.json({
-        message: `병원 상세 테이블 조회 실패: ${hospitalDetailError.message}`,
-        status: "error",
-        data: {
-          hospital_exists: hospitalExists,
-          hospital_detail_exists: false
-        }
-      }, { status: 500, headers: corsHeaders });
-    }
-
-    const hospitalDetailExists = !!hospitalDetailData;
+    const hospitalDetailExists = hospitalDetailRows.length > 0;
     log.info('병원 상세 테이블 존재 여부:', hospitalDetailExists);
 
     // 결과 반환

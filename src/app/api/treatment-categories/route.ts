@@ -1,7 +1,7 @@
 import { CategoryNode } from '@/models/category';
 import { NextResponse } from 'next/server';
 import { TABLE_TREATMENT_INFO } from '@/constants/tables';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import "@/utils/logger"; 
 
 export async function GET() {
@@ -9,19 +9,14 @@ export async function GET() {
   log.info("Treatment Categories API 시작:", new Date().toISOString());
   
   const dbQueryStart = Date.now();
-  const { data, error } = await supabase
-    .from(TABLE_TREATMENT_INFO)
-    .select('code, department, level1, name, unit');
+  const { rows: data } = await pool.query(
+    `SELECT code, department, level1, name, unit FROM ${TABLE_TREATMENT_INFO}`
+  );
   
   const dbQueryEnd = Date.now();
   const dbQueryTime = dbQueryEnd - dbQueryStart;
   log.info(` DB 쿼리 시간: ${dbQueryTime}ms`);
   log.info(` 조회된 데이터 개수: ${data?.length || 0}`);
-
-  if (error) {
-    console.error(" DB 쿼리 에러:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
 
   const transformStart = Date.now();
   log.info("데이터 변환 시작");

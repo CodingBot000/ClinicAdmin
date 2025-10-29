@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { 
   TABLE_HOSPITAL_DETAIL, 
   TABLE_HOSPITAL_BUSINESS_HOUR
@@ -84,45 +84,44 @@ export async function POST(request: NextRequest) {
     log.info("영업시간 데이터:", businessHourInserts);
 
     // 먼저 기존 데이터가 있는지 확인
-    const { data: existingBusinessHour, error: checkErrorBusinessHour } = await supabase
-      .from(TABLE_HOSPITAL_BUSINESS_HOUR)
-      .select('*')
-      .eq('id_uuid_hospital', id_uuid_hospital);
-    
-    console.error("hospital_business_hours 조회 중 에러:", checkErrorBusinessHour);
+    const { rows: existingBusinessHour } = await pool.query(
+      `SELECT * FROM ${TABLE_HOSPITAL_BUSINESS_HOUR} WHERE id_uuid_hospital = $1`,
+      [id_uuid_hospital]
+    );
 
     if (existingBusinessHour && existingBusinessHour.length > 0) {
       log.info("hospital_business_hours 데이터가 존재");
       for (const form_business_hour of businessHourInserts) {
         const { day_of_week } = form_business_hour;
       
-        const { data, error } = await supabase
-          .from(TABLE_HOSPITAL_BUSINESS_HOUR)
-          .update({
-            open_time: form_business_hour.open_time,
-            close_time: form_business_hour.close_time,
-            status: form_business_hour.status,
-          })
-          .eq('id_uuid_hospital', id_uuid_hospital)
-          .eq('day_of_week', day_of_week);
-      
-        if (error) {
+        try {
+          await pool.query(
+            `UPDATE ${TABLE_HOSPITAL_BUSINESS_HOUR} 
+             SET open_time=$1, close_time=$2, status=$3 
+             WHERE id_uuid_hospital=$4 AND day_of_week=$5`,
+            [form_business_hour.open_time, form_business_hour.close_time, form_business_hour.status, id_uuid_hospital, day_of_week]
+          );
+          log.info(`요일 ${day_of_week} 업데이트 성공`);
+        } catch (error) {
           console.error(`요일 ${day_of_week} 업데이트 실패:`, error);
-        } else {
-          log.info(`요일 ${day_of_week} 업데이트 성공:`, data);
         }
       }
     } else {
       log.info("hospital_business_hours 데이터가 존재하지 않습니다. 추가할 데이터: ", businessHourInserts);
-      let operateBusinessHour = await supabase
-        .from(TABLE_HOSPITAL_BUSINESS_HOUR)
-        .insert(businessHourInserts)
-        .select("*");
-
-      if (operateBusinessHour.error) {
-        log.info("error 3 : ", operateBusinessHour.error);
+      
+      try {
+        for (const item of businessHourInserts) {
+          await pool.query(
+            `INSERT INTO ${TABLE_HOSPITAL_BUSINESS_HOUR} (id_uuid_hospital, day_of_week, open_time, close_time, status)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [item.id_uuid_hospital, item.day_of_week, item.open_time, item.close_time, item.status]
+          );
+        }
+        log.info("영업시간 데이터 삽입 완료");
+      } catch (error) {
+        console.error("영업시간 데이터 삽입 실패:", error);
         return NextResponse.json({
-          message: operateBusinessHour.error.code || operateBusinessHour.error.message,
+          message: "영업시간 데이터 저장 실패",
           status: "error",
         }, { status: 500 });
       }
@@ -163,36 +162,33 @@ export async function POST(request: NextRequest) {
     log.info("변환된 extra_options:", extra_options);
     
     // 먼저 기존 데이터가 있는지 확인
-    const { data: existingDetail, error: checkError } = await supabase
-      .from(TABLE_HOSPITAL_DETAIL)
-      .select('*')
-      .eq('id_uuid_hospital', id_uuid_hospital)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error("hospital_details 조회 중 에러:", checkError);
-      return NextResponse.json({
-        message: checkError.code || checkError.message,
-        status: "error",
-      }, { status: 500 });
-    }
+    const { rows: existingDetail } = await pool.query(
+      `SELECT id FROM ${TABLE_HOSPITAL_DETAIL} WHERE id_uuid_hospital = $1`,
+      [id_uuid_hospital]
+    );
 
-    if (!existingDetail) {
+    if (!existingDetail || existingDetail.length === 0) {
       return NextResponse.json({
-        message: "병원 정보가 존재하지 않아 업데이트 할수 없습니다.(uploadActionStep2)",
+        message: "병원 정보가 존재하지 않아 업데이트 할수 없습니다.(uploadActionStep3)",
         status: "error",
       }, { status: 400 });
     }
 
-    let detailOperation = await supabase
-      .from(TABLE_HOSPITAL_DETAIL)
-      .update(extra_options)
-      .eq('id_uuid_hospital', id_uuid_hospital);
-    
-    if (detailOperation.error) {
-      log.info("hospitalDetail operation error:", detailOperation.error);
+    try {
+      await pool.query(
+        `UPDATE ${TABLE_HOSPITAL_DETAIL} 
+         SET has_private_recovery_room=$1, has_parking=$2, has_cctv=$3, has_night_counseling=$4, 
+             has_female_doctor=$5, has_anesthesiologist=$6, specialist_count=$7
+         WHERE id_uuid_hospital=$8`,
+        [extra_options.has_private_recovery_room, extra_options.has_parking, extra_options.has_cctv, 
+         extra_options.has_night_counseling, extra_options.has_female_doctor, extra_options.has_anesthesiologist,
+         extra_options.specialist_count, id_uuid_hospital]
+      );
+      log.info("hospitalDetail operation 성공");
+    } catch (error) {
+      log.info("hospitalDetail operation error:", error);
       return NextResponse.json({
-        message: detailOperation.error.code || detailOperation.error.message,
+        message: "병원 추가 정보 업데이트 실패",
         status: "error",
       }, { status: 500 });
     }
@@ -203,7 +199,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Step2 API 오류:', error);
+    console.error('Step3 API 오류:', error);
     return NextResponse.json({
       message: "서버 오류가 발생했습니다.",
       status: "error",

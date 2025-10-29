@@ -6,14 +6,13 @@ import { useEffect, useState } from 'react';
 import Button from '@/components/Button';
 
 
-import { supabase } from '@/lib/supabaseClient';
+
 import { useQuery } from '@tanstack/react-query';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import useModal from '@/hooks/useModal';
 
 import { useRouter } from 'next/navigation';
 
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
@@ -21,7 +20,7 @@ import Divider from '@/components/Divider';
 
 import ContactsInfoSection from '../../../components/ContactsInfoSection';
 
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
 
 import { ContactsInfo } from '@/models/basicinfo';
 import { validateEmail } from '@/utils/validate-check/validate-forms';
@@ -31,7 +30,7 @@ import PageBottom from '@/components/PageBottom';
 interface Step2BasicContactInfoProps {
   id_uuid_hospital: string;
   setIdUUIDHospital: (id_uuid_hospital: string) => void;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
@@ -42,7 +41,7 @@ const Step2BasicContactInfo = ({
   setIdUUIDHospital,
   onPrev,
   onNext,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
 }: Step2BasicContactInfoProps) => {
   
@@ -115,12 +114,15 @@ const Step2BasicContactInfo = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `Step1 - isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `Step2 - isEditMode: ${isEditMode}, id_admin: ${id_admin}, id_uuid_hospital: ${id_uuid_hospital}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
+      log.info('Step2 - 모든 조건 충족, 데이터 로딩 시작');
       loadExistingDataForEdit();
+    } else if (isEditMode && id_admin && !id_uuid_hospital) {
+      log.warn('Step2 - id_uuid_hospital을 기다리는 중...');
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   // hospitalName 상태를 basicInfo.name과 동기화
   // useEffect(() => {
@@ -130,20 +132,27 @@ const Step2BasicContactInfo = ({
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
-      log.info('Step1 - 편집 모드 - 기존 데이터 로딩 시작');
+      log.info('Step2 - 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 100);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info('Step2 - 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
-        log.info('Step1 - 편집 모드 - 기존 데이터 로딩 완료');
+        log.info('Step2 - 편집 모드 - 기존 데이터 로딩 완료');
       } else {
-        log.info('Step1 - 편집 모드 - 기존 데이터가 없습니다');
+        log.info('Step2 - 편집 모드 - 기존 데이터가 없습니다');
       }
     } catch (error) {
       console.error(
-        'Step1 - 편집 모드 - 데이터 로딩 실패:',
+        'Step2 - 편집 모드 - 데이터 로딩 실패:',
         error,
       );
       setFormState({
@@ -160,18 +169,18 @@ const Step2BasicContactInfo = ({
   const populateFormWithExistingData = (
     existingData: ExistingHospitalData,
   ) => {
-    log.info('Step1 - 폼에 기존 데이터 적용 시작');
+    log.info('Step2 - 폼에 기존 데이터 적용 시작');
 
     try {
       // 1. 데이터를 폼 형식으로 변환
       const formData = mapExistingDataToFormValues(existingData);
-      log.info('Step1 - 변환된 폼 데이터:', formData);
+      log.info('Step2 - 변환된 폼 데이터:', formData);
 
       // 2. 병원 기본 정보 설정
       setHospitalName(formData.hospital.name);
 
       if (existingData.contacts && existingData.contacts.length > 0) {
-        log.info('Step1 - 연락처 정보 설정 시작:', existingData.contacts);
+        log.info('Step2 - 연락처 정보 설정 시작:', existingData.contacts);
         
         // 연락처 데이터를 ContactsInfo 형태로 변환
         const contactsData: ContactsInfo = {
@@ -207,11 +216,11 @@ const Step2BasicContactInfo = ({
         });
 
         setContactsInfo(contactsData);
-        log.info('Step1 - 연락처 정보 설정 완료:', contactsData);
+        log.info('Step2 - 연락처 정보 설정 완료:', contactsData);
       }
 
-      log.info('Step1 - 기존 데이터 적용 완료!');
-      log.info('Step1 - 적용된 데이터:', {
+      log.info('Step2 - 기존 데이터 적용 완료!');
+      log.info('Step2 - 적용된 데이터:', {
         병원명: formData.hospital.name,
         의사수: formData.doctors.length,
         영업시간: Object.keys(formData.businessHours)
@@ -219,7 +228,7 @@ const Step2BasicContactInfo = ({
         시술정보: Object.keys(formData.treatments).length,
       });
     } catch (error) {
-      console.error('Step1 - 기존 데이터 적용 중 오류:', error);
+      console.error('Step2 - 기존 데이터 적용 중 오류:', error);
     }
   };
 
@@ -276,12 +285,12 @@ const Step2BasicContactInfo = ({
     return <LoadingSpinner backdrop />;
 
     const handleNext = async () => {
-        log.info('Step1 - handleNext 시작');
+        log.info('Step2 - handleNext 시작');
         setIsSubmitting(true);
 
         const result = await handleSave();
         setIsSubmitting(false);
-        console.debug('Step1 - handleNext result:', result);
+        console.debug('Step2 - handleNext result:', result);
         if (result?.status === 'success') {
           document.body.style.overflow = '';
             onNext();
@@ -290,13 +299,13 @@ const Step2BasicContactInfo = ({
     
  
   const handleSave = async () => {
-    log.info('Step1 - handleSave 시작');
-    log.info('Step1 - 현재 상태:', {
+    log.info('Step2 - handleSave 시작');
+    log.info('Step2 - 현재 상태:', {
       // basicInfo,
       // selectedLocation,
       // addressForSendForm,
       contactsInfo,
-      currentUserUid,
+      id_admin,
       id_uuid_hospital,
       isEditMode
     });
@@ -304,11 +313,11 @@ const Step2BasicContactInfo = ({
     
     try {
       // 클라이언트 측 검증
-      log.info('Step1 - 검증 시작');
+      log.info('Step2 - 검증 시작');
       const validation = validateForm();
       
       if (!validation.isValid) {
-        log.info('Step1 - 검증 실패:', validation.errors);
+        log.info('Step2 - 검증 실패:', validation.errors);
         const formattedErrors = validation.errors.map((error, index) => `${index + 1}. ${error}`).join('\n');
         setFormState({
           message: formattedErrors,
@@ -320,35 +329,35 @@ const Step2BasicContactInfo = ({
         return { status: 'error' };
       }
       
-      log.info('Step1 - 검증 통과');
+      log.info('Step2 - 검증 통과');
 
       // FormData 구성
-      log.info('Step1 - FormData 구성 시작');
+      log.info('Step2 - FormData 구성 시작');
       const formData = new FormData();
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
       
       // 기본 정보
       formData.append('id_uuid', id_uuid_hospital);
       
-      log.info('Step1 - 기본 정보 FormData 추가 완료');
+      log.info('Step2 - 기본 정보 FormData 추가 완료');
 
       // 연락처 정보 추가
       formData.append('contacts_info', JSON.stringify(contactsInfo));
 
-      log.info('Step1 - FormData 구성 완료');
-      log.info('Step1 - API 호출 시작');
+      log.info('Step2 - FormData 구성 완료');
+      log.info('Step2 - API 호출 시작');
       
       // 새로운 API Route 호출
       const result = await uploadAPI.step2(formData);
 
-      log.info('Step1 - API 응답:', result);
+      log.info('Step2 - API 응답:', result);
       
       if (!isApiSuccess(result)) {
         // 에러 발생 시 처리
-        log.info('Step1 - API 응답이 성공이 아님:', result);
+        log.info('Step2 - API 응답이 성공이 아님:', result);
         const errorMessage = formatApiError(result.error);
-        log.info('Step1 - 포맷된 에러 메시지:', errorMessage);
+        log.info('Step2 - 포맷된 에러 메시지:', errorMessage);
         
         setFormState({
           message: errorMessage,
@@ -363,7 +372,7 @@ const Step2BasicContactInfo = ({
         };
       } else {
         // 성공 시 처리
-        log.info('Step1 - 데이터 저장 성공');
+        log.info('Step2 - 데이터 저장 성공');
         setFormState({
           message: result.message || '성공적으로 저장되었습니다.',
           status: 'success',
@@ -377,13 +386,13 @@ const Step2BasicContactInfo = ({
       }
       
     } catch (error) {
-      console.error('Step1 - API 호출 에러:', error);
-      console.error('Step1 - 에러 타입:', typeof error);
-      console.error('Step1 - 에러 메시지:', (error as any)?.message);
-      console.error('Step1 - 에러 스택:', (error as any)?.stack);
+      console.error('Step2 - API 호출 에러:', error);
+      console.error('Step2 - 에러 타입:', typeof error);
+      console.error('Step2 - 에러 메시지:', (error as any)?.message);
+      console.error('Step2 - 에러 스택:', (error as any)?.stack);
 
       const errorMessage = formatApiError(error);
-      log.info('Step1 - 포맷된 에러 메시지:', errorMessage);
+      log.info('Step2 - 포맷된 에러 메시지:', errorMessage);
 
       setFormState({
         message: errorMessage,
@@ -399,7 +408,7 @@ const Step2BasicContactInfo = ({
         message: errorMessage
       };
     } finally {
-      log.info('Step1 - handleSave 완료');
+      log.info('Step2 - handleSave 완료');
       setIsSubmitting(false);
     }
   };

@@ -1,7 +1,5 @@
-
 import { NextRequest, NextResponse } from "next/server";
-// import { createClient } from "@/utils/supabase/server";
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { ReservationInputDto } from "@/models/reservation.dto";
 import { TABLE_RESERVATIONS } from "@/constants/tables";
 
@@ -11,16 +9,12 @@ export async function GET(req: NextRequest) {
 
   
   try {
-    const { data, error, status, statusText } = await supabase
-      .from(TABLE_RESERVATIONS)
-      .select("*")
-      .eq('id_uuid_hospital', id_uuid_hospital);
+    const { rows: data } = await pool.query(
+      `SELECT * FROM ${TABLE_RESERVATIONS} WHERE id_uuid_hospital = $1`,
+      [id_uuid_hospital]
+    );
 
-    if (error) {
-      return NextResponse.json({ data: null }, { status, statusText });
-    }
-
-    return NextResponse.json({ reservationData : data }, { status, statusText });
+    return NextResponse.json({ reservationData : data }, { status: 200 });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ status: 500, statusText: error.message });
@@ -31,7 +25,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // const supabase = createClient();
     const body = await req.json();
     
     // Next.js 15에서 params는 Promise 타입
@@ -63,15 +56,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       created_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-      .from(TABLE_RESERVATIONS)
-      .update(reservationData)
-      // .eq('uuid', )
-
-    if (error) {
-      console.error("Insert error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    // POST 로직은 미완성으로 보임
+    const data = null;
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

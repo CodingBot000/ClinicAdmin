@@ -35,9 +35,8 @@ export default function RootLayout({
   const { info } = useAlarmStore(); // 1. 로그인 전에는 null
   const hospitalId = info?.id_uuid_hospital;
 
-  if (hospitalId) {
-    useReservationRealtime(hospitalId); // 2. hospitalId가 undefined → 구독 X
-  }
+  // ✅ Hook을 조건 없이 항상 호출 (Rules of Hooks)
+  useReservationRealtime(hospitalId || '');
 
   return (
     <html lang="en">

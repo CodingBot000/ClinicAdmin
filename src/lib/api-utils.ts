@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from './supabaseClient';
+import { pool } from './db';
 import { TABLE_ADMIN } from '@/constants/tables';
 import { ApiResponse } from '@/models/api';
+import { readSession } from './auth';
 
 export type { ApiResponse };
 
@@ -36,22 +37,13 @@ export async function authenticateUser(request: NextRequest): Promise<{
   error?: string;
 }> {
   try {
-    // Authorization 헤더 또는 쿠키에서 토큰 확인
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    const session = await readSession();
     
-    if (!token) {
-      return { isAuthenticated: false, error: 'No token provided' };
+    if (!session) {
+      return { isAuthenticated: false, error: 'No session found' };
     }
 
-    // Supabase를 통한 사용자 확인 (실제 구현은 인증 방식에 따라 다름)
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return { isAuthenticated: false, error: 'Invalid token' };
-    }
-
-    return { isAuthenticated: true, user };
+    return { isAuthenticated: true, user: session };
   } catch (error) {
     return { isAuthenticated: false, error: 'Authentication failed' };
   }
@@ -65,27 +57,26 @@ export async function extractAndValidateUser(formData: FormData): Promise<{
   error?: string;
 }> {
   try {
-    const current_user_uid = formData.get("current_user_uid") as string;
-    
-    if (!current_user_uid) {
-      return { isValid: false, error: 'User ID not provided' };
+    const adminId = (formData.get("current_user_id") || formData.get("current_user_uid")) as string;
+
+    if (!adminId) {
+      return { isValid: false, error: 'Admin ID not provided' };
     }
 
-    // admin 테이블에서 사용자 확인
-    const { data: adminData, error: adminError } = await supabase
-      .from(TABLE_ADMIN)
-      .select('id, id_auth_user')
-      .eq('id_auth_user', current_user_uid)
-      .single();
-    
-    if (adminError || !adminData) {
+    // admin 테이블에서 사용자 확인 (id 기준)
+    const { rows } = await pool.query(
+      `SELECT id FROM ${TABLE_ADMIN} WHERE id = $1`,
+      [adminId]
+    );
+
+    if (rows.length === 0) {
       return { isValid: false, error: 'Admin user not found' };
     }
 
-    return { 
-      isValid: true, 
-      userId: current_user_uid,
-      adminData 
+    return {
+      isValid: true,
+      userId: adminId,
+      adminData: rows[0],
     };
   } catch (error) {
     return { isValid: false, error: 'User validation failed' };

@@ -7,12 +7,11 @@ import useModal from '@/hooks/useModal';
 
 import { TreatmentSelectBox } from '@/components/TreatmentSelectBox';
 import { useTreatmentCategories } from '@/hooks/useTreatmentCategories';
-import { loadExistingHospitalData } from '@/lib/hospitalDataLoader';
 import { ExistingHospitalData } from '@/models/hospital';
 import { mapExistingDataToFormValues } from '@/lib/hospitalDataMapper';
 
-import { uploadAPI, formatApiError, isApiSuccess } from '@/lib/api-client';
-import { supabase } from '@/lib/supabaseClient';
+import { uploadAPI, formatApiError, isApiSuccess, api } from '@/lib/api-client';
+
 
 import { TreatmentSelectedOptionInfo } from '@/components/TreatmentSelectedOptionInfo';
 import PageBottom from '@/components/PageBottom';
@@ -31,7 +30,7 @@ const EXCEL_MAX_FILES = 1;
 
 interface Step5TreatmentsProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean; // 편집 모드 여부
   onPrev: () => void;
   onNext: () => void;
@@ -39,7 +38,7 @@ interface Step5TreatmentsProps {
 
 const Step5Treatments = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onNext,
@@ -74,6 +73,7 @@ const Step5Treatments = ({
       const [uploadMethod, setUploadMethod] = useState('excel');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [existingFileNames, setExistingFileNames] = useState<string[]>([]);
+  const [existingFileKeys, setExistingFileKeys] = useState<string[]>([]); // S3 파일 키 저장
 
   const [formState, setFormState] = useState<{
     message?: string;
@@ -99,37 +99,43 @@ const Step5Treatments = ({
     }
   }, [formState, showFinalResult]);
 
-  // 기존 엑셀 파일 확인
+  // 기존 엑셀 파일 확인 (AWS S3 Lightsail)
   const checkExistingExcelFiles = async () => {
     try {
       const filePath = getTreatmentsFilePath(id_uuid_hospital);
-      
       log.info('기존 엑셀 파일 확인 시작:', filePath);
-      
-      const { data, error } = await supabase.storage
-        .from(STORAGE_IMAGES)
-        .list(filePath);
 
-      if (error) {
-        console.error('기존 파일 확인 실패:', error);
+      const response = await fetch('/api/storage/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix: filePath }),
+      });
+
+      if (!response.ok) {
+        console.error('기존 파일 확인 실패:', response.statusText);
+        setUploadMethod('manual');
+        setExistingFileNames([]);
         return;
       }
 
-      if (data && data.length > 0) {
-        // 파일이 존재하면 uploadMethod를 'excel'로 설정
-        log.info('기존 엑셀 파일 발견:', data.length, '개');
+      const result = await response.json();
+
+      if (result.success && result.files && result.files.length > 0) {
+        log.info('기존 엑셀 파일 발견:', result.files.length, '개');
         setUploadMethod('excel');
-        setExistingFileNames(data.map(item => item.name));
+        setExistingFileNames(result.files.map((item: any) => item.name));
+        setExistingFileKeys(result.files.map((item: any) => item.key)); // S3 키 저장
       } else {
-        // 파일이 없으면 uploadMethod를 'manual'로 설정
         log.info('기존 엑셀 파일 없음');
-        // setUploadMethod('manual');
+        setUploadMethod('manual');
         setExistingFileNames([]);
+        setExistingFileKeys([]);
       }
     } catch (error) {
       console.error('기존 파일 확인 중 오류:', error);
       setUploadMethod('manual');
       setExistingFileNames([]);
+      setExistingFileKeys([]);
     }
   };
 
@@ -141,20 +147,27 @@ const Step5Treatments = ({
   // 편집 모드일 때 기존 데이터 로딩
   useEffect(() => {
     log.info(
-      `isEditMode: ${isEditMode}, currentUserUid: ${currentUserUid}`,
+      `isEditMode: ${isEditMode}, id_admin: ${id_admin}`,
     );
-    if (isEditMode && currentUserUid) {
+    if (isEditMode && id_admin && id_uuid_hospital) {
       loadExistingDataForEdit();
     }
-  }, [isEditMode, currentUserUid]);
+  }, [isEditMode, id_admin, id_uuid_hospital]);
 
   const loadExistingDataForEdit = async () => {
     try {
       setIsLoadingExistingData(true);
       log.info(' 편집 모드 - 기존 데이터 로딩 시작');
 
-      const data =
-        await loadExistingHospitalData(currentUserUid, id_uuid_hospital, 4);
+      // ✅ API를 사용하여 데이터 로드 (hospitalDataLoader 대신)
+      const result = await api.hospital.getPreview(id_uuid_hospital);
+
+      if (!result.success || !result.data) {
+        log.info(' 편집 모드 - 기존 데이터가 없습니다');
+        return;
+      }
+
+      const data = result.data.hospital;
       if (data) {
         setExistingData(data);
         populateFormWithExistingData(data);
@@ -261,50 +274,56 @@ const Step5Treatments = ({
       setUploadedFiles(files);
   }
 
-  // 기존 파일 전체 삭제
+  // 기존 파일 전체 삭제 (AWS S3 Lightsail)
   const handleClearAllFiles = async () => {
     try {
-     const filePath = getTreatmentsFilePath(id_uuid_hospital);
-      
+      const filePath = getTreatmentsFilePath(id_uuid_hospital);
       log.info('기존 파일 전체 삭제 시작:', filePath);
-      
-      // 기존 파일 목록 가져오기
-      const { data, error } = await supabase.storage
-        .from(STORAGE_IMAGES)
-        .list(filePath);
 
-      if (error) {
-        console.error('기존 파일 목록 조회 실패:', error);
-        throw error;
+      // 파일 목록 조회
+      const listResponse = await fetch('/api/storage/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix: filePath }),
+      });
+
+      if (!listResponse.ok) {
+        console.error('기존 파일 목록 조회 실패:', listResponse.statusText);
+        throw new Error('파일 목록 조회 실패');
       }
 
-      if (data && data.length > 0) {
-        // 삭제할 파일 경로들 생성
-        const filesToDelete = data.map(item => `${filePath}${item.name}`);
-        
-        log.info('삭제할 파일들:', filesToDelete);
-        
-        // 파일들 삭제
-        const { error: deleteError } = await supabase.storage
-          .from(STORAGE_IMAGES)
-          .remove(filesToDelete);
+      const listResult = await listResponse.json();
 
-        if (deleteError) {
-          console.error('파일 삭제 실패:', deleteError);
-          throw deleteError;
+      if (listResult.success && listResult.files && listResult.files.length > 0) {
+        const filesToDelete = listResult.files.map((item: any) => item.key);
+
+        log.info('삭제할 파일들:', filesToDelete);
+
+        // 파일들 삭제
+        const deleteResponse = await fetch('/api/storage/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keys: filesToDelete }),
+        });
+
+        if (!deleteResponse.ok) {
+          console.error('파일 삭제 실패:', deleteResponse.statusText);
+          throw new Error('파일 삭제 실패');
         }
 
-        log.info('기존 파일 전체 삭제 완료:', data.length, '개');
-        
-        // 기존 파일명 목록 초기화
-        setExistingFileNames([]);
-        
-        // uploadMethod를 manual로 변경
-        setUploadMethod('manual');
-        
-        toast.success('기존 파일이 모두 삭제되었습니다.');
+        const deleteResult = await deleteResponse.json();
+
+        if (deleteResult.success) {
+          log.info('기존 파일 전체 삭제 완료:', listResult.files.length, '개');
+          setExistingFileNames([]);
+          setUploadMethod('manual');
+          toast.success('기존 파일이 모두 삭제되었습니다.');
+        } else {
+          throw new Error(deleteResult.error || '파일 삭제 실패');
+        }
       } else {
         log.info('삭제할 파일이 없습니다.');
+        toast.info('삭제할 파일이 없습니다.');
       }
     } catch (error) {
       console.error('전체 파일 삭제 중 오류:', error);
@@ -335,7 +354,7 @@ const Step5Treatments = ({
       // FormData 구성
       const formData = new FormData();
       formData.append('is_edit_mode', isEditMode ? 'true' : 'false');
-      formData.append('current_user_uid', currentUserUid);
+      formData.append('current_user_uid', id_admin);
       formData.append('id_uuid_hospital', id_uuid_hospital);
       
       // uploadMethod에 따른 처리
@@ -389,22 +408,31 @@ const Step5Treatments = ({
                 message: '파일명에 한글 혹은 공백이 있으면 모두 제거하고 올려주세요.'
               };
             }
+            // AWS S3 Lightsail 업로드
             const filePath = getTreatmentsFilePath(id_uuid_hospital, fileName);
-            const { data, error } = await supabase.storage
-              .from(STORAGE_IMAGES)
-              .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-              });
 
-            if (error) throw error;
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            uploadFormData.append('key', filePath);
+            uploadFormData.append('contentType', file.type);
 
-            const { data: urlData } = supabase.storage
-              .from(STORAGE_IMAGES)
-              .getPublicUrl(filePath);
+            const uploadResponse = await fetch('/api/storage/upload', {
+              method: 'POST',
+              body: uploadFormData,
+            });
 
-            uploadedFileUrls.push(urlData.publicUrl);
-            log.info('엑셀 파일 업로드 성공:', fileName);
+            if (!uploadResponse.ok) {
+              throw new Error('파일 업로드 실패');
+            }
+
+            const uploadResult = await uploadResponse.json();
+
+            if (uploadResult.success) {
+              uploadedFileUrls.push(uploadResult.url);
+              log.info('엑셀 파일 업로드 성공:', fileName, uploadResult.url);
+            } else {
+              throw new Error(uploadResult.error || '파일 업로드 실패');
+            }
           } catch (error) {
             console.error('엑셀 파일 업로드 실패:', error);
             throw error;
@@ -544,7 +572,7 @@ const Step5Treatments = ({
                   엑셀 작성 가이드보기
                 </button>
               </div>
-              <FileUploadSection 
+              <FileUploadSection
                   onFileChange={handleFileChange}
                   name="treatment_file"
                   title=""
@@ -552,6 +580,7 @@ const Step5Treatments = ({
                   fileType="excel"
                   maxFiles={EXCEL_MAX_FILES}
                   existingFileNames={existingFileNames}
+                  existingFileKeys={existingFileKeys}
                   onClearAllFiles={handleClearAllFiles}
               />
             </div>

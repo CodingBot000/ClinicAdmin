@@ -13,7 +13,7 @@ import { MainTabType } from '@/models/common';
 
 interface Step6SupportTreatmentsProps {
   id_uuid_hospital: string;
-  currentUserUid: string;
+  id_admin: string;
   isEditMode?: boolean;
   onPrev: () => void;
   onNext: () => void;
@@ -21,7 +21,7 @@ interface Step6SupportTreatmentsProps {
 
 const Step6SupportTreatments = ({
   id_uuid_hospital,
-  currentUserUid,
+  id_admin,
   isEditMode = false,
   onPrev,
   onNext,

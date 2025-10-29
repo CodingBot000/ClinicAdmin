@@ -108,15 +108,20 @@ async function apiCallWithFormData<T = any>(
 export const adminApi = {
   /**
    * Verify admin authentication and fetch hospital data
-   * @param uid - Auth user ID
+   * @param id - Auth user ID (optional - will use session if not provided)
    */
-  verifyAuth: async (uid: string) => {
+  verifyAuth: async (id?: string | number) => {
+    // If ID is provided and valid, use it; otherwise let API use session
+    const url = id && id.toString().trim() !== '' && id.toString() !== 'undefined' && id.toString() !== 'null'
+      ? `/admin/auth?id=${encodeURIComponent(id.toString())}`
+      : '/admin/auth';
+
     return apiCall<{
       adminExists: boolean;
       hasClinicInfo: boolean;
       admin: any;
       hospital: any;
-    }>(`/admin/auth?uid=${encodeURIComponent(uid)}`, {
+    }>(url, {
       method: 'GET'
     });
   },
@@ -126,10 +131,10 @@ export const adminApi = {
    * @param uid - Auth user ID
    * @param email - Admin email
    */
-  createAdmin: async (uid: string, email: string) => {
+  createAdmin: async (email: string, passwordHash?: string) => {
     return apiCall<{ admin: any }>('/admin/auth', {
       method: 'POST',
-      body: JSON.stringify({ uid, email })
+      body: JSON.stringify({ email, passwordHash })
     });
   }
 };
@@ -224,6 +229,15 @@ export const hospitalApi = {
    * @param id_uuid_hospital - Hospital UUID
    */
   getPreview: async (id_uuid_hospital: string) => {
+    // Validate hospital ID before making request
+    if (!id_uuid_hospital || id_uuid_hospital.trim() === '' || id_uuid_hospital === 'undefined' || id_uuid_hospital === 'null') {
+      return {
+        success: false,
+        error: 'Invalid hospital ID provided',
+        data: null
+      };
+    }
+
     return apiCall<{ hospital: any }>(`/hospital/preview?id_uuid_hospital=${encodeURIComponent(id_uuid_hospital)}`, {
       method: 'GET'
     });

@@ -1,0 +1,95 @@
+{
+  "autoRunShell": true,
+  "autoApplyEdits": true,
+  "requireConfirmation": false,
+  "protectedGlobs": ["**/*.env", ".git/**", "node_modules/**"],
+  "name": "Clinic Admin Project",
+  "description": "Next.js clinic admin platform with JWT authentication and PostgreSQL",
+  "version": "1.0.0",
+  "framework": "nextjs",
+  "language": "typescript",
+  "authentication": "jwt",
+  "database": "postgresql",
+  "session": "jwt-cookies",
+  "deployment": "vercel",
+  "build_config": {
+    "webpack_fallbacks": {
+      "client_side": ["fs", "net", "tls", "dns", "pg", "argon2"],
+      "server_external": ["pg", "argon2", "pg-connection-string"]
+    }
+  },
+  "features": [
+    "jwt",
+    "session-management",
+    "admin-authentication",
+    "hospital-management",
+    "image-upload",
+    "reservation-system",
+    "chat-integration"
+  ],
+  "directories": {
+    "components": "src/components",
+    "pages": "src/app",
+    "api": "src/app/api",
+    "lib": "src/lib",
+    "styles": "src/styles",
+    "constants": "src/constants",
+    "models": "src/models",
+    "hooks": "src/hooks",
+    "contexts": "src/contexts",
+    "utils": "src/utils"
+  },
+  "key_files": {
+    "auth_utils": "src/lib/auth.ts",
+    "db_connection": "src/lib/db.ts",
+    "api_client": "src/lib/api-client.ts",
+    "middleware": "src/middleware.ts",
+    "main_layout": "src/app/layout.tsx",
+    "login_form": "src/components/AdminLoginForm.tsx",
+    "auth_hook": "src/hooks/useAuth.ts"
+  },
+  "api_endpoints": {
+    "auth": {
+      "login": "/api/auth/login",
+      "me": "/api/auth/me",
+      "logout": "/api/auth/logout"
+    },
+    "admin": {
+      "verify": "/api/admin/auth"
+    },
+    "hospital": {
+      "preview": "/api/hospital/preview",
+      "name": "/api/hospital/name"
+    },
+    "upload": {
+      "steps": "/api/upload/step[1-6]",
+      "final": "/api/upload/step_last"
+    }
+  },
+  "environment_variables": [
+    "AUTH_SECRET",
+    "POSTGRES_URL",
+    "PGHOST",
+    "PGPORT", 
+    "PGDATABASE",
+    "PGUSER",
+    "PGPASSWORD",
+    "PGSSL",
+    "PGSSL_CA",
+    "LIGHTSAIL_BUCKET_NAME",
+    "LIGHTSAIL_REGION",
+    "LIGHTSAIL_ENDPOINT",
+    "LIGHTSAIL_ACCESS_KEY",
+    "LIGHTSAIL_SECRET_KEY",
+    "NEXT_PUBLIC_SENDBIRD_APP_ID",
+    "SENDBIRD_API_TOKEN",
+    "NEXT_PUBLIC_SUPER_ADMIN",
+    "NEXT_PUBLIC_IMG_URL"
+  ],
+  "architecture_notes": {
+    "client_server_separation": "Client components use API calls only, no direct DB access",
+    "authentication": "JWT tokens in HttpOnly cookies, argon2id password hashing",
+    "database": "PostgreSQL with pg pool connections, server-side only",
+    "image_storage": "AWS S3 (Lightsail) for public image storage"
+  }
+}

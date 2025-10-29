@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { 
   TABLE_HOSPITAL_TREATMENT,
   TABLE_TREATMENT_INFO
@@ -73,37 +73,28 @@ export async function POST(request: NextRequest) {
     if (isEditMode) {
       log.info("편집 모드: 기존 hospital_treatment 데이터 삭제 중...");
       
-      const { error: deleteError } = await supabase
-        .from(TABLE_HOSPITAL_TREATMENT)
-        .delete()
-        .eq('id_uuid_hospital', id_uuid_hospital);
-      
-      if (deleteError) {
-        console.error("기존 hospital_treatment 데이터 삭제 실패:", deleteError);
+      try {
+        await pool.query(
+          `DELETE FROM ${TABLE_HOSPITAL_TREATMENT} WHERE id_uuid_hospital = $1`,
+          [id_uuid_hospital]
+        );
+        log.info("기존 hospital_treatment 데이터 삭제 완료");
+      } catch (error) {
+        console.error("기존 hospital_treatment 데이터 삭제 실패:", error);
         return NextResponse.json({
-          message: `기존 데이터 삭제 실패: ${deleteError.code || deleteError.message}`,
+          message: `기존 데이터 삭제 실패: ${(error as any).message}`,
           status: "error",
         }, { status: 500 });
       }
-      
-      log.info("기존 hospital_treatment 데이터 삭제 완료");
     }
 
     if (treatment_options_parsed.length > 0) {
       log.info("시술 상품옵션 데이터 처리 시작");
       
       // treatment 테이블에서 code와 id_uuid 매핑 데이터 가져오기
-      const { data: treatmentData, error: treatmentError } = await supabase
-        .from(TABLE_TREATMENT_INFO)
-        .select('code, id_uuid');
-      
-      if (treatmentError) {
-        console.error("treatment 테이블 조회 실패:", treatmentError);
-        return NextResponse.json({
-          message: `treatmentError:${treatmentError.code || treatmentError.message}`,
-          status: "error",
-        }, { status: 500 });
-      }
+      const { rows: treatmentData } = await pool.query(
+        `SELECT code, id_uuid FROM ${TABLE_TREATMENT_INFO}`
+      );
       
       // code를 키로 하는 매핑 맵 생성
       const codeToUuidMap = new Map();
@@ -139,48 +130,42 @@ export async function POST(request: NextRequest) {
       log.info("hospital_treatment insert 데이터:", hospitalTreatmentInserts);
       
       if (hospitalTreatmentInserts.length > 0) {
-        const { error: hospitalTreatmentError } = await supabase
-          .from(TABLE_HOSPITAL_TREATMENT)
-          .insert(hospitalTreatmentInserts);
-        
-        if (hospitalTreatmentError) {
-          log.info("uploadActions hospital_treatment error:", hospitalTreatmentError);
+        try {
+          for (const data of hospitalTreatmentInserts) {
+            await pool.query(
+              `INSERT INTO ${TABLE_HOSPITAL_TREATMENT} (id_uuid_hospital, id_uuid_treatment, option_value, price, discount_price, price_expose)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              [data.id_uuid_hospital, data.id_uuid_treatment, data.option_value, data.price, data.discount_price, data.price_expose]
+            );
+          }
+          log.info("hospital_treatment 데이터 insert 완료");
+        } catch (error) {
+          log.info("uploadActions hospital_treatment error:", error);
           return NextResponse.json({
-            message: `hospitalTreatmentError:${hospitalTreatmentError.code || hospitalTreatmentError.message}`,
+            message: `hospitalTreatmentError: ${(error as any).message}`,
             status: "error",
           }, { status: 500 });
         }
-        
-        log.info("hospital_treatment 데이터 insert 완료");
       }
       
       // 기타 시술 정보가 있는 경우 별도 레코드로 저장
       if (etc && etc.trim() !== "") {
         log.info("기타 시술 정보 저장 중:", etc);
         
-        const etcTreatmentData = {
-          id_uuid_hospital: id_uuid_hospital,
-          id_uuid_treatment: null, // 기타 정보는 특정 시술에 속하지 않음
-          option_value: "기타", // 옵션명을 "기타"로 설정
-          price: 0, // 기타 정보는 가격 없음
-          discount_price: 0,
-          price_expose: 0, // 기타 정보는 가격 노출하지 않음
-          etc: etc.trim() // 기타 정보 내용
-        };
-        
-        const { error: etcTreatmentError } = await supabase
-          .from(TABLE_HOSPITAL_TREATMENT)
-          .insert([etcTreatmentData]);
-        
-        if (etcTreatmentError) {
-          log.info("uploadActions hospital_treatment (기타) error:", etcTreatmentError);
+        try {
+          await pool.query(
+            `INSERT INTO ${TABLE_HOSPITAL_TREATMENT} (id_uuid_hospital, id_uuid_treatment, option_value, price, discount_price, price_expose, etc)
+             VALUES ($1, NULL, '기타', 0, 0, 0, $2)`,
+            [id_uuid_hospital, etc.trim()]
+          );
+          log.info("기타 시술 정보 저장 완료");
+        } catch (error) {
+          log.info("uploadActions hospital_treatment (기타) error:", error);
           return NextResponse.json({
-            message: `etcTreatmentError:${etcTreatmentError.code || etcTreatmentError.message}`,
+            message: `etcTreatmentError: ${(error as any).message}`,
             status: "error",
           }, { status: 500 });
         }
-        
-        log.info("기타 시술 정보 저장 완료");
       }
     }
 
@@ -190,7 +175,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Step4 API 오류:', error);
+    console.error('Step5 API 오류:', error);
     return NextResponse.json({
       message: "서버 오류가 발생했습니다.",
       status: "error",

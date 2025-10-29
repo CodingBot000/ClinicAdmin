@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import "@/utils/logger";
+
+const TABLE_HOSPITAL_TREATMENT_SELECTION = 'hospital_treatment_selection';
 
 // CORS 헤더 정의
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
@@ -28,18 +30,10 @@ export async function GET(request: NextRequest) {
     log.info("Step6 GET API - id_uuid_hospital:", id_uuid_hospital);
 
     // hospital_treatment_selection 테이블에서 데이터 조회
-    const { data, error } = await supabase
-      .from('hospital_treatment_selection')
-      .select('category, ids, device_ids')
-      .eq('id_uuid_hospital', id_uuid_hospital);
-
-    if (error) {
-      log.error("Step6 GET API - Query error:", error);
-      return NextResponse.json({
-        message: `Query error: ${error.message}`,
-        status: "error",
-      }, { status: 500, headers: corsHeaders });
-    }
+    const { rows: data } = await pool.query(
+      `SELECT category, ids, device_ids FROM ${TABLE_HOSPITAL_TREATMENT_SELECTION} WHERE id_uuid_hospital = $1`,
+      [id_uuid_hospital]
+    );
 
     // 카테고리별로 데이터 분리
     const skinData = data?.find(row => row.category === 'skin');
@@ -89,11 +83,7 @@ export async function POST(request: NextRequest) {
       id_uuid_hospital,
       category: 'skin',
       ids: skinTreatmentIds || [],
-      device_ids: deviceIds.filter((id: string) => {
-        // Device가 skin 또는 both인지 확인 필요 - 일단 전체 포함
-        return true;
-      }),
-      updated_at: new Date().toISOString(),
+      device_ids: deviceIds || [],
     };
 
     // Plastic 카테고리 데이터 준비
@@ -101,39 +91,58 @@ export async function POST(request: NextRequest) {
       id_uuid_hospital,
       category: 'plastic',
       ids: plasticTreatmentIds || [],
-      device_ids: deviceIds.filter((id: string) => {
-        // Device가 plastic 또는 both인지 확인 필요 - 일단 전체 포함
-        return true;
-      }),
-      updated_at: new Date().toISOString(),
+      device_ids: deviceIds || [],
     };
 
     // Upsert skin category
-    const { error: skinError } = await supabase
-      .from('hospital_treatment_selection')
-      .upsert(skinData, {
-        onConflict: 'id_uuid_hospital,category'
-      });
-
-    if (skinError) {
-      log.error("Step6 API - Skin upsert error:", skinError);
+    try {
+      await pool.query(
+        `INSERT INTO ${TABLE_HOSPITAL_TREATMENT_SELECTION}
+          (id_uuid_hospital, category, ids, device_ids, updated_at)
+         VALUES ($1, $2, $3::text[], $4::text[], now())
+         ON CONFLICT (id_uuid_hospital, category)
+         DO UPDATE SET
+           ids = EXCLUDED.ids,
+           device_ids = EXCLUDED.device_ids,
+           updated_at = now()`,
+        [
+          skinData.id_uuid_hospital,
+          skinData.category,
+          skinData.ids,          // <-- 배열 ['S3CCE','S3CCJ',...]
+          skinData.device_ids    // <-- 배열
+        ]
+      );
+    } catch (error) {
+      log.error("Step6 API - Skin upsert error:", error);
       return NextResponse.json({
-        message: `Skin upsert error: ${skinError.message}`,
+        message: `Skin upsert error: ${(error as any).message}`,
         status: "error",
       }, { status: 500, headers: corsHeaders });
     }
 
     // Upsert plastic category
-    const { error: plasticError } = await supabase
-      .from('hospital_treatment_selection')
-      .upsert(plasticData, {
-        onConflict: 'id_uuid_hospital,category'
-      });
-
-    if (plasticError) {
-      log.error("Step6 API - Plastic upsert error:", plasticError);
+    try {
+    
+      await pool.query(
+        `INSERT INTO ${TABLE_HOSPITAL_TREATMENT_SELECTION}
+          (id_uuid_hospital, category, ids, device_ids, updated_at)
+          VALUES ($1, $2, $3::text[], $4::text[], now())
+          ON CONFLICT (id_uuid_hospital, category)
+          DO UPDATE SET
+            ids = EXCLUDED.ids,
+            device_ids = EXCLUDED.device_ids,
+            updated_at = now()`,
+        [
+          plasticData.id_uuid_hospital,
+          plasticData.category,
+          plasticData.ids,        // ['P3FEA', 'P3FEB'] 형태의 배열
+          plasticData.device_ids  // ['D123', 'D456'] 등
+        ]
+      );
+    } catch (error) {
+      log.error("Step6 API - Plastic upsert error:", error);
       return NextResponse.json({
-        message: `Plastic upsert error: ${plasticError.message}`,
+        message: `Plastic upsert error: ${(error as any).message}`,
         status: "error",
       }, { status: 500, headers: corsHeaders });
     }

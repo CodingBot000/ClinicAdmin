@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { pool } from '@/lib/db';
 import { TABLE_TREATMENT_SELECTION } from '@/constants/tables';
 import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils';
 
@@ -16,19 +16,14 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('Hospital ID is required', 400);
     }
 
-    const { data, error } = await supabase
-      .from(TABLE_TREATMENT_SELECTION)
-      .select('category, ids, device_ids')
-      .eq('id_uuid_hospital', id_uuid_hospital);
-
-    if (error) {
-      console.error('Treatment selection fetch error:', error);
-      return createErrorResponse('Failed to fetch treatment selections', 500);
-    }
+    const { rows: data } = await pool.query(
+      `SELECT category, ids, device_ids FROM ${TABLE_TREATMENT_SELECTION} WHERE id_uuid_hospital = $1`,
+      [id_uuid_hospital]
+    );
 
     // Organize data by category
-    const skinData = data?.find(row => row.category === 'skin');
-    const plasticData = data?.find(row => row.category === 'plastic');
+    const skinData = data?.find((row: any) => row.category === 'skin');
+    const plasticData = data?.find((row: any) => row.category === 'plastic');
 
     const treatmentSelection = {
       skinTreatmentIds: skinData?.ids || [],
